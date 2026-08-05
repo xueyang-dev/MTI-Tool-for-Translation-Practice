@@ -65,6 +65,21 @@ def parse_json_array(text):
     return None
 
 
+def _translation_item_text(item):
+    """把模型返回数组项归一为译文文本：支持字符串或 {translation/target/...} 对象。"""
+    if isinstance(item, str):
+        return item
+    if isinstance(item, dict):
+        for key in ("translation", "target", "text", "译文", "翻译", "content"):
+            val = item.get(key)
+            if isinstance(val, str) and val.strip():
+                return val
+        for val in item.values():
+            if isinstance(val, str) and val.strip():
+                return val
+    return ""
+
+
 def parse_translation_array(res, expected):
     """解析翻译响应，支持多种模型实际输出形态：
     1. JSON 数组；2. JSON 对象 {"1": "..."}；3. 编号行（1. 译文 / 1、译文）；
@@ -72,7 +87,9 @@ def parse_translation_array(res, expected):
     """
     arr = parse_json_array(res)
     if arr is not None and len(arr) == expected:
-        return arr
+        out = [_translation_item_text(item) for item in arr]
+        if all(t.strip() for t in out):
+            return out
     if isinstance(res, str):
         candidate = res.strip()
         candidate = re.sub(r'^```(?:json)?\s*', '', candidate, flags=re.DOTALL)
@@ -100,7 +117,10 @@ def parse_translation_array(res, expected):
                     return out
     if expected == 1 and isinstance(res, str) and res.strip():
         # 单段兜底：去掉编号前缀后按整段接受，交给确定性检查与审校把关
-        return [re.sub(r'^\s*\d+[.)、]\s*', '', res).strip()]
+        raw = res.strip()
+        if raw.startswith('[') or raw.startswith('{'):
+            return None  # 形似 JSON 的响应不允许当纯文本吞下
+        return [re.sub(r'^\s*\d+[.)、]\s*', '', raw).strip()]
     return None
 
 
@@ -119,6 +139,11 @@ def is_rate_limited(err):
 
 # 句末终结符（用于判断段落是否未完结、需要与下一段合并）
 _SENTENCE_TERMINAL = set('.!?"”’…:;)')
+
+# 常见缩写（句点不计入句界）
+_ABBREV_RE = re.compile(
+    r"\b(?:Lt|Col|Gen|Maj|Capt|Sgt|Brig|Mr|Mrs|Ms|Dr|St|No|Vol|pp|"
+    r"e\.g|i\.e|vs|etc|a\.m|p\.m|U\.S|A\.F|B\.C|A\.D)\.", re.IGNORECASE)
 
 
 def extract_pdf_paragraphs(file_bytes):
@@ -455,9 +480,31 @@ def find_residuals(src, tgt, target_lang):
     return result
 
 
+def _count_sentences(text):
+    """粗粒度句数统计：按终结符切分（引号/括号闭合归并到前一句）。"""
+    text = _ABBREV_RE.sub(" ", text)
+    parts = re.split(r"[.!?…。！？]+[”\"'’)\]]*", text)
+    return sum(1 for p in parts if p.strip())
+
+
 def is_incomplete_translation(src, tgt):
-    """长原文配过短译文 => 疑似漏译/截断（英->中约 0.5-0.7，拉丁互译约 1:1）。"""
-    return len(src) >= 120 and len((tgt or "").strip()) < 0.3 * len(src)
+    """疑似漏译/截断判定（双重规则，实测调优）：
+    1. 字符级：长原文（≥120 字符）配极短译文（<15%）——只拦灾难性截断，
+       英译中正常比例可低至 0.2-0.3，不能用高阈值；
+    2. 句子级：原文 ≥2 句而译文不足一半句数，且字符占比 <35%——
+       截断译文必然句数对不上，完整译文即使语言再凝练也很少掉一半句。
+    """
+    tgt = (tgt or "").strip()
+    if not tgt:
+        return True
+    if len(src) >= 120 and len(tgt) < 0.15 * len(src):
+        return True
+    src_sents = _count_sentences(src)
+    if src_sents >= 2:
+        tgt_sents = _count_sentences(tgt)
+        if tgt_sents < src_sents * 0.5 and len(tgt) < 0.35 * len(src):
+            return True
+    return False
 
 
 def check_translation_batch(sources, targets, glossary, target_lang):
@@ -472,8 +519,9 @@ def check_translation_batch(sources, targets, glossary, target_lang):
         # 实测根因：审校/修复环节的整段替换把长段译文换成了一句修正。
         if is_incomplete_translation(src, tgt):
             findings.append({"segment_index": i, "type": "check", "severity": "blocking",
-                             "reason": f"疑似漏译：译文长度（{len(tgt.strip())} 字符）"
-                                       f"不足原文（{len(src)} 字符）的 30%"})
+                             "reason": f"疑似漏译/截断：原文 {len(src)} 字符"
+                                       f"/{_count_sentences(src)} 句，译文仅 {len(tgt.strip())} 字符"
+                                       f"/{_count_sentences(tgt)} 句"})
         for token, kind in extract_preserved_tokens(src).items():
             if token not in tgt:
                 findings.append({"segment_index": i, "type": "check",

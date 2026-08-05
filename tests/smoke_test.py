@@ -43,6 +43,9 @@ def test_misc_helpers():
 
 def test_parse_translation_array():
     assert core.parse_translation_array('["a", "b"]', 2) == ["a", "b"]
+    assert core.parse_translation_array('[{"translation": "甲"}, {"translation": "乙"}]', 2) == ["甲", "乙"]
+    assert core.parse_translation_array('[{"target": "甲"}, {"text": "乙"}]', 2) == ["甲", "乙"]
+    assert core.parse_translation_array('[{"译文": "甲"}, 42]', 1) is None
     assert core.parse_translation_array('{"1": "甲", "2": "乙"}', 2) == ["甲", "乙"]
     assert core.parse_translation_array('```json\n{"1": "甲"}\n```', 1) == ["甲"]
     assert core.parse_translation_array('1. 甲\n2. 乙', 2) == ["甲", "乙"]
@@ -175,7 +178,24 @@ def test_completeness_check():
     long_src = "The flight course lasted only twenty months. " * 6  # >120 字符
     assert core.is_incomplete_translation(long_src, "一句话。")
     assert not core.is_incomplete_translation(long_src, "译" * 100)
-    assert not core.is_incomplete_translation("短句", "")
+    assert core.is_incomplete_translation("短句", ""), "空译文恒为不完整"
+    # 实测案例：完整但凝练的译文不应误报
+    legal = ("All rights reserved; No parts of this book may be reproduced or transmitted "
+             "in any form or by any means, electronic or mechanical, including photocopying, "
+             "recording, taping, or by any information storage and retrieval system, "
+             "without permission in writing from the publisher.")
+    assert not core.is_incomplete_translation(
+        legal, "保留所有权利；未经出版方书面许可，本书任何部分不得以任何形式或任何方式"
+               "（电子或机械，包括影印、录制、磁带或任何信息存储检索系统）复制或传播。")
+    dialogue = ('"What mud?" I asked. "It was summer."')
+    assert not core.is_incomplete_translation(dialogue, '"什么泥？"我问。"那是夏天。"')
+    # 实测案例：2 句原文只译 1 句 => 截断
+    two_sent = ("When Kibbutz Geva celebrated forty years, Grandpa took me on a compost tour "
+                "of the kibbutzim. I believe he was one of the first farmers in the country "
+                "to understand the great benefits of organic fertilization and the dangers "
+                "of chemical fertilizers.")
+    assert core.is_incomplete_translation(
+        two_sent, "当基布兹格瓦庆祝成立四十周年时，祖父带我参加了一次对各基布兹的堆肥考察。")
     fs = core.check_translation_batch([long_src], ["一句话。"], [], "简体中文")
     assert any(f["severity"] == "blocking" and "漏译" in f["reason"] for f in fs), \
         "截断译文应判 blocking"
