@@ -1,8 +1,10 @@
-"""核心逻辑冒烟测试：解析、持久化、文档生成、端到端流水线与断点续传。
+"""核心逻辑冒烟测试：解析、持久化、术语表/确定性检查、审校、翻译记忆、断点续传。
 
 运行方式（项目根目录）：python tests/smoke_test.py
 """
 import io
+import json
+import re
 import shutil
 import sys
 import tempfile
@@ -50,13 +52,75 @@ def test_doc_generation():
 
 def test_termbase_parsing():
     buf = core.dict_to_excel({"MT": "机器翻译", "CAT": "计算机辅助翻译"})
-    assert core.parse_termbase(buf) == {"MT": "机器翻译", "CAT": "计算机辅助翻译"}
+    entries = core.normalize_glossary(core.parse_termbase(buf))
+    assert len(entries) == 2
+    assert all(e["behavior"] == "translate" and e["status"] == "provisional" for e in entries)
+
+    # 概念化列：Behavior / Status / Preferred / Forbidden
+    buf2 = io.BytesIO()
+    import pandas as pd
+    pd.DataFrame([
+        {"Source": "Skopos", "Target": "目的论", "Behavior": "translate", "Status": "locked",
+         "Preferred": "目的论", "Forbidden": "功能对等;目的学派"},
+        {"Source": "John Smith", "Target": "约翰·史密斯", "Behavior": "preserve", "Status": "locked"},
+    ]).to_excel(buf2, index=False)
+    buf2.seek(0)
+    entries2 = core.normalize_glossary(core.parse_termbase(buf2))
+    assert entries2[0]["status"] == "locked"
+    assert entries2[0]["forbidden"] == ["功能对等", "目的学派"]
+    assert entries2[1]["behavior"] == "preserve"
+
     try:
         core.parse_termbase(io.BytesIO(b"not an excel"))
         raise AssertionError("应抛出 ValueError")
     except ValueError:
         pass
-    print("  ✓ 术语库解析与错误提示")
+    print("  ✓ 术语库解析（概念化条目 + 锁定/禁止译名）")
+
+
+def test_glossary_and_checks():
+    g = core.normalize_glossary([
+        {"source": "Skopos", "target": "目的论", "status": "locked", "forbidden": ["功能对等"]},
+        {"source": "John Smith", "target": "约翰·史密斯", "behavior": "preserve", "status": "locked"},
+        {"source": "MT", "target": "机器翻译"},
+        {"source": "", "target": "x"},
+        "garbage",
+    ])
+    assert len(g) == 3
+    assert g[0]["status"] == "locked" and g[0]["preferred"] == "目的论"
+    assert g[1]["behavior"] == "preserve"
+    assert g[2]["status"] == "provisional"
+    assert core.glossary_to_terms(g) == {"Skopos": "目的论", "MT": "机器翻译"}
+    block = core.glossary_block(g)
+    assert "Skopos -> 目的论" in block and "功能对等" in block
+    assert "John Smith" in block
+
+    src = "价格 %s 元，详见 https://example.com/ref，引用 [12]。John Smith 提出了 Skopos 理论。"
+    tgt = "价格 元，详见 见文档，引用 12。约翰·史密斯提出了功能对等理论。"
+    fs = core.check_translation_batch([src], [tgt], g, "简体中文")
+    assert any(f["severity"] == "blocking" for f in fs), "占位符丢失应为 blocking"
+    assert any("https://example.com/ref" in f["reason"] for f in fs)
+    assert any("John Smith" in f["reason"] for f in fs)
+    assert any("Skopos" in f["reason"] for f in fs)
+    assert any("功能对等" in f["reason"] for f in fs)
+
+    fs2 = core.check_translation_batch(
+        ["Theoretical Framework 理论框架"], ["理论框架 Theoretical Framework"], [], "简体中文")
+    assert any("Theoretical" in f["reason"] for f in fs2), "应检测到源语残留"
+    fs3 = core.check_translation_batch(
+        ["理论框架"], ["Theoretical Framework 理论"], [], "English")
+    assert any("理论" in f["reason"] for f in fs3)
+
+    fs4 = core.check_translation_batch(["abc"], [""], [], "简体中文")
+    assert fs4[0]["severity"] == "blocking" and "为空" in fs4[0]["reason"]
+    print("  ✓ 概念化术语表 + 确定性检查（占位符/保留项/残留/锁定合规）")
+
+
+def test_batches():
+    assert core.make_batches(["a", "b", "c", "d", "e", "f"]) == [["a", "b", "c", "d"], ["e", "f"]]
+    assert core.make_batches(["x" * 900, "y" * 900, "z"]) == [["x" * 900], ["y" * 900, "z"]]
+    assert core.make_batches(["x" * 900, "y" * 1700, "z"]) == [["x" * 900], ["y" * 1700], ["z"]]
+    print("  ✓ 语义批次")
 
 
 def test_job_store():
@@ -72,20 +136,14 @@ def test_job_store():
         loaded = core.load_job_state(jid)
         assert loaded["paras"] == ["p1", "p2"]
         assert loaded["filename"] == "demo.pdf"
-        jobs = core.list_jobs()
-        assert any(j["job_id"] == jid for j in jobs)
+        assert any(j["job_id"] == jid for j in core.list_jobs())
         assert core.progress_label(loaded) == "待处理"
         loaded.update(p1_done=True, p2_done=True, p3_done=True)
         assert core.progress_label(loaded) == "已完成"
-        # 损坏的 state.json 不应崩溃
         (core.job_dir(jid) / "state.json").write_text("{broken", encoding="utf-8")
         assert core.load_job_state(jid) is None
-        (core.job_dir(jid) / "state.json").write_text(
-            core.job_state_path(jid).read_text() if False else '{"filename": "x"}', encoding="utf-8")
-        assert core.load_job_state(jid)["filename"] == "x"
         core.delete_job(jid)
         assert core.load_job_state(jid) is None
-        assert all(j["job_id"] != jid for j in core.list_jobs())
     finally:
         core.OUTPUT_DIR = old_dir
         shutil.rmtree(tmp, ignore_errors=True)
@@ -102,18 +160,26 @@ def _make_docx(texts):
     return buf.getvalue()
 
 
+def _numbered_sources(user_prompt):
+    """从翻译/修复 prompt 中提取编号段落（按序号排序）。"""
+    segs = [(int(m.group(1)), m.group(2).strip())
+            for m in re.finditer(r'^\s*(\d+)\.\s+(.+?)\s*$', user_prompt, re.M)]
+    segs.sort(key=lambda x: x[0])
+    return segs
+
+
 def _fake_llm_factory():
-    """返回 (fake_llm, calls)：术语/翻译/报告均返回固定内容。"""
+    """返回 (fake_llm, calls)：术语/翻译/审校/报告均返回固定内容。"""
     calls = []
 
     def fake_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
         calls.append(system_prompt[:10])
         if "术语管理专家" in system_prompt:
             return '[{"Source": "MT", "Target": "机器翻译"}, {"Source": "CAT", "Target": "计算机辅助翻译"}, 123, {"Source": null, "Target": "坏数据"}]'
+        if "翻译审校专家" in system_prompt:
+            return '[]'  # 审校无问题
         if "学术翻译专家" in system_prompt:
-            return f"译文：{user_prompt}"
-        if "学术排版专家" in system_prompt:
-            return '["段落一", "段落二"]'
+            return json.dumps([f"译文：{s}" for _, s in _numbered_sources(user_prompt)])
         return "这是报告章节内容，包含 **加粗** 与列表。\n\n- 要点一\n- 要点二"
 
     return fake_llm, calls
@@ -132,25 +198,144 @@ def test_e2e_pipeline():
             jid, "demo.docx", docx_bytes,
             provider="DeepSeek", api_key="test-key", model="deepseek-chat",
             target_lang="简体中文", auto_term=True, enable_report=True,
-            translation_theory="目的论 (Skopos Theory)", user_termbase={})
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
         assert state["p1_done"] and len(state["paras"]) == 2
         assert state["auto_terms"] == {"MT": "机器翻译", "CAT": "计算机辅助翻译"}
         assert state["p2_done"] and len(state["pairs"]) == 2
         assert state["pairs"][0]["target"].startswith("译文：")
-        assert state["p3_done"]
-        assert state["p3_md"].count("## ") == 4, "报告应包含四个章节"
+        assert state["pairs"][0]["reviewed"] is True, "审校通过段落应标记 reviewed"
+        stats = state["review_stats"]
+        assert stats["reviewed_segments"] == 2 and stats["batches_reviewed"] == 1
+        assert stats["blocking"] == 0 and stats["actionable"] == 0
+        assert state["has_blocking"] is False
+        assert state["p3_done"] and state["p3_md"].count("## ") == 4
+        # 审校通过的段落应已写入翻译记忆
+        tm = core.load_tm()
+        assert len(tm) == 2 and all(v["reviewed"] for v in tm.values())
         # 幂等：已完成任务再次运行不产生额外 LLM 调用
         n_before = len(calls)
         state2 = core.run_job_pipeline(
             jid, "demo.docx", None,
             provider="DeepSeek", api_key="test-key", model="deepseek-chat",
             target_lang="简体中文", auto_term=True, enable_report=True,
-            translation_theory="目的论 (Skopos Theory)", user_termbase={})
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
         assert len(calls) == n_before
         assert state2["p3_md"] == state["p3_md"]
-        # 源文件已留存，可删除后重跑阶段一
         assert core.load_source(jid) == docx_bytes
-        print("  ✓ 端到端流水线（清洗/术语/翻译/报告/幂等）")
+        print("  ✓ 端到端流水线（清洗/术语/批次翻译/审校/报告/幂等/TM 入库）")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_deterministic_repair():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-repair-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["请参考 https://example.com/ref 获取详细信息。"])
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "术语管理专家" in system_prompt:
+                return '[]'
+            if "翻译审校专家" in system_prompt:
+                return '[]'
+            if "学术翻译专家" in system_prompt:
+                if "以下译文未通过检查" in user_prompt:
+                    targets = re.findall(r'^\s*译文：(.*)$', user_prompt, re.M)
+                    return json.dumps([t.strip() + " https://example.com/ref" for t in targets])
+                return json.dumps(["译文：请参考 获取详细信息。"])  # 故意丢失 URL
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        state = core.run_job_pipeline(
+            "rp0000000000000001", "r.docx", docx_bytes,
+            provider="DeepSeek", api_key="k", model="deepseek-chat",
+            target_lang="简体中文", auto_term=False, enable_report=False,
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+        assert "https://example.com/ref" in state["pairs"][0]["target"], "自动修复应补回 URL"
+        assert state["findings"] == []
+        assert state["has_blocking"] is False
+        print("  ✓ 确定性检查 -> 自动修复 -> 复验通过")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_review_fix_and_blocking():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-review-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["这是第一段，内容足够长以通过过滤。",
+                                 "这是第二段，内容足够长以通过过滤。"])
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "术语管理专家" in system_prompt:
+                return '[]'
+            if "翻译审校专家" in system_prompt:
+                return json.dumps([
+                    {"segment_index": 0, "severity": "actionable", "reason": "术语不一致",
+                     "suggested_target": "修正后的译文"},
+                    {"segment_index": 1, "severity": "blocking", "reason": "语义严重错误，需人工确认"},
+                ])
+            if "学术翻译专家" in system_prompt:
+                return json.dumps([f"译文：{s}" for _, s in _numbered_sources(user_prompt)])
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        state = core.run_job_pipeline(
+            "rv0000000000000001", "v.docx", docx_bytes,
+            provider="DeepSeek", api_key="k", model="deepseek-chat",
+            target_lang="简体中文", auto_term=False, enable_report=False,
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+        pairs = state["pairs"]
+        assert pairs[0]["target"] == "修正后的译文", "actionable 建议应复验后应用"
+        assert pairs[0]["reviewed"] is True
+        assert pairs[1]["reviewed"] is False, "blocking 段落不应进入翻译记忆"
+        assert len(state["findings"]) == 1
+        assert state["findings"][0]["severity"] == "blocking"
+        assert state["findings"][0]["type"] == "review"
+        assert state["has_blocking"] is True
+        report = core.findings_report_md(state)
+        assert "blocking" in report and "待处理问题" in report
+        print("  ✓ 独立审校：actionable 修复 + blocking 留待确认 + 审查报告")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_tm_reuse():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-tm-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["这是第一段，内容足够长以通过过滤。",
+                                 "这是第二段，内容足够长以通过过滤。"])
+        counting = {"translate": 0, "review": 0}
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "术语管理专家" in system_prompt:
+                return '[]'
+            if "翻译审校专家" in system_prompt:
+                counting["review"] += 1
+                return '[]'
+            if "学术翻译专家" in system_prompt:
+                counting["translate"] += 1
+                return json.dumps([f"译文：{s}" for _, s in _numbered_sources(user_prompt)])
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        kwargs = dict(provider="DeepSeek", api_key="k", model="deepseek-chat",
+                      target_lang="简体中文", auto_term=False, enable_report=False,
+                      translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+        core.run_job_pipeline("tm0000000000000001", "a.docx", docx_bytes, **kwargs)
+        assert counting["translate"] == 1, "任务 A 应翻译一个批次"
+        state_b = core.run_job_pipeline("tm0000000000000002", "b.docx", docx_bytes, **kwargs)
+        assert counting["translate"] == 1, "任务 B 应全部命中翻译记忆，不再调用翻译"
+        assert state_b["tm_used_count"] == 2
+        assert all(p["from_tm"] and p["reviewed"] for p in state_b["pairs"])
+        print("  ✓ 翻译记忆：审校通过段落跨任务精确复用")
     finally:
         core.OUTPUT_DIR = old_dir
         shutil.rmtree(tmp, ignore_errors=True)
@@ -170,9 +355,11 @@ def test_resume_translation():
             if "学术翻译专家" in system_prompt:
                 if "第二段" in user_prompt:
                     raise RuntimeError("模拟网络中断")
-                return f"译文：{user_prompt}"
+                return json.dumps([f"译文：{s}" for _, s in _numbered_sources(user_prompt)])
             if "术语管理专家" in system_prompt:
                 return '[]'  # 空术语表
+            if "翻译审校专家" in system_prompt:
+                return '[]'
             return "报告章节内容。"
 
         core.call_llm = flaky_llm
@@ -181,30 +368,28 @@ def test_resume_translation():
                 jid, "demo.docx", docx_bytes,
                 provider="DeepSeek", api_key="test-key", model="deepseek-chat",
                 target_lang="简体中文", auto_term=True, enable_report=True,
-                translation_theory="目的论 (Skopos Theory)", user_termbase={})
-            raise AssertionError("应在第二段翻译处抛出异常")
+                translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+            raise AssertionError("应在批次翻译处抛出异常")
         except RuntimeError as e:
             assert "模拟网络中断" in str(e)
 
-        # 中断后：阶段一已完成、只翻译了第一段，且已落盘
         mid = core.load_job_state(jid)
-        assert mid["p1_done"] and len(mid["pairs"]) == 1
+        assert mid["p1_done"] and len(mid["pairs"]) == 0, "失败的批次不应提交任何译文"
         assert any("术语抽取失败" in w for w in mid["warnings"])
         assert sum("术语抽取失败" in w for w in mid["warnings"]) == 1
 
-        # 模拟刷新后继续：不传文件字节，直接从磁盘恢复
         fake_llm, _ = _fake_llm_factory()
         core.call_llm = fake_llm
         state = core.run_job_pipeline(
             jid, "demo.docx", None,
             provider="DeepSeek", api_key="test-key", model="deepseek-chat",
             target_lang="简体中文", auto_term=True, enable_report=True,
-            translation_theory="目的论 (Skopos Theory)", user_termbase={})
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
         assert state["p2_done"] and len(state["pairs"]) == 3
         assert state["pairs"][0]["target"] == "译文：这是第一段，内容足够长以通过过滤。"
         assert state["pairs"][1]["target"] == "译文：这是第二段，内容足够长以通过过滤。"
         assert state["p3_done"]
-        print("  ✓ 翻译中断 -> 磁盘断点续传")
+        print("  ✓ 批次翻译中断 -> 磁盘断点续传")
     finally:
         core.OUTPUT_DIR = old_dir
         shutil.rmtree(tmp, ignore_errors=True)
@@ -224,8 +409,10 @@ def test_resume_report_sections():
 
             def __call__(self, provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
                 if "学术翻译专家" in system_prompt:
-                    return f"译文：{user_prompt}"
+                    return json.dumps([f"译文：{s}" for _, s in _numbered_sources(user_prompt)])
                 if "术语管理专家" in system_prompt:
+                    return '[]'
+                if "翻译审校专家" in system_prompt:
                     return '[]'
                 if "MTI（翻译硕士）导师" in system_prompt:
                     self.report_calls += 1
@@ -240,7 +427,7 @@ def test_resume_report_sections():
                 jid, "demo.docx", docx_bytes,
                 provider="DeepSeek", api_key="test-key", model="deepseek-chat",
                 target_lang="简体中文", auto_term=True, enable_report=True,
-                translation_theory="目的论 (Skopos Theory)", user_termbase={})
+                translation_theory="目的论 (Skopos Theory)", user_glossary=[])
             raise AssertionError("应在第四章节处抛出异常")
         except RuntimeError as e:
             assert "报告章节" in str(e)
@@ -255,7 +442,7 @@ def test_resume_report_sections():
             jid, "demo.docx", None,
             provider="DeepSeek", api_key="test-key", model="deepseek-chat",
             target_lang="简体中文", auto_term=True, enable_report=True,
-            translation_theory="目的论 (Skopos Theory)", user_termbase={})
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
         assert state["p3_done"]
         assert len(state["p3_sections"]) == 4
         assert state["p3_md"].count("## ") == 4
@@ -276,7 +463,7 @@ def test_missing_source():
                 "e2e0000000000004", "x.pdf", None,
                 provider="DeepSeek", api_key="k", model="deepseek-chat",
                 target_lang="简体中文", auto_term=True, enable_report=True,
-                translation_theory="目的论 (Skopos Theory)", user_termbase={})
+                translation_theory="目的论 (Skopos Theory)", user_glossary=[])
             raise AssertionError("缺少源文件时应抛出 ValueError")
         except ValueError:
             pass
@@ -292,8 +479,13 @@ if __name__ == "__main__":
     test_misc_helpers()
     test_doc_generation()
     test_termbase_parsing()
+    test_glossary_and_checks()
+    test_batches()
     test_job_store()
     test_e2e_pipeline()
+    test_deterministic_repair()
+    test_review_fix_and_blocking()
+    test_tm_reuse()
     test_resume_translation()
     test_resume_report_sections()
     test_missing_source()

@@ -23,12 +23,20 @@ with st.sidebar:
     auto_term = st.checkbox("🤖 智能抽取术语库 (翻译前执行)", value=True,
                             help="大模型自动提取专有名词并生成 Excel 术语库")
     enable_report = st.checkbox("📝 自动生成实践报告", value=True)
+    enable_review = st.checkbox("🔍 独立审校 (Review)", value=True,
+                                help="翻译后由独立审校 pass 检查语义/术语问题；通过审校的段落才会进入翻译记忆")
     translation_theory = st.selectbox("案例分析理论", [
         "目的论 (Skopos Theory)",
         "交际翻译与语义翻译 (Newmark)",
         "功能对等理论 (Nida)",
         "文本类型理论 (Reiss)",
     ])
+    style_rules = st.text_area(
+        "风格与保留规则（可选）",
+        value="保持学术书面语；专有名词、作者姓名、机构名、引用标注、URL 等保留原文；"
+              "标点遵循目标语言规范。",
+        help="这些规则会注入翻译与审校 prompt，作为项目级风格/保留规则。",
+    )
 
     st.divider()
     st.header("📂 本地任务（断点续传）")
@@ -44,12 +52,14 @@ with st.sidebar:
 col1, col2 = st.columns(2)
 with col1:
     termbase_file = st.file_uploader("导入已有术语库 (.xlsx, 可选)", type=["xlsx"])
-    user_termbase = {}
+    user_glossary = []
     if termbase_file:
         try:
-            user_termbase = core.parse_termbase(termbase_file)
-            if user_termbase:
-                st.success(f"✅ 已导入 {len(user_termbase)} 条术语")
+            user_glossary = core.parse_termbase(termbase_file)
+            if user_glossary:
+                locked = sum(1 for e in user_glossary
+                             if str(e.get("status") or "").lower() == "locked")
+                st.success(f"✅ 已导入 {len(user_glossary)} 条术语（锁定 {locked} 条）")
             else:
                 st.warning("术语表为空（未找到有效的 Source/Target 行）")
         except ValueError as e:
@@ -98,7 +108,8 @@ if st.button("🚀 开始 / 继续处理 (断点续传)", type="primary", use_co
                         provider=ai_provider, api_key=api_key, model=ai_model,
                         target_lang=target_lang, auto_term=auto_term,
                         enable_report=enable_report, translation_theory=translation_theory,
-                        user_termbase=user_termbase,
+                        user_glossary=user_glossary,
+                        style_rules=style_rules, enable_review=enable_review,
                         on_status=lambda label: status.update(label=label, state="running"),
                         on_caption=lambda text: st.caption(text),
                     )
@@ -107,7 +118,12 @@ if st.button("🚀 开始 / 继续处理 (断点续传)", type="primary", use_co
                         st.warning(warn)
                     if state["p1_done"] and state["p2_done"] \
                             and (not enable_report or state["p3_done"]):
-                        status.update(label=f"🎉 {filename} 全部流程圆满完成！", state="complete")
+                        if state.get("has_blocking"):
+                            status.update(
+                                label=f"⚠️ {filename} 流程完成，但有 blocking 问题待确认（见资产面板审查报告）",
+                                state="complete")
+                        else:
+                            status.update(label=f"🎉 {filename} 全部流程圆满完成！", state="complete")
             except Exception as e:
                 st.error(f"⚠️ {filename} 处理中断: {e}。进度已保存到本地 outputs/ 目录，"
                          f"刷新页面后可在左侧「本地任务」继续！")
@@ -159,6 +175,21 @@ if saved_jobs_after:
                         file_name=f"阶段3_实践报告_{filename}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         key=f"d3_{job['job_id']}", use_container_width=True)
+
+            if state.get("p2_done"):
+                stats = state.get("review_stats") or {}
+                st.caption(
+                    f"🔍 审校：{stats.get('reviewed_segments', 0)} 段通过 · "
+                    f"blocking {stats.get('blocking', 0)} · actionable {stats.get('actionable', 0)} · "
+                    f"informational {stats.get('informational', 0)} · "
+                    f"记忆复用 {state.get('tm_used_count', 0)} 段")
+                if state.get("findings"):
+                    st.download_button(
+                        "🧾 审查报告 (.md)",
+                        core.findings_report_md(state),
+                        file_name=f"审查报告_{filename}.md",
+                        mime="text/markdown",
+                        key=f"rr_{job['job_id']}", use_container_width=True)
 
             if state.get("p3_md"):
                 st.markdown(state["p3_md"])
