@@ -65,6 +65,45 @@ def parse_json_array(text):
     return None
 
 
+def parse_translation_array(res, expected):
+    """解析翻译响应，支持多种模型实际输出形态：
+    1. JSON 数组；2. JSON 对象 {"1": "..."}；3. 编号行（1. 译文 / 1、译文）；
+    4. 单段时接受任意非空文本。全部失败返回 None。
+    """
+    arr = parse_json_array(res)
+    if arr is not None and len(arr) == expected:
+        return arr
+    if isinstance(res, str):
+        candidate = res.strip()
+        candidate = re.sub(r'^```(?:json)?\s*', '', candidate, flags=re.DOTALL)
+        candidate = re.sub(r'\s*```$', '', candidate, flags=re.DOTALL).strip()
+        try:
+            obj = json.loads(candidate)
+        except Exception:
+            obj = None
+        if isinstance(obj, dict):
+            out = []
+            for i in range(1, expected + 1):
+                v = obj.get(str(i))
+                if not isinstance(v, str) or not v.strip():
+                    return None
+                out.append(v.strip())
+            return out
+    if isinstance(res, str):
+        numbered = re.findall(r'^\s*(\d+)[.)、]\s*(.+?)\s*$', res, re.M)
+        if numbered:
+            numbered.sort(key=lambda x: int(x[0]))
+            texts = [t for _, t in numbered]
+            if len(texts) >= expected:
+                out = [t for t in texts[:expected] if t.strip()]
+                if len(out) == expected:
+                    return out
+    if expected == 1 and isinstance(res, str) and res.strip():
+        # 单段兜底：去掉编号前缀后按整段接受，交给确定性检查与审校把关
+        return [re.sub(r'^\s*\d+[.)、]\s*', '', res).strip()]
+    return None
+
+
 def is_rate_limited(err):
     s = str(err)
     return '429' in s or 'RESOURCE_EXHAUSTED' in s or 'rate limit' in s.lower()
@@ -287,16 +326,33 @@ def extract_preserved_tokens(text):
 
 
 def find_residuals(src, tgt, target_lang):
-    """检测目标语言中残留的源语言片段（启发式，不替代审校）。"""
+    """检测目标语言中残留的源语言片段。
+
+    返回 [(片段, severity)]：连续 ≥2 个源语单词/较长汉字串 -> actionable；
+    单个词（可能是专有名词）-> informational。启发式，不替代审校。
+    """
     tgt_clean = PRESERVE_RE.sub(" ", tgt or "")
     if target_lang == "English":
         source_runs = set(re.findall(r'[\u4e00-\u9fff]{2,}', src or ""))
-        return [c for c in re.findall(r'[\u4e00-\u9fff]{2,}', tgt_clean)
+        return [(c, "actionable" if len(c) >= 4 else "informational")
+                for c in re.findall(r'[\u4e00-\u9fff]{2,}', tgt_clean)
                 if any(c in run for run in source_runs)]
     src_words = set(w.lower() for w in re.findall(r'[A-Za-z]{5,}', src or ""))
     allowed = {"mti"}  # 产品名等明确保留词白名单（审校负责语义判断）
-    return [w for w in re.findall(r'[A-Za-z]{5,}', tgt_clean)
-            if w.lower() in src_words and w.lower() not in allowed]
+    words = re.findall(r'[A-Za-z]{5,}', tgt_clean)
+    hits = [w for w in words if w.lower() in src_words and w.lower() not in allowed]
+    result, run = [], []
+    for w in words:
+        if w in hits:
+            run.append(w)
+        else:
+            if run:
+                result.append((" ".join(run),
+                               "actionable" if len(run) >= 2 else "informational"))
+                run = []
+    if run:
+        result.append((" ".join(run), "actionable" if len(run) >= 2 else "informational"))
+    return result
 
 
 def check_translation_batch(sources, targets, glossary, target_lang):
@@ -312,9 +368,9 @@ def check_translation_batch(sources, targets, glossary, target_lang):
                 findings.append({"segment_index": i, "type": "check",
                                  "severity": PRESERVE_SEVERITY.get(kind, "actionable"),
                                  "reason": f"保留项 {kind}「{token}」在译文中丢失"})
-        for w in find_residuals(src, tgt, target_lang):
-            findings.append({"segment_index": i, "type": "check", "severity": "actionable",
-                             "reason": f"疑似残留源语片段「{w}」"})
+        for residual, sev in find_residuals(src, tgt, target_lang):
+            findings.append({"segment_index": i, "type": "check", "severity": sev,
+                             "reason": f"疑似残留源语片段「{residual}」"})
         findings.extend(check_glossary_compliance(src, tgt, glossary))
         for f in findings:
             if "segment_index" not in f:
@@ -385,25 +441,26 @@ def translate_batch(segments, ctx_prev, ctx_next, glossary_text, style_rules, ta
         context += "【后文上下文】：\n" + "\n".join(f"- {s}" for s in ctx_next) + "\n\n"
     sys_prompt = _translator_system(glossary_text, style_rules, target_lang)
     user_prompt = f"{context}待翻译段落（按序号返回等长译文数组）：\n{numbered}"
-    last_err = None
+    last_err, last_res = None, None
     for _attempt in range(3):
         try:
             res = call_llm(provider, api_key, model, sys_prompt, user_prompt, temperature=0.3)
-            arr = parse_json_array(res)
-            if arr is None or len(arr) != len(segments):
-                raise ValueError(f"译文数量不匹配：期望 {len(segments)}，实际 {len(arr) if arr is not None else 0}")
-            out = []
-            for item in arr:
-                if not isinstance(item, str) or not item.strip():
-                    raise ValueError("译文包含空项")
-                out.append(item.strip())
-            return out
+            last_res = res
+            arr = parse_translation_array(res, len(segments))
+            if arr is None:
+                raise ValueError(f"译文数量不匹配：期望 {len(segments)}，"
+                                 f"响应预览：{(res or '')[:160]!r}")
+            # 空项不直接判死：交给确定性检查与自动修复环节兜底
+            return [item.strip() if isinstance(item, str) else "" for item in arr]
         except Exception as e:
             last_err = e
             if is_rate_limited(e):
                 time.sleep(15)
             else:
                 break
+    if len(segments) == 1 and last_res and str(last_res).strip():
+        # 单段兜底：接受模型原始输出，交由确定性检查/修复把关
+        return [re.sub(r'^\s*\d+[.)、]\s*', '', str(last_res)).strip()]
     raise RuntimeError(f"批次翻译失败：{last_err or '模型返回格式异常或数量不匹配'}")
 
 
@@ -442,6 +499,7 @@ def review_translation_batch(sources, targets, glossary_text, style_rules, targe
                   f"不要为低风险或主观偏好制造 finding。\n"
                   f"severity 只允许以下三种：blocking（结构/占位符/语义严重错误）、"
                   f"actionable（应修正的问题）、informational（建议）。\n"
+                  "如果整批译文没有问题，请严格返回空数组 []，不要输出任何 informational 备注。\n"
                   f"{glossary_text}\n"
                   f"{style_rules}\n"
                   '请严格输出 JSON 数组，每项格式：{"segment_index": 0, "severity": "actionable", '
@@ -525,8 +583,20 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
         # 2) 未命中段落批次翻译
         if to_translate:
             texts = [t for _, t in to_translate]
-            targets = translate_batch(texts, ctx_prev, ctx_next, glossary_text, style_rules,
-                                      target_lang, provider, api_key, model)
+            try:
+                targets = translate_batch(texts, ctx_prev, ctx_next, glossary_text, style_rules,
+                                          target_lang, provider, api_key, model)
+            except RuntimeError:
+                # 批次解析失败时降级为逐段翻译，保证进度不中断
+                if len(texts) == 1:
+                    raise
+                if on_caption:
+                    on_caption("⚠️ 批次翻译返回格式异常，降级为逐段翻译...")
+                targets = []
+                for t in texts:
+                    targets.append(translate_batch([t], ctx_prev, ctx_next, glossary_text,
+                                                   style_rules, target_lang, provider,
+                                                   api_key, model)[0])
             for (i, src), tgt in zip(to_translate, targets):
                 batch_pairs[i] = {"source": src, "target": clean_xml_chars(tgt).replace('\n', ' '),
                                   "reviewed": False, "from_tm": False}

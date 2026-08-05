@@ -41,6 +41,20 @@ def test_misc_helpers():
     print("  ✓ misc helpers")
 
 
+def test_parse_translation_array():
+    assert core.parse_translation_array('["a", "b"]', 2) == ["a", "b"]
+    assert core.parse_translation_array('{"1": "甲", "2": "乙"}', 2) == ["甲", "乙"]
+    assert core.parse_translation_array('```json\n{"1": "甲"}\n```', 1) == ["甲"]
+    assert core.parse_translation_array('1. 甲\n2. 乙', 2) == ["甲", "乙"]
+    assert core.parse_translation_array('以下是译文：\n1、甲\n2、乙', 2) == ["甲", "乙"]
+    assert core.parse_translation_array('1. “单段译文。”', 1) == ["“单段译文。”"]
+    assert core.parse_translation_array('裸文本译文', 1) == ["裸文本译文"]
+    assert core.parse_translation_array('["a"]', 2) is None
+    assert core.parse_translation_array("普通文本", 2) is None
+    assert core.parse_translation_array(None, 1) is None
+    print("  ✓ parse_translation_array（数组/对象/降级）")
+
+
 def test_doc_generation():
     for buf in (core.paragraphs_to_word(["段落一"]),
                 core.pairs_to_word([{"source": "a", "target": "b"}]),
@@ -477,6 +491,7 @@ if __name__ == "__main__":
     print("core 冒烟测试：")
     test_parse_json_array()
     test_misc_helpers()
+    test_parse_translation_array()
     test_doc_generation()
     test_termbase_parsing()
     test_glossary_and_checks()
