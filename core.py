@@ -109,6 +109,106 @@ def is_rate_limited(err):
     return '429' in s or 'RESOURCE_EXHAUSTED' in s or 'rate limit' in s.lower()
 
 
+# ================= PDF 确定性段落提取 =================
+# 经验（来自 localize-anything 与全书实测）：分段/清洗必须确定性，不能交给 LLM。
+# 旧流程把 ~2500 字符的任意文本块交给模型"清洗"，导致两类系统性缺陷：
+#   1. 块边界落在句中 -> 句子被拦腰截断（"…pecking at" / "crumbs and bones…"）；
+#   2. 模型自由裁量 -> 对白、引语被随意拆分或合并，分段结果不可复现。
+# 新流程直接读 PDF 版面：块(block)->行(line)->首行缩进判定段落，连字符修复、
+# 跨页段落合并、页眉页脚/页码剔除全部确定完成。
+
+# 句末终结符（用于判断段落是否未完结、需要与下一段合并）
+_SENTENCE_TERMINAL = set('.!?"”’…:;)')
+
+
+def extract_pdf_paragraphs(file_bytes):
+    """从 PDF 确定性重建段落列表。
+
+    规则：
+    - 行内文本按 span 拼接；行 -> 段落依据首行缩进（x0 明显大于正文 x0 即新段落）；
+    - 连字符换行修复（"word-" + 小写开头 -> 去连字符直接拼接）；
+    - 跨页/跨块延续：上一段未以终结符结尾且长度超过标题阈值 -> 合并；
+    - 小写开头的碎片段 -> 并入上一段（碎句兜底）；
+    - 剔除页眉页脚（跨 ≥20% 页重复出现的短行）与独立页码行。
+    无文本层（扫描件）时返回空列表，由调用方报错提示 OCR。
+    """
+    from collections import Counter
+
+    doc = fitz.open(stream=file_bytes, filetype="pdf")
+    pages_blocks, line_freq, x0_freq = [], Counter(), Counter()
+    for page in doc:
+        page_dict = page.get_text("dict")
+        blocks, seen_norms = [], set()
+        for block in page_dict.get("blocks", []):
+            if block.get("type") != 0:
+                continue
+            lines = []
+            for line in block.get("lines", []):
+                text = "".join(span.get("text", "") for span in line.get("spans", []))
+                if text.strip():
+                    lines.append((text, line["bbox"][0]))
+                    seen_norms.add(re.sub(r"\d+", "#", text.strip()))
+                    x0_freq[round(line["bbox"][0])] += 1
+            if lines:
+                blocks.append(lines)
+        pages_blocks.append(blocks)
+        for norm in seen_norms:
+            line_freq[norm] += 1
+    doc.close()
+
+    if not x0_freq:
+        return []
+
+    # 跨页高频重复的短行视为页眉/页脚样板文本
+    boilerplate = {t for t, n in line_freq.items()
+                   if n >= max(5, 0.2 * len(pages_blocks)) and len(t) < 80}
+    body_x0 = x0_freq.most_common(1)[0][0]  # 正文左缘 = 出现最多的 x0
+
+    paragraphs = []
+    for blocks in pages_blocks:
+        for lines in blocks:
+            lines = [(t, x) for t, x in lines
+                     if re.sub(r"\d+", "#", t.strip()) not in boilerplate
+                     and not re.fullmatch(r"\d{1,4}", t.strip())]
+            if not lines:
+                continue
+            # 首行缩进 -> 新段落
+            groups, current = [], [lines[0][0]]
+            for text, x0 in lines[1:]:
+                if x0 >= body_x0 + 1.5:
+                    groups.append(current)
+                    current = [text]
+                else:
+                    current.append(text)
+            groups.append(current)
+            for group in groups:
+                text = group[0].strip()
+                for ln in group[1:]:
+                    ln = ln.strip()
+                    if text.endswith("-") and ln[:1].islower():
+                        text = text[:-1] + ln  # 连字符换行修复
+                    else:
+                        text = text + " " + ln
+                text = re.sub(r"\s+", " ", text).strip()
+                if not text:
+                    continue
+                # 跨页/跨块延续：上一段未完结（且不是标题级短行）-> 合并
+                if paragraphs and paragraphs[-1][-1] not in _SENTENCE_TERMINAL \
+                        and len(paragraphs[-1]) > 40:
+                    paragraphs[-1] = paragraphs[-1] + " " + text
+                else:
+                    paragraphs.append(text)
+
+    # 兜底：小写开头的碎句并入上一段
+    merged = []
+    for para in paragraphs:
+        if merged and para[:1].islower():
+            merged[-1] = merged[-1] + " " + para
+        else:
+            merged.append(para)
+    return merged
+
+
 def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
     """底层大模型统一路由（超时 150 秒，模型可配置）。"""
     if provider == "DeepSeek":
@@ -355,6 +455,11 @@ def find_residuals(src, tgt, target_lang):
     return result
 
 
+def is_incomplete_translation(src, tgt):
+    """长原文配过短译文 => 疑似漏译/截断（英->中约 0.5-0.7，拉丁互译约 1:1）。"""
+    return len(src) >= 120 and len((tgt or "").strip()) < 0.3 * len(src)
+
+
 def check_translation_batch(sources, targets, glossary, target_lang):
     """确定性检查一批译文：空译、保留项丢失、源语残留、锁定术语合规。"""
     findings = []
@@ -363,6 +468,12 @@ def check_translation_batch(sources, targets, glossary, target_lang):
             findings.append({"segment_index": i, "type": "check", "severity": "blocking",
                              "reason": "译文为空"})
             continue
+        # 完整性检查：拦截截断译文。
+        # 实测根因：审校/修复环节的整段替换把长段译文换成了一句修正。
+        if is_incomplete_translation(src, tgt):
+            findings.append({"segment_index": i, "type": "check", "severity": "blocking",
+                             "reason": f"疑似漏译：译文长度（{len(tgt.strip())} 字符）"
+                                       f"不足原文（{len(src)} 字符）的 30%"})
         for token, kind in extract_preserved_tokens(src).items():
             if token not in tgt:
                 findings.append({"segment_index": i, "type": "check",
@@ -616,7 +727,12 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                 if repaired and len(repaired) == len(batch_pairs):
                     for j, p in enumerate(batch_pairs):
                         if not p["from_tm"] and repaired[j] and repaired[j].strip():
-                            p["target"] = clean_xml_chars(repaired[j]).replace('\n', ' ')
+                            candidate = clean_xml_chars(repaired[j]).replace('\n', ' ')
+                            # 修复结果本身截断时，不接受更差的译文
+                            if is_incomplete_translation(batch_sources[j], candidate) \
+                                    and not is_incomplete_translation(batch_sources[j], p["target"]):
+                                continue
+                            p["target"] = candidate
                 batch_targets = [p["target"] for p in batch_pairs]
                 findings = check_translation_batch(batch_sources, batch_targets, glossary, target_lang)
             except Exception:
@@ -997,7 +1113,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     # ---------------- 阶段一：排版清洗 ----------------
     if not state["p1_done"]:
         if on_status:
-            on_status("【阶段一】AI 智能排版与断句清洗...")
+            on_status("【阶段一】排版解析与段落重建（确定性提取）...")
         if file_bytes is None:
             file_bytes = load_source(job_id)
         if file_bytes is None:
@@ -1005,47 +1121,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
 
         paragraphs = []
         if filename.lower().endswith(".pdf"):
-            doc_pdf = fitz.open(stream=file_bytes, filetype="pdf")
-            raw_chunks, current_chunk = [], ""
-            for page in doc_pdf:
-                text = page.get_text("text").strip()
-                if text:
-                    current_chunk += text + "\n\n"
-                if len(current_chunk) > 2500:
-                    raw_chunks.append(current_chunk)
-                    current_chunk = ""
-            if current_chunk:
-                raw_chunks.append(current_chunk)
-            doc_pdf.close()
-
-            sys_p1 = "你是一个学术排版专家。剔除页眉页脚、合并换行截断的句子。严格返回JSON数组（List[str]）。"
-            for idx, chunk in enumerate(raw_chunks):
-                if on_caption:
-                    on_caption(f"📡 清洗区块 {idx + 1}/{len(raw_chunks)}...")
-                success = False
-                for _attempt in range(3):
-                    try:
-                        result_text = call_llm(provider, api_key, model, sys_p1, f"文本：\n{chunk}")
-                        parsed = parse_json_array(result_text)
-                        if parsed is not None:
-                            for p in parsed:
-                                if isinstance(p, str):
-                                    for sub_p in re.split(r'\n+', clean_xml_chars(p)):
-                                        if len(sub_p.strip()) > 5:
-                                            paragraphs.append(sub_p.strip())
-                            success = True
-                            time.sleep(1)
-                            break
-                    except Exception as e:
-                        if is_rate_limited(e):
-                            time.sleep(10)
-                        else:
-                            break
-                if not success:
-                    # 模型清洗失败时降级：直接使用原始文本
-                    for sub_p in re.split(r'\n+', clean_xml_chars(chunk)):
-                        if len(sub_p.strip()) > 5:
-                            paragraphs.append(sub_p.strip())
+            paragraphs = [clean_xml_chars(p) for p in extract_pdf_paragraphs(file_bytes)]
         elif filename.lower().endswith(".docx"):
             doc_word = Document(io.BytesIO(file_bytes))
             for p in doc_word.paragraphs:
@@ -1054,7 +1130,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                         paragraphs.append(sub_p.strip())
 
         if not paragraphs:
-            raise ValueError("未提取到有效文本")
+            raise ValueError("未提取到有效文本（若为扫描版 PDF，请先做 OCR 生成文本层）")
         state["paras"] = paragraphs
         state["p1_done"] = True
         save_source(job_id, file_bytes)  # 留存源文件，刷新后无需重新上传

@@ -137,6 +137,88 @@ def test_batches():
     print("  ✓ 语义批次")
 
 
+def _make_pdf():
+    """构造一个带缩进段落、连字符换行、跨页段落、页码与对白行的小 PDF。"""
+    import fitz
+    doc = fitz.open()
+    page = doc.new_page()
+    body_x, indent_x = 72, 84
+    page.insert_text((indent_x, 72), "Chapter One", fontsize=11)
+    page.insert_text((indent_x, 100), "The quick brown fox jumps over the lazy dog while the kit-", fontsize=11)
+    page.insert_text((body_x, 114), "ten slept on the mat, completely unaware of the world around", fontsize=11)
+    page.insert_text((body_x, 128), "and humming a quiet tune that drifted softly through", fontsize=11)
+    page.insert_text((306, 780), "1", fontsize=9)
+    page2 = doc.new_page()
+    page2.insert_text((body_x, 72), "the empty rooms of the old house.", fontsize=11)
+    page2.insert_text((indent_x, 100), '"What are you doing?" she asked, looking up from the book.', fontsize=11)
+    page2.insert_text((indent_x, 128), '"Nothing much," he replied with a shrug.', fontsize=11)
+    page2.insert_text((306, 780), "2", fontsize=9)
+    buf = io.BytesIO(doc.tobytes())
+    doc.close()
+    return buf.getvalue()
+
+
+def test_pdf_extraction():
+    paras = core.extract_pdf_paragraphs(_make_pdf())
+    joined = "\n".join(paras)
+    assert any("kitten slept" in p for p in paras), "连字符换行应修复为 kitten"
+    assert not any(p.strip() in ("1", "2") for p in paras), "独立页码应被剔除"
+    assert any(p.startswith('"What are you doing?"') for p in paras), "对白应为独立段落"
+    assert any(p.startswith('"Nothing much,"') for p in paras), "对白换段应保持独立"
+    assert any("softly through the empty rooms" in p for p in paras), "跨页未完结段落应合并"
+    assert not any(p[:1].islower() for p in paras), "不应残留小写开头的碎句"
+    assert "Chapter One" in joined
+    print("  ✓ PDF 确定性段落提取（缩进分段/连字符/跨页合并/页码剔除/碎片兜底）")
+
+
+def test_completeness_check():
+    long_src = "The flight course lasted only twenty months. " * 6  # >120 字符
+    assert core.is_incomplete_translation(long_src, "一句话。")
+    assert not core.is_incomplete_translation(long_src, "译" * 100)
+    assert not core.is_incomplete_translation("短句", "")
+    fs = core.check_translation_batch([long_src], ["一句话。"], [], "简体中文")
+    assert any(f["severity"] == "blocking" and "漏译" in f["reason"] for f in fs), \
+        "截断译文应判 blocking"
+    fs_ok = core.check_translation_batch([long_src], ["译" * 100], [], "简体中文")
+    assert not any("漏译" in f["reason"] for f in fs_ok)
+    print("  ✓ 译文完整性检查（截断判 blocking）")
+
+
+def test_review_truncated_suggestion_rollback():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-trunc-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        long_para = "The squadron prepared for the long-range mission. " * 5  # >120 字符
+        docx_bytes = _make_docx([long_para])
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "术语管理专家" in system_prompt:
+                return '[]'
+            if "翻译审校专家" in system_prompt:
+                return json.dumps([
+                    {"segment_index": 0, "severity": "actionable", "reason": "术语应统一",
+                     "suggested_target": "只修正了一句。"}])
+            if "学术翻译专家" in system_prompt:
+                return json.dumps(["译" * 100])
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        state = core.run_job_pipeline(
+            "tr0000000000000001", "t.docx", docx_bytes,
+            provider="DeepSeek", api_key="k", model="deepseek-chat",
+            target_lang="简体中文", auto_term=False, enable_report=False,
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+        assert state["pairs"][0]["target"] == "译" * 100, \
+            "截断的审校建议应被完整性复验拦截并回滚"
+        assert any("suggested_target" in f for f in state["findings"]), \
+            "被拦截的建议应记入 findings 供人工参考"
+        print("  ✓ 审校截断建议 -> 完整性复验 -> 自动回滚")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_job_store():
     tmp = Path(tempfile.mkdtemp(prefix="mti-test-"))
     old_dir = core.OUTPUT_DIR
@@ -496,6 +578,9 @@ if __name__ == "__main__":
     test_termbase_parsing()
     test_glossary_and_checks()
     test_batches()
+    test_pdf_extraction()
+    test_completeness_check()
+    test_review_truncated_suggestion_rollback()
     test_job_store()
     test_e2e_pipeline()
     test_deterministic_repair()
