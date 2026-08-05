@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 应用运行数据（任务进度与中间文件）
+outputs/
+
+# Streamlit
+.streamlit/
+
+# 系统与编辑器
+.DS_Store
+.env
+.idea/
+.vscode/
