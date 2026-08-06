@@ -333,6 +333,7 @@ def test_symbol_segment_passthrough_and_tm_gate():
     assert not core._tm_eligible("*", "我脸红了。")
     assert not core._tm_eligible("— — —", "某某译文")
     assert not core._tm_eligible("* * * *", "某某译文")
+    assert not core._tm_eligible("◇◇◇", "某某译文")
     assert core._tm_eligible("I blushed.", "我脸红了。")
     assert not core._tm_eligible("hello", "")
 
@@ -340,7 +341,7 @@ def test_symbol_segment_passthrough_and_tm_gate():
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
-        docx_bytes = _make_docx(["这是第一段，内容足够长。", "* * * *", "这是第二段，内容足够长。"])
+        docx_bytes = _make_docx(["OK.", "* * * *", "◇◇◇", "这是长段落。"])
 
         def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
             if "术语管理专家" in system_prompt:
@@ -357,12 +358,83 @@ def test_symbol_segment_passthrough_and_tm_gate():
             provider="DeepSeek", api_key="k", model="deepseek-chat",
             target_lang="简体中文", auto_term=False, enable_report=False,
             translation_theory="目的论 (Skopos Theory)", user_glossary=[])
-        assert state["pairs"][1]["source"] == "* * * *"
-        assert state["pairs"][1]["target"] == "* * * *", "纯符号段应原样保留，不调模型"
+        assert [p["source"] for p in state["pairs"]] == ["OK.", "◇◇◇", "这是长段落。"], \
+            "装饰行应剔除，短段保留，非装饰纯符号段直通"
+        assert state["pairs"][1]["target"] == "◇◇◇", "纯符号段应原样保留，不调模型"
         tm = core.load_tm()
-        assert "* * * *" not in tm, "纯符号段不应进入翻译记忆"
-        assert len(tm) == 2, "只有两个真实段落入 TM"
+        assert "◇◇◇" not in tm, "纯符号段不应进入翻译记忆"
+        assert len(tm) == 2, "只有 OK. 与长段落入 TM"
         print("  ✓ 纯符号段直通 + 翻译记忆资格门槛")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_tm_sanitize_on_load():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-tmsan-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        poison = {
+            "*": {"target": "我脸红了。", "reviewed": True},          # 无字母源文
+            "hello": {"target": "你好", "reviewed": True},            # 合格
+            "good": {"target": "", "reviewed": True},                 # 空译文
+            "bad": {"target": "糟糕", "reviewed": False},             # 未过审校
+            "nonsense": "不是字典",                                   # 结构非法
+        }
+        core.save_tm(poison)
+        tm = core.load_tm()
+        assert tm == {"hello": {"target": "你好", "reviewed": True}}, tm
+        print("  ✓ 翻译记忆加载自清洗（污染条目自动剔除）")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_annotations_normalize_and_bounds():
+    ann = {"0": [{"type": "rare", "src_span": [0, 4], "tgt_span": [0, 2]}],
+           3: [{"type": "hard", "src_span": [0, 4], "tgt_span": [0, 2]}],
+           "x": [{"type": "domain"}], "999": [{"type": "rare", "src_span": [0, 4],
+                                               "tgt_span": [0, 2]}],
+           "5": "不是列表"}
+    norm = core._normalize_annotations(ann)
+    assert set(norm) == {0, 3, 999}, "归一化只处理键类型与非列表值"
+    pairs = [{"source": "abcd", "target": "一二"}] * 4
+    cleaned = core._clean_annotations(norm, pairs)
+    assert set(cleaned) == {0, 3}, "越界键 999 应被丢弃"
+    print("  ✓ 标注键归一化 + 越界保护")
+
+
+def test_annotate_resume_by_offset():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-annres-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        pairs = [{"source": f"The quick brown fox jumps over the lazy dog number {i}.",
+                  "target": f"第{i}句的译文，内容足够长。"} for i in range(25)]
+        state = {"filename": "r.pdf", "p1_done": True, "p2_done": True, "paras": [],
+                 "pairs": pairs, "auto_terms": {}, "findings": [], "review_stats": {},
+                 "annotations": {"0": [{"type": "hard", "src_span": [0, 10],
+                                        "tgt_span": [0, 3], "note": "预置"}]},
+                 "annotations_done_offset": 10}
+        calls = {"n": 0}
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "翻译教学专家" in system_prompt:
+                calls["n"] += 1
+                return json.dumps([{"seg": 1, "type": "hard", "src": "The quick brown fox",
+                                    "tgt": "第0句的译文", "note": "x"}])
+            return "[]"
+
+        core.call_llm = llm
+        core.annotate_stage(state, "ar0000000000000001", [], "DeepSeek", "k",
+                            "deepseek-chat", "简体中文")
+        assert calls["n"] == 2, f"应从第 10 段后续跑（2 批），实际 {calls['n']} 批"
+        assert state["annotations_done"] is True
+        assert state["annotations_done_offset"] == 25
+        assert state["annotations"][0][0]["note"] == "预置", "已标注段不应被覆盖"
+        assert len(state["annotations"]) >= 2
+        print("  ✓ 标注断点按段偏移续跑（批大小变化不串位）")
     finally:
         core.OUTPUT_DIR = old_dir
         shutil.rmtree(tmp, ignore_errors=True)
@@ -799,6 +871,9 @@ if __name__ == "__main__":
     test_batches()
     test_pdf_extraction()
     test_symbol_segment_passthrough_and_tm_gate()
+    test_tm_sanitize_on_load()
+    test_annotations_normalize_and_bounds()
+    test_annotate_resume_by_offset()
     test_completeness_check()
     test_review_truncated_suggestion_rollback()
     test_job_store()

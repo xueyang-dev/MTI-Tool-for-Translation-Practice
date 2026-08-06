@@ -17,6 +17,8 @@
 - 🛡️ **断点续传和稳定性 (Robustness)**：任务进度实时落盘到本地 `outputs/` 目录，浏览器刷新、电脑重启后都能从断点继续；内置 API 防崩限流策略与重试机制。支持 DeepSeek、OpenAI、Gemini，模型可切换。
 - 🖋️ **产出排版 (Typography)**：生成的 Word 文档默认西文 Times New Roman、中文宋体，可直接用于 MTI 练习排版。
 
+> 📚 实战经验与内部规约（含多次真实事故的根因与防线）见 [docs/经验总结.md](docs/经验总结.md)，改动代码前建议先读。
+
 ## 🚀 极速启动 (Quick Start)
 
 ### 1. 环境安装

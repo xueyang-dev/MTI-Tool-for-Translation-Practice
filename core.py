@@ -565,20 +565,28 @@ def tm_path():
     return OUTPUT_DIR / "translation_memory.json"
 
 
-def load_tm():
-    p = tm_path()
-    if p.is_file():
-        try:
-            return json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            return {}
-    return {}
-
-
 def _tm_eligible(source, target):
     """翻译记忆资格：源文必须有字母/数字（纯符号装饰行不入库），译文非空。"""
     return bool(re.search(r"[A-Za-z0-9\u4e00-\u9fff]", source or "")) \
         and bool((target or "").strip())
+
+
+def load_tm():
+    """加载翻译记忆并自清洗：非法条目（无字母源文/空译文/未过审校）直接丢弃。
+
+    翻译记忆是错误放大器（一次错译会复制到全书），因此加载即消毒，
+    防止旧版本或异常写入留下的污染条目继续命中。
+    """
+    p = tm_path()
+    if p.is_file():
+        try:
+            raw = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+        return {k: v for k, v in raw.items()
+                if isinstance(v, dict) and v.get("reviewed")
+                and _tm_eligible(k, v.get("target"))}
+    return {}
 
 
 def save_tm(tm):
@@ -777,6 +785,23 @@ def _domain_ok(span_text):
     return True
 
 
+def _normalize_annotations(annotations):
+    """标注字典键归一化：JSON 落盘后键变字符串，统一回 int；越界/非列表值丢弃。
+
+    这是本项目反复踩过的坑（标注渲染、过滤、续跑三处各自处理过一次），
+    统一入口避免再次各修各的。
+    """
+    out = {}
+    for k, v in (annotations or {}).items():
+        try:
+            gi = int(k)
+        except (TypeError, ValueError):
+            continue
+        if isinstance(v, list):
+            out[gi] = v
+    return out
+
+
 def _clean_annotations(annotations, pairs):
     """过滤 + 去重 + 数量上限；术语表覆盖的 domain（note 以"术语："开头）不参与过滤。"""
     token_freq = {}
@@ -784,8 +809,9 @@ def _clean_annotations(annotations, pairs):
         for tok in re.findall(r"[A-Za-z]+", pr["source"].lower()):
             token_freq[tok] = token_freq.get(tok, 0) + 1
     cleaned = {}
-    for gi, items in annotations.items():
-        gi = int(gi)  # JSON 落盘后键为字符串
+    for gi, items in _normalize_annotations(annotations).items():
+        if not (0 <= gi < len(pairs)):
+            continue  # 段已被删除等场景：越界键丢弃
         src_text = pairs[gi]["source"]
         seen, kept, counts = set(), [], {"rare": 0, "domain": 0, "hard": 0}
         for it in items:
@@ -837,7 +863,7 @@ def annotate_batch(pairs_slice, target_lang, provider, api_key, model):
         for i, p in enumerate(pairs_slice))
     sys_prompt = _annotator_system(target_lang)
     user_prompt = f"待标注双语段落：\n{numbered}"
-    for _attempt in range(2):
+    for _attempt in range(3):
         try:
             res = call_llm(provider, api_key, model, sys_prompt, user_prompt, temperature=0.2)
             arr = parse_json_array(res)
@@ -861,7 +887,10 @@ def annotate_batch(pairs_slice, target_lang, provider, api_key, model):
                 out.append({"seg": seg - 1, "type": atype, "src": src,
                             "tgt": tgt, "note": note})
             return out
-        except Exception:
+        except Exception as e:
+            if is_rate_limited(e):
+                time.sleep(10)  # 限流退避后重试，避免整批标注静默丢失
+                continue
             return []
     return []
 
@@ -898,13 +927,16 @@ def annotate_stage(state, job_id, glossary, provider, api_key, model, target_lan
     if state.get("annotations_done"):
         return state
     pairs = state["pairs"]
-    annotations = {int(k): v for k, v in (state.get("annotations") or {}).items()}
+    annotations = _normalize_annotations(state.get("annotations"))
     batches = make_batches([p["source"] for p in pairs], batch_size=ANNOT_BATCH_SIZE,
                            max_chars=2600)
-    start_bi = state.get("annotations_done_batches", 0)
-    if start_bi:
+    # 断点按“已标注段数”记录（而非批次号），避免批大小调整后续跑错位
+    done_offset = state.get("annotations_done_offset") or 0
+    start_bi = next((bi for bi, b in enumerate(batches)
+                     if sum(len(x) for x in batches[:bi]) >= done_offset), len(batches))
+    if done_offset:
         if on_caption:
-            on_caption(f"↩️ 从第 {start_bi + 1}/{len(batches)} 批继续标注...")
+            on_caption(f"↩️ 从第 {done_offset + 1} 段（批次 {start_bi + 1}/{len(batches)}）继续标注...")
 
     # 1) LLM 标注
     failed_batches = 0
@@ -936,7 +968,7 @@ def annotate_stage(state, job_id, glossary, provider, api_key, model, target_lan
                  "tgt_span": list(tgt_span) if tgt_span else None, "note": note})
         # 每批落盘：断点粒度 = 一个批次
         state["annotations"] = annotations
-        state["annotations_done_batches"] = bi + 1
+        state["annotations_done_offset"] = offset + len(slice_pairs)
         save_job_state(job_id, state)
 
     # 2) 术语表确定性覆盖：专业名词（特殊译法）-> 黄色
@@ -1304,9 +1336,7 @@ def pairs_to_word(pairs, annotations=None):
     table.style = 'Table Grid'
     table.rows[0].cells[0].text = "原文"
     table.rows[0].cells[1].text = "译文"
-    annot = {}
-    for k, v in (annotations or {}).items():
-        annot[int(k)] = v  # JSON 落盘后键为字符串，统一回 int
+    annot = _normalize_annotations(annotations)
     for i, pair in enumerate(pairs):
         row = table.add_row().cells
         seg_annot = annot.get(i) or []
@@ -1323,7 +1353,6 @@ def pairs_to_word(pairs, annotations=None):
     run = p_legend.add_run("图例：红色 = 生僻词/难词；黄色 = 专业名词（特殊译法）；"
                            "青绿色 = 翻译难点句（特别译法）。")
     _apply_run_fonts(run)
-    run.font.size = None
     out = io.BytesIO()
     doc.save(out)
     out.seek(0)
@@ -1403,6 +1432,9 @@ def new_job_state(filename):
         "p3_sections": [],
         "theory": "",
         "warnings": [],
+        "annotations": {},
+        "annotations_done": False,
+        "annotations_done_offset": 0,
     }
 
 
@@ -1592,8 +1624,9 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
             doc_word = Document(io.BytesIO(file_bytes))
             for p in doc_word.paragraphs:
                 for sub_p in re.split(r'\n+', clean_xml_chars(p.text)):
-                    if len(sub_p.strip()) > 5:
-                        paragraphs.append(sub_p.strip())
+                    t = sub_p.strip()
+                    if len(t) > 1 and not _ORNAMENT_RE.match(t):
+                        paragraphs.append(t)
 
         if not paragraphs:
             raise ValueError("未提取到有效文本（若为扫描版 PDF，请先做 OCR 生成文本层）")
