@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
-from mti_tool import document_profile, models, state_migration
+from mti_tool import document_profile, models, state_migration, terminology
 
 
 def test_document_profile_normalize_validate():
@@ -254,8 +254,181 @@ def test_core_load_job_state_migrates():
     print("  ✓ core.load_job_state 迁移 + new_job_state 新字段")
 
 
+def test_term_matches_word_boundary():
+    assert terminology.term_matches("Skopos", "The Skopos theory is central.")
+    assert terminology.term_matches("skopos", "The SKOPOS theory is central."), "大小写不敏感"
+    assert terminology.term_matches("MT", "MT is machine translation.")
+    assert not terminology.term_matches("MT", "The MTI tool translates books."), \
+        "短词不得在更长词内部误命中"
+    assert not terminology.term_matches("AI", "The mountain is high in the main range."), \
+        "AI 不得命中 MAIN/mountain 等普通词"
+    assert terminology.term_matches("AI", "The AI model works.")
+    assert terminology.term_matches("目的论", "翻译目的论是核心概念。"), "CJK 术语按子串匹配"
+    assert not terminology.term_matches("", "text")
+    assert not terminology.term_matches("x", None)
+    print("  ✓ 术语匹配（大小写 + 词边界 + CJK + 短词防误命中）")
+
+
+def test_find_occurrences_all_segments():
+    paras = [
+        "The Skopos theory guides the translation.",
+        "This chapter discusses Skopos and fidelity.",
+        "No term here.",
+        "SKOPOS appears again at the end.",
+    ]
+    occ = terminology.find_occurrences("Skopos", paras)
+    assert occ == [0, 1, 3], "必须记录全部出现位置，而不是只记第一次"
+    assert terminology.find_occurrences("不存在的术语", paras) == []
+    assert terminology.find_occurrences("MT", ["MTI is a tool"]) == [], "短词不应命中 MTI"
+    print("  ✓ occurrences 记录全部 segment_id")
+
+
+def test_extract_auto_terms_v2():
+    paras = [f"第{i}段：The Skopos theory and the fidelity principle 是本章核心。"
+             for i in range(12)]
+    profile = models.normalize_document_profile(
+        {"domain": "翻译学", "confidence": 0.8, "sections": []})
+    calls = {"n": 0}
+
+    def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+        calls["n"] += 1
+        return json.dumps([
+            {"Source": "Skopos theory", "Target": "目的论"},
+            {"Source": "fidelity principle", "Target": "忠实原则"},
+            {"Source": "Skopos theory", "Target": "翻译目的论", "domain": "翻译学"},
+            {"Source": "MT", "Target": "机器翻译"},   # 短词但仍合法
+            123,
+            {"Source": None, "Target": "坏数据"},
+        ])
+
+    entries, warnings = terminology.extract_auto_terms_v2(
+        paras, "简体中文", "DeepSeek", "k", "deepseek-chat",
+        document_profile=profile, call_llm=llm)
+    assert calls["n"] == 1
+    assert warnings == []
+    by_source = {e["source"]: e for e in entries}
+    assert "Skopos theory" in by_source and "fidelity principle" in by_source
+    # 去重：同 source 只保留一条，occurrences 取并集
+    assert by_source["Skopos theory"]["target"] == "目的论", "保留首次译名"
+    assert by_source["Skopos theory"]["occurrences"] == list(range(12)), \
+        "重复候选应合并全部 occurrence"
+    # 垃圾条目被丢弃；candidate 状态；evidence 为 model_knowledge 且无 URL
+    assert "MT" in by_source and len(by_source) == 3
+    assert all(e["status"] == "candidate" for e in entries), "自动术语不得自动 locked"
+    assert all(e["evidence"][0]["evidence_type"] == "model_knowledge" for e in entries)
+    assert all(not e["evidence"][0]["url"] for e in entries), "model_knowledge 禁 URL"
+    assert by_source["Skopos theory"]["domain"] == "翻译学", "domain 来自画像/模型"
+    assert all(e["scope"] == "document" for e in entries)
+
+    # 失败：返回垃圾 -> warning，不静默宣称成功
+    def bad_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+        return "很抱歉，我无法输出 JSON。"
+
+    entries2, warnings2 = terminology.extract_auto_terms_v2(
+        paras, "简体中文", "DeepSeek", "k", "m", call_llm=bad_llm)
+    assert entries2 == [] and any("术语抽取失败" in w for w in warnings2)
+    print("  ✓ 分布式术语抽取（去重 / 全量 occurrences / candidate / 证据 / 失败 warning）")
+
+
+def _make_docx(texts):
+    import io
+    from docx import Document
+    buf = io.BytesIO()
+    doc = Document()
+    for t in texts:
+        doc.add_paragraph(t)
+    doc.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+
+
+def test_review_state_persist_and_restore():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-termstate-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["The Skopos theory 是本章核心。",
+                                 "The fidelity principle 也很重要。"])
+        jid = "ts000000000000001"
+        calls = {"extract": 0, "translate": 0}
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "术语管理专家" in system_prompt:
+                calls["extract"] += 1
+                return json.dumps([
+                    {"Source": "Skopos theory", "Target": "目的论"},
+                    {"Source": "fidelity principle", "Target": "忠实原则"},
+                ])
+            if "学术翻译专家" in system_prompt:
+                calls["translate"] += 1
+                return json.dumps([f"译文：{s}" for s, _ in _numbered(user_prompt)])
+            if "翻译审校专家" in system_prompt:
+                return '[]'
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        kwargs = dict(provider="DeepSeek", api_key="k", model="deepseek-chat",
+                      target_lang="简体中文", auto_term=True, enable_report=False,
+                      translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+
+        # 高质量模式：术语抽取后停在审核阶段，不得翻译
+        state = core.run_job_pipeline(jid, "t.docx", docx_bytes, mode="quality", **kwargs)
+        assert state["p1_done"] and state["p2_done"] is False
+        assert state["stage"] == "TERMS_PREPARED"
+        assert state["delivery_status"] == "draft"
+        assert calls["translate"] == 0
+        assert len(state["glossary"]) == 2
+        assert all(e["status"] == "candidate" for e in state["glossary"])
+        assert any("尚未冻结" in w for w in state["warnings"])
+
+        # 刷新/重启：从磁盘恢复，不得重新抽取，也不得翻译
+        state2 = core.run_job_pipeline(jid, "t.docx", None, mode="quality", **kwargs)
+        assert calls["extract"] == 1, "恢复时不得重新抽取术语"
+        assert calls["translate"] == 0
+        assert state2["stage"] == "TERMS_PREPARED"
+        assert len(state2["glossary"]) == 2
+        assert state2["auto_term_entries"][0]["occurrences"] == [0], \
+            "occurrences 已持久化"
+
+        # 冻结后：允许翻译
+        frozen = core.freeze_glossary(jid, frozen_by="测试用户")
+        assert frozen["glossary_frozen"]["version"] == 1
+        assert frozen["glossary_frozen"]["glossary_hash"]
+        state3 = core.run_job_pipeline(jid, "t.docx", None, mode="quality", **kwargs)
+        assert state3["p2_done"] is True and len(state3["pairs"]) == 2
+
+        # 修改术语再冻结 -> 新版本 + 新哈希，旧版本保留
+        entries = list(frozen["glossary"])
+        entries[0]["target"] = "翻译目的论"
+        frozen2 = core.freeze_glossary(jid, entries=entries, frozen_by="测试用户")
+        assert frozen2["glossary_frozen"]["version"] == 2
+        assert frozen2["glossary_frozen"]["glossary_hash"] != \
+            frozen["glossary_frozen"]["glossary_hash"]
+        assert len(frozen2["glossary_versions"]) == 2
+        assert frozen2["glossary_versions"][0]["glossary_hash"] == \
+            frozen["glossary_frozen"]["glossary_hash"], "旧冻结状态不得被覆盖"
+
+        # 快速模式：直接翻译，自动术语为 provisional
+        jid2 = "ts000000000000002"
+        state_q = core.run_job_pipeline(jid2, "q.docx", docx_bytes, mode="quick", **kwargs)
+        assert state_q["p2_done"] is True
+        assert all(e["status"] == "provisional" for e in state_q["glossary"])
+        print("  ✓ 审核状态持久化/恢复 + 冻结门禁 + 版本化 + 快速模式")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def _numbered(user_prompt):
+    import re
+    segs = [(int(m.group(1)), m.group(2).strip())
+            for m in re.finditer(r'^\s*(\d+)\.\s+(.+?)\s*$', user_prompt, re.M)]
+    segs.sort(key=lambda x: x[0])
+    return segs
+
+
 if __name__ == "__main__":
-    print("术语治理测试（阶段1 数据模型/迁移/画像）：")
+    print("术语治理测试（模型/迁移/画像/术语候选）：")
     test_document_profile_normalize_validate()
     test_profile_json_parse_and_degrades()
     test_distributed_sample_covers_head_middle_tail()
@@ -264,4 +437,8 @@ if __name__ == "__main__":
     test_glossary_hash_deterministic()
     test_state_migration_old_job()
     test_core_load_job_state_migrates()
+    test_term_matches_word_boundary()
+    test_find_occurrences_all_segments()
+    test_extract_auto_terms_v2()
+    test_review_state_persist_and_restore()
     print("\n全部通过 ✅")

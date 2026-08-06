@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -16,6 +17,7 @@ from docx import Document
 from google import genai
 from openai import OpenAI
 
+from mti_tool import models as _models
 from mti_tool import state_migration as _state_migration
 
 # ================= 常量 =================
@@ -308,78 +310,21 @@ def parse_termbase(file_stream):
 
 
 def extract_auto_terms(paragraphs, target_lang, provider, api_key, model):
-    """自动抽取术语库：采样前 10000 字符 + 强规则过滤；失败返回空 dict 并留待重试。"""
-    sample_text = "\n".join(paragraphs)[:10000]
-    sys_prompt = f"""你是一位极其严谨的学术译员和术语管理专家（Terminologist）。
-    请从以下文本中提取 30 到 50 个最具代表性的【核心专业术语】。
+    """自动抽取术语库（兼容旧接口：返回 {source: target}）。
 
-    【核心筛选规则（极其重要）】：
-    1. 必须是特定学科的理论概念、专业名词、核心方法论或行业黑话（Jargon）。
-    2. 🚫 绝对禁止提取：人名（如学者名/作者名）、书名、文章标题、期刊名、出版地、机构名称、年份。
-    3. 🚫 绝对禁止提取：日常通用词汇（如 research, study, analysis 等无门槛词汇）。
-    4. 请将其精准、符合学术规范地翻译为{target_lang}。
-
-    请严格输出合法的 JSON 数组格式，绝对不要包含任何其他多余的解释文字，格式如下：
-    [
-        {{"Source": "英文专业术语1", "Target": "中文专业译名1"}},
-        {{"Source": "英文专业术语2", "Target": "中文专业译名2"}}
-    ]"""
-
-    for _attempt in range(3):
-        try:
-            res = call_llm(provider, api_key, model, sys_prompt, sample_text, temperature=0.1)
-            term_list = parse_json_array(res)
-            if term_list is None:
-                raise ValueError("返回内容不是合法 JSON 数组")
-            filtered_terms = {}
-            for item in term_list:
-                if not isinstance(item, dict):
-                    continue
-                src, tgt = item.get("Source"), item.get("Target")
-                if isinstance(src, str) and isinstance(tgt, str):
-                    src, tgt = src.strip(), tgt.strip()
-                    if len(src) > 1 and tgt:
-                        filtered_terms[src] = tgt
-            return filtered_terms
-        except Exception as e:
-            if is_rate_limited(e):
-                time.sleep(15)
-            else:
-                break
-    return {}
+    新实现（mti_tool.terminology.extract_auto_terms_v2）：分布式采样、
+    全量 occurrences、candidate 状态与 model_knowledge 证据。
+    """
+    from mti_tool.terminology import extract_auto_terms_v2
+    entries, _warnings = extract_auto_terms_v2(
+        paragraphs, target_lang, provider, api_key, model)
+    return {e["source"]: e["target"] for e in entries}
 
 
 # ================= 概念化术语表（对齐 localize-anything 的 Glossary 模型）=================
 def normalize_glossary(entries):
-    """标准化术语条目：{source, target, behavior, status, preferred, forbidden, scope, note}。
-
-    - behavior: translate（需翻译）| preserve（保留原文）
-    - status: locked（锁定，确定性强制）| provisional（建议，仅提示）
-    - preferred: 锁定后的首选译名；forbidden: 禁止出现的译名
-    """
-    out = []
-    for e in entries or []:
-        if not isinstance(e, dict):
-            continue
-        source = str(e.get("source") or "").strip()
-        target = str(e.get("target") or "").strip()
-        if not source:
-            continue
-        behavior = str(e.get("behavior") or "translate").strip().lower()
-        if behavior not in ("translate", "preserve"):
-            behavior = "translate"
-        status = str(e.get("status") or "provisional").strip().lower()
-        if status not in ("locked", "provisional"):
-            status = "provisional"
-        preferred = str(e.get("preferred") or target).strip()
-        forbidden = [str(x).strip() for x in (e.get("forbidden") or []) if str(x).strip()]
-        out.append({
-            "source": source, "target": target, "behavior": behavior, "status": status,
-            "preferred": preferred, "forbidden": forbidden,
-            "scope": str(e.get("scope") or "").strip(),
-            "note": str(e.get("note") or "").strip(),
-        })
-    return out
+    """标准化术语条目（委托 mti_tool.models，兼容旧字段并新增 id/occurrences/evidence）。"""
+    return _models.normalize_glossary(entries)
 
 
 def glossary_block(glossary):
@@ -1511,6 +1456,79 @@ def progress_label(state):
     return "待处理"
 
 
+# ================= 术语审核状态（草稿 / 锁定 / 拒绝 / 冻结）=================
+def save_glossary_draft(job_id, entries):
+    """保存术语审核草稿（不冻结）。刷新/重启后从 TERMS_PREPARED 恢复。"""
+    state = load_job_state(job_id)
+    if state is None:
+        return None
+    norm = normalize_glossary(entries)
+    state["glossary_draft"] = norm
+    state["glossary"] = norm
+    state["stage"] = "TERMS_PREPARED"
+    save_job_state(job_id, state)
+    return state
+
+
+def set_glossary_entry_status(job_id, entry_ids, status):
+    """批量修改术语状态（candidate/provisional/locked/rejected）。"""
+    if status not in ("candidate", "provisional", "locked", "rejected"):
+        raise ValueError(f"非法状态：{status}")
+    state = load_job_state(job_id)
+    if state is None:
+        return None
+    ids = set(entry_ids or [])
+    for e in state.get("glossary") or []:
+        if e.get("id") in ids:
+            e["status"] = status
+    save_job_state(job_id, state)
+    return state
+
+
+def freeze_glossary(job_id, entries=None, frozen_by="user"):
+    """冻结术语表：生成新版本 + 确定性 glossary_hash。
+
+    修改后再次冻结 -> 新版本追加到 glossary_versions，不悄悄覆盖旧冻结状态。
+    """
+    state = load_job_state(job_id)
+    if state is None:
+        return None
+    norm = normalize_glossary(entries if entries is not None
+                              else state.get("glossary") or [])
+    source_hash = ""
+    src = job_dir(job_id) / "source.bin"
+    if src.is_file():
+        source_hash = hashlib.sha256(src.read_bytes()).hexdigest()
+    version = len(state.get("glossary_versions") or []) + 1
+    frozen = {
+        "version": version,
+        "source_hash": source_hash,
+        "entries": norm,
+        "frozen_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "glossary_hash": _models.glossary_hash(norm),
+        "frozen_by": frozen_by,
+    }
+    state["glossary"] = norm
+    state["glossary_frozen"] = frozen
+    state.setdefault("glossary_versions", []).append(frozen)
+    state["stage"] = "GLOSSARY_FROZEN"
+    if state.get("delivery_status") not in ("approved", "final"):
+        state["delivery_status"] = "draft"
+    save_job_state(job_id, state)
+    return state
+
+
+def save_document_profile(job_id, profile):
+    """人工填写/修改文档画像后保存。"""
+    state = load_job_state(job_id)
+    if state is None:
+        return None
+    state["document_profile"] = _models.normalize_document_profile(profile)
+    state["profile_done"] = True
+    save_job_state(job_id, state)
+    return state
+
+
 # ================= 阶段三：报告生成（Map-Reduce + 章节级断点）=================
 def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_key,
                         model, state, job_id, on_status=None):
@@ -1599,9 +1617,14 @@ def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_ke
 def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                      target_lang, auto_term, enable_report, translation_theory,
                      user_glossary=None, style_rules="", enable_review=True,
-                     enable_annotate=True,
+                     enable_annotate=True, mode="quick",
                      on_status=None, on_caption=None):
-    """执行单个文档的完整流程；每个里程碑实时落盘，刷新/重启后均可继续。"""
+    """执行单个文档的完整流程；每个里程碑实时落盘，刷新/重启后均可继续。
+
+    mode="quick"：自动术语作为 provisional，直接翻译（原行为）。
+    mode="quality"：术语冻结（glossary_frozen）后才能开始翻译；
+    未冻结时在 TERMS_PREPARED 阶段返回，由 UI 呈现术语审核面板。
+    """
     _ensure_output_dir()
     base = new_job_state(filename)
     state = load_job_state(job_id) or base
@@ -1613,6 +1636,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     # 全部完成 -> 直接返回
     if state["p1_done"] and state["p2_done"] and (not enable_report or state["p3_done"]) \
             and (not enable_annotate or state.get("annotations_done")):
+        state["stage"] = _state_migration.derive_stage(state)
         return state
 
     # ---------------- 阶段一：排版清洗 ----------------
@@ -1666,22 +1690,59 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         if on_status:
             on_status("【阶段1.5】正在 AI 智能抽取全文核心术语...")
         if on_caption:
-            on_caption("🤖 正在从前言样本中提取行业词汇...")
-        extracted = extract_auto_terms(state["paras"], target_lang, provider, api_key, model)
-        state["auto_terms"] = extracted
-        if extracted:
+            on_caption("🤖 正在从全文分布式样本中提取专业术语...")
+        from mti_tool.terminology import extract_auto_terms_v2
+        entries, extract_warnings = extract_auto_terms_v2(
+            state["paras"], target_lang, provider, api_key, model,
+            document_profile=state.get("document_profile"))
+        state["auto_term_entries"] = entries
+        state["auto_terms"] = {e["source"]: e["target"] for e in entries}
+        if entries:
             if on_caption:
-                on_caption(f"✅ 成功提取 {len(extracted)} 个专属术语并注入翻译引擎")
+                on_caption(f"✅ 成功提取 {len(entries)} 个候选术语（全部出现位置已记录）")
         else:
             msg = "术语抽取失败（限流或返回格式异常），已跳过该步骤；可稍后点击“继续处理”重试。"
+            if msg not in warnings and msg not in extract_warnings:
+                warnings.append(msg)
+        for w in extract_warnings:
+            if w not in warnings:
+                warnings.append(w)
+        save_job_state(job_id, state)
+    legacy_auto = [{"source": k, "target": v, "behavior": "translate",
+                    "status": "provisional"}
+                   for k, v in (state["auto_terms"] or {}).items()]
+    auto_entries = normalize_glossary(state.get("auto_term_entries") or legacy_auto)
+    user_entries = normalize_glossary(list(user_glossary or []))
+    if mode == "quick":
+        for e in auto_entries:
+            if e["status"] == "candidate":
+                e["status"] = "provisional"
+    working = normalize_glossary(state.get("glossary") or [])
+    if not working:
+        working = normalize_glossary(user_entries + auto_entries)
+    else:
+        # 新上传/新抽取的术语若不在已保存审核表中，追加（不覆盖人工审核结果）
+        known = {e["source"].casefold() for e in working}
+        for e in user_entries + auto_entries:
+            if e["source"].casefold() not in known:
+                working.append(e)
+    state["glossary"] = working
+    glossary = working
+    final_termbase = glossary_to_terms(glossary)
+
+    # ---------------- 高质量模式门禁：术语冻结后才能开始翻译 ----------------
+    if mode == "quality":
+        state["quality_mode"] = True
+        if not state.get("glossary_frozen"):
+            if on_status:
+                on_status("⏸ 高质量模式：等待人工术语审核与冻结（术语面板）...")
+            msg = ("高质量模式：术语尚未冻结，翻译未开始。"
+                   "请在“术语准备与审核”面板完成冻结后继续。")
             if msg not in warnings:
                 warnings.append(msg)
-        save_job_state(job_id, state)
-    auto_entries = [{"source": k, "target": v, "behavior": "translate",
-                     "status": "provisional"}
-                    for k, v in (state["auto_terms"] or {}).items()]
-    glossary = normalize_glossary(list(user_glossary or []) + auto_entries)
-    final_termbase = glossary_to_terms(glossary)
+            state["stage"] = _state_migration.derive_stage(state)
+            save_job_state(job_id, state)
+            return state
 
     # ---------------- 阶段二：双语翻译（批次 + 确定性检查 + 独立审校 + 翻译记忆）----------------
     if not state["p2_done"]:
@@ -1713,4 +1774,5 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         state["p3_done"] = True
         save_job_state(job_id, state)
 
+    state["stage"] = _state_migration.derive_stage(state)
     return state
