@@ -288,3 +288,101 @@ def glossary_to_terms(entries: List[models.GlossaryEntry]) -> Dict[str, str]:
     return {e["source"]: (e["preferred"] or e["target"])
             for e in models.normalize_glossary(entries)
             if e["behavior"] == "translate" and e["target"]}
+
+
+# ---------------- 术语 QA（entry_id / segment_id 级）----------------
+
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._\-]{1,}$")
+
+
+def _preserve_severity(source: str) -> str:
+    """保留项丢失严重度：结构标识类（型号/编号/纯标识符）-> blocking，其余 actionable。"""
+    src = (source or "").strip()
+    if _IDENTIFIER_RE.match(src):
+        return "blocking"
+    return "actionable"
+
+
+def check_glossary_compliance(
+    src: str,
+    tgt: str,
+    glossary: List[models.GlossaryEntry],
+    segment_id: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """锁定术语的确定性合规检查（基于 entry_id + segment_id）。
+
+    - locked translate：首选译名缺失 -> actionable；禁止译名出现 -> actionable；
+    - locked preserve：丢失 -> 按类型 actionable / blocking；
+    - 检查基于词边界匹配（term_matches），不依赖 reason 文本。
+    """
+    findings: List[Dict[str, Any]] = []
+    for e in models.normalize_glossary(glossary):
+        if e["status"] != "locked":
+            continue
+        if e["behavior"] == "preserve":
+            if term_matches(e["source"], src) and not term_matches(e["source"], tgt):
+                findings.append({
+                    "type": "glossary", "severity": _preserve_severity(e["source"]),
+                    "entry_id": e["id"], "segment_id": segment_id,
+                    "reason": f"锁定保留项「{e['source']}」在译文中丢失",
+                })
+        else:
+            preferred = e.get("preferred") or e.get("target")
+            if term_matches(e["source"], src) and preferred \
+                    and not term_matches(preferred, tgt):
+                findings.append({
+                    "type": "glossary", "severity": "actionable",
+                    "entry_id": e["id"], "segment_id": segment_id,
+                    "reason": f"锁定术语「{e['source']}」未使用首选译名「{preferred}」",
+                })
+            for fb in e.get("forbidden") or []:
+                if fb and fb in tgt:
+                    findings.append({
+                        "type": "glossary", "severity": "actionable",
+                        "entry_id": e["id"], "segment_id": segment_id,
+                        "reason": f"术语「{e['source']}」使用了禁止译名「{fb}」",
+                    })
+    return findings
+
+
+def detect_glossary_conflicts(
+    pairs: List[Dict[str, str]],
+    glossary: List[models.GlossaryEntry],
+) -> List[Dict[str, Any]]:
+    """跨段扫描：同一 locked 术语在同一范围内出现多种译法时报告冲突。
+
+    按术语在每段译文中的实际用法分组（首选 / 禁止译名 / 其他），
+    同一术语出现 ≥2 种用法即报告 actionable 冲突（带 entry_id / segment_id）。
+    """
+    findings: List[Dict[str, Any]] = []
+    for e in models.normalize_glossary(glossary):
+        if e["status"] != "locked" or e["behavior"] != "translate":
+            continue
+        preferred = e.get("preferred") or e.get("target")
+        if not preferred:
+            continue
+        usages: Dict[str, List[int]] = {}
+        for i, p in enumerate(pairs):
+            src, tgt = (p.get("source") or ""), (p.get("target") or "")
+            if not term_matches(e["source"], src):
+                continue
+            if preferred in tgt:
+                key = f"preferred:{preferred}"
+            else:
+                fb_hit = next((fb for fb in e.get("forbidden") or [] if fb and fb in tgt),
+                              None)
+                key = f"forbidden:{fb_hit}" if fb_hit else "other:未使用首选译名"
+            usages.setdefault(key, []).append(i)
+        if len(usages) > 1:
+            for key, segs in sorted(usages.items()):
+                kind = "首选" if key.startswith("preferred:") else (
+                    "禁止" if key.startswith("forbidden:") else "其他")
+                label = key.split(":", 1)[1] if ":" in key else key
+                for i in segs:
+                    findings.append({
+                        "type": "glossary", "severity": "actionable",
+                        "entry_id": e["id"], "segment_id": i, "conflict": True,
+                        "reason": f"锁定术语「{e['source']}」在同一范围内出现多种译法"
+                                  f"（段 {i} 为{kind}译法「{label}」），需人工统一",
+                    })
+    return findings

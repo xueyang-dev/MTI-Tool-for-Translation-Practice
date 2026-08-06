@@ -471,6 +471,170 @@ def test_apptest_term_review_panel():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def _entry(source, target, **kw):
+    base = {"source": source, "target": target, "behavior": "translate",
+            "status": "provisional"}
+    base.update(kw)
+    return models.normalize_glossary_entry(base)
+
+
+def test_select_glossary_for_segments():
+    glossary = [
+        _entry("Skopos theory", "目的论", status="locked", scope="global"),
+        _entry("John Smith", "约翰·史密斯", behavior="preserve", status="locked",
+               scope="global"),
+        _entry("fidelity principle", "忠实原则", status="locked", scope="section:s1"),
+        _entry("MT", "机器翻译", status="locked", scope="document"),
+        _entry("AI", "人工智能", status="locked", scope="global"),
+        _entry("rejected term", "拒绝", status="rejected", scope="global"),
+        _entry("provisional term", "建议译名", status="provisional", scope="global"),
+        _entry("section2 term", "第二节术语", status="locked", scope="section:s2"),
+        _entry("segment0 term", "段0术语", status="locked", scope="segment:0"),
+    ]
+    for i in range(6):
+        glossary.append(_entry(f"prov{i}", f"建议{i}", status="provisional",
+                               scope="global"))
+    segs = ["The Skopos theory guides John Smith, the fidelity principle and segment0 term.",
+            "No locked terms here except provisional term prov0 prov1 prov2 prov3 prov4 prov5."]
+    section_profile = {"section_id": "s1", "start_segment": 0, "end_segment": 1}
+
+    selected, ids = terminology.select_glossary_for_segments(
+        segs, glossary, section_profile=section_profile)
+    by_source = {e["source"]: e for e in selected}
+    assert "Skopos theory" in by_source, "locked 术语应被注入"
+    assert "John Smith" in by_source, "preserve 条目应被注入"
+    assert "fidelity principle" in by_source, "section:s1 匹配时应注入"
+    assert "MT" not in by_source, "无关术语不得注入"
+    assert "AI" not in by_source, "短词不得因 substring 误命中（Mountain 等）"
+    assert "rejected term" not in by_source, "rejected 永不注入"
+    assert "section2 term" not in by_source, "scope 不匹配时不得注入"
+    assert "segment0 term" in by_source, "segment:0 应命中批次第 0 段"
+    prov_count = sum(1 for e in selected if e["status"] == "provisional")
+    assert prov_count == 5, f"provisional 建议数量应受限，实际 {prov_count}"
+    assert ids == sorted(e["id"] for e in selected)
+
+    # 无 section_profile 时 section scope 不注入
+    selected2, _ = terminology.select_glossary_for_segments(segs, glossary)
+    assert "fidelity principle" not in {e["source"] for e in selected2}
+    # 空输入
+    assert terminology.select_glossary_for_segments([], glossary) == ([], [])
+    assert terminology.select_glossary_for_segments(["x"], []) == ([], [])
+    print("  ✓ 相关术语选择（locked/preserve 注入、scope、provisional 上限、短词防误命中）")
+
+
+def test_glossary_qa_all_occurrences():
+    glossary = [
+        _entry("Skopos theory", "目的论", status="locked", scope="global"),
+        _entry("John Smith", "约翰·史密斯", behavior="preserve", status="locked"),
+        _entry("RT-52", "RT-52", behavior="preserve", status="locked"),
+        _entry("provisional term", "建议译名", status="provisional"),
+    ]
+    pairs = [
+        ("The Skopos theory matters here.", "目的论在这里很重要。"),
+        ("The Skopos theory appears again.", "这里没有使用首选译名。"),
+        ("John Smith and the RT-52 unit.", "约翰·史密斯和那个装置。"),
+        ("The RT-52 unit was removed.", "该装置已被移除。"),
+        ("provisional term is fine.", "建议译名没问题。"),
+    ]
+    findings = []
+    for i, (src, tgt) in enumerate(pairs):
+        findings.extend(terminology.check_glossary_compliance(src, tgt, glossary,
+                                                              segment_id=i))
+    # 第 1 段未用首选译名（第二个 occurrence 也要检查）
+    miss = [f for f in findings if f["entry_id"] == glossary[0]["id"]
+            and f["segment_id"] == 1]
+    assert miss and miss[0]["severity"] == "actionable"
+    assert not any(f["segment_id"] == 0 for f in miss), "正确段落不应误报"
+    # John Smith 丢失 -> actionable；RT-52（结构标识）丢失 -> blocking
+    js = [f for f in findings if f["entry_id"] == glossary[1]["id"]]
+    assert js and js[0]["severity"] == "actionable"
+    rt = [f for f in findings if f["entry_id"] == glossary[2]["id"]]
+    assert any(f["segment_id"] == 3 and f["severity"] == "blocking" for f in rt), \
+        "结构标识类保留项丢失应为 blocking"
+    # provisional 不产生强制 finding
+    assert not any(f["entry_id"] == glossary[3]["id"] for f in findings)
+    # 所有 finding 都带 entry_id / segment_id
+    assert all(f.get("entry_id") and f.get("segment_id") is not None for f in findings)
+    print("  ✓ 术语 QA（全部 occurrence / preferred / forbidden / preserve 分级 / entry_id）")
+
+
+def test_conflict_detection():
+    glossary = [
+        _entry("Skopos theory", "目的论", status="locked", scope="global"),
+    ]
+    # 段 0 用首选，段 1 用其他译法 -> 冲突
+    pairs = [
+        {"source": "The Skopos theory is central.", "target": "目的论是核心。"},
+        {"source": "Skopos theory again.", "target": "翻译目的学派再次出现。"},
+    ]
+    findings = terminology.detect_glossary_conflicts(pairs, glossary)
+    assert findings
+    assert all(f["conflict"] and f["entry_id"] == glossary[0]["id"] for f in findings)
+    assert {f["segment_id"] for f in findings} == {0, 1}
+    assert all(f["severity"] == "actionable" for f in findings)
+    # 全部一致 -> 无冲突
+    pairs2 = [
+        {"source": "The Skopos theory is central.", "target": "目的论是核心。"},
+        {"source": "Skopos theory again.", "target": "目的论再次出现。"},
+    ]
+    assert terminology.detect_glossary_conflicts(pairs2, glossary) == []
+    print("  ✓ 同范围多译法冲突检测")
+
+
+def test_batch_injection_log_and_prompt():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-inject-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["The Skopos theory 是本章核心，其他术语未出现。",
+                                 "John Smith 也在讨论范围内。"])
+        user_glossary = [
+            {"Source": "Skopos theory", "Target": "目的论", "Status": "locked",
+             "Preferred": "目的论"},
+            {"Source": "John Smith", "Target": "约翰·史密斯", "Behavior": "preserve",
+             "Status": "locked"},
+            {"Source": "unrelated term", "Target": "无关术语", "Status": "locked",
+             "Preferred": "无关术语"},
+            {"Source": "MT", "Target": "机器翻译", "Status": "locked",
+             "Preferred": "机器翻译"},
+        ]
+        prompts = []
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "学术翻译专家" in system_prompt:
+                prompts.append(system_prompt)
+                return json.dumps([f"译文：{s}" for _, s in _numbered(user_prompt)])
+            if "翻译审校专家" in system_prompt:
+                return '[]'
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        state = core.run_job_pipeline(
+            "in0000000000000001", "i.docx", docx_bytes,
+            provider="DeepSeek", api_key="k", model="deepseek-chat",
+            target_lang="简体中文", auto_term=False, enable_report=False,
+            translation_theory="目的论 (Skopos Theory)", user_glossary=user_glossary,
+            mode="quick")
+        # 只注入实际出现的 locked 术语，无关术语不进入 prompt
+        assert prompts, "应有一次翻译调用"
+        prompt_text = prompts[0]
+        assert "Skopos theory -> 目的论" in prompt_text
+        assert "John Smith" in prompt_text
+        assert "unrelated term" not in prompt_text, "无关术语不得注入 prompt"
+        assert "MT" not in prompt_text, "未出现的术语不得注入 prompt"
+        # 注入日志 + 每段 entry_ids
+        log = state["glossary_injection_log"]
+        assert len(log) == 1 and log[0]["batch"] == 0
+        injected = log[0]["entry_ids"]
+        assert all(e["id"] in injected for e in state["glossary"]
+                   if e["source"] in ("Skopos theory", "John Smith"))
+        assert all(p.get("glossary_entry_ids") == injected for p in state["pairs"])
+        print("  ✓ 批次注入：仅相关术语注入 prompt + 审计日志 + 每段 entry_ids")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("术语治理测试（模型/迁移/画像/术语候选）：")
     test_document_profile_normalize_validate()
@@ -486,4 +650,8 @@ if __name__ == "__main__":
     test_extract_auto_terms_v2()
     test_review_state_persist_and_restore()
     test_apptest_term_review_panel()
+    test_select_glossary_for_segments()
+    test_glossary_qa_all_occurrences()
+    test_conflict_detection()
+    test_batch_injection_log_and_prompt()
     print("\n全部通过 ✅")

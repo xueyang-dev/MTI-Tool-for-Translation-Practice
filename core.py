@@ -356,25 +356,9 @@ def glossary_to_terms(glossary):
 
 
 def check_glossary_compliance(src, tgt, glossary):
-    """锁定术语的确定性合规检查：首选译名缺失、禁止译名出现、保留项丢失。"""
-    findings = []
-    for e in glossary:
-        if e["status"] != "locked":
-            continue
-        if e["behavior"] == "preserve":
-            if e["source"] in src and e["source"] not in tgt:
-                findings.append({"type": "glossary", "severity": "actionable",
-                                 "reason": f"锁定保留项「{e['source']}」在译文中丢失"})
-        else:
-            preferred = e.get("preferred") or e.get("target")
-            if e["source"] in src and preferred and preferred not in tgt:
-                findings.append({"type": "glossary", "severity": "actionable",
-                                 "reason": f"锁定术语「{e['source']}」未使用首选译名「{preferred}」"})
-            for fb in e.get("forbidden") or []:
-                if fb and fb in tgt:
-                    findings.append({"type": "glossary", "severity": "actionable",
-                                     "reason": f"术语「{e['source']}」使用了禁止译名「{fb}」"})
-    return findings
+    """锁定术语的确定性合规检查（委托 mti_tool.terminology：entry_id/segment_id 级）。"""
+    from mti_tool.terminology import check_glossary_compliance as _qa
+    return _qa(src, tgt, glossary)
 
 
 # ================= 确定性检查（对齐 localize-anything 的机械检查）=================
@@ -485,6 +469,8 @@ def check_translation_batch(sources, targets, glossary, target_lang):
         for f in findings:
             if "segment_index" not in f:
                 f["segment_index"] = i
+            if "segment_id" not in f or f.get("segment_id") is None:
+                f["segment_id"] = i
     return findings
 
 
@@ -505,6 +491,19 @@ def make_batches(paragraphs, batch_size=BATCH_SIZE, max_chars=MAX_BATCH_CHARS):
     if cur:
         batches.append(cur)
     return batches
+
+
+def _batch_section_profile(document_profile, offset, batch_len):
+    """按全局段区间匹配 section profile（用于相关术语的 section:<id> scope）。"""
+    if not document_profile:
+        return None
+    for sec in document_profile.get("sections") or []:
+        start, end = sec.get("start_segment"), sec.get("end_segment")
+        if start is None or end is None:
+            continue
+        if start <= offset and offset + batch_len - 1 <= end:
+            return sec
+    return None
 
 
 # ================= 翻译记忆（对齐 localize-anything 的 TM：仅收录审校通过段落）=================
@@ -947,7 +946,8 @@ def annotate_stage(state, job_id, glossary, provider, api_key, model, target_lan
 
 
 def translate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
-                    style_rules, enable_review, on_status=None, on_caption=None):
+                    style_rules, enable_review, document_profile=None,
+                    on_status=None, on_caption=None):
     """阶段二：语义批次翻译 + 确定性检查/修复 + 独立审校 + 翻译记忆。
 
     对齐 localize-anything 经验：
@@ -980,7 +980,11 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
         "blocking": 0, "actionable": 0, "informational": 0, "review_failed": 0,
     })
     findings_all = state.setdefault("findings", [])
-    glossary_text = glossary_block(glossary)
+    from mti_tool.terminology import (
+        detect_glossary_conflicts as _detect_conflicts,
+        glossary_block as _glossary_block,
+        select_glossary_for_segments as _select_glossary,
+    )
 
     for bi in range(start_batch, len(batches)):
         batch = batches[bi]
@@ -1010,9 +1014,23 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
             else:
                 to_translate.append((i, clean_src))
 
+        # 相关术语选择：只注入本批实际出现的 locked translate / preserve 条目，
+        # provisional 仅作受限建议；记录实际注入的 entry IDs（审计）。
+        texts = [t for _, t in to_translate]
+        section_profile = _batch_section_profile(document_profile, offset, len(batch))
+        selected, injected_ids = _select_glossary(
+            texts, glossary, document_profile, section_profile)
+        glossary_text = _glossary_block(selected)
+        state.setdefault("glossary_injection_log", []).append({
+            "batch": bi,
+            "offset": offset,
+            "entry_ids": injected_ids,
+            "glossary_version": (state.get("glossary_frozen") or {}).get("version"),
+            "glossary_hash": (state.get("glossary_frozen") or {}).get("glossary_hash"),
+        })
+
         # 2) 未命中段落批次翻译
         if to_translate:
-            texts = [t for _, t in to_translate]
             try:
                 targets = translate_batch(texts, ctx_prev, ctx_next, glossary_text, style_rules,
                                           target_lang, provider, api_key, model)
@@ -1033,6 +1051,8 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
 
         batch_sources = [p["source"] for p in batch_pairs]
         batch_targets = [p["target"] for p in batch_pairs]
+        for p in batch_pairs:
+            p["glossary_entry_ids"] = list(injected_ids)
         findings = check_translation_batch(batch_sources, batch_targets, glossary, target_lang)
 
         # 3) 确定性问题自动修复（一轮）
@@ -1093,6 +1113,11 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
         findings = check_translation_batch(
             batch_sources, [p["target"] for p in batch_pairs], glossary, target_lang)
 
+        # 批内冲突检测（跨段同术语多译法）——在 TM 入库前执行
+        for cf in _detect_conflicts(batch_pairs, glossary):
+            cf["segment_index"] = offset + cf["segment_id"]
+            findings_all.append(cf)
+
         # 记录仍未解决的确定性问题
         for f in findings:
             if f["severity"] in ("blocking", "actionable", "informational"):
@@ -1114,6 +1139,16 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
 
         pairs.extend(batch_pairs)
         save_job_state(job_id, state)  # 每批落盘，断点粒度 = 一个批次
+
+    # 全局冲突检测（跨批次），与批内结果去重
+    batch_conflict_keys = {(f.get("type"), f.get("entry_id"),
+                            f.get("segment_index"), True)
+                           for f in findings_all if f.get("conflict")}
+    for cf in _detect_conflicts(pairs, glossary):
+        cf["segment_index"] = cf["segment_id"]
+        key = (cf.get("type"), cf.get("entry_id"), cf.get("segment_index"), True)
+        if key not in batch_conflict_keys:
+            findings_all.append(cf)
 
     stats["blocking"] = sum(1 for f in findings_all if f["severity"] == "blocking")
     stats["actionable"] = sum(1 for f in findings_all if f["severity"] == "actionable")
@@ -1765,7 +1800,9 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         if on_status:
             on_status("【阶段二】双语翻译与术语严格注入（批次翻译 + 确定性检查 + 独立审校）...")
         translate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
-                        style_rules, enable_review, on_status=on_status, on_caption=on_caption)
+                        style_rules, enable_review,
+                        document_profile=state.get("document_profile"),
+                        on_status=on_status, on_caption=on_caption)
         state["p2_done"] = True
         save_job_state(job_id, state)
 
