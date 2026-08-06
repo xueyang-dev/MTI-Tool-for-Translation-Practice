@@ -67,6 +67,104 @@ def test_doc_generation():
     print("  ✓ docx / xlsx 生成")
 
 
+def test_docx_fonts():
+    import zipfile
+    buf = core.pairs_to_word([{"source": "Hello 世界", "target": "你好 world"}])
+    with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as z:
+        xml = z.read("word/document.xml").decode("utf-8")
+        styles = z.read("word/styles.xml").decode("utf-8")
+    assert "Times New Roman" in styles, "默认西文字体应为 Times New Roman"
+    assert "宋体" in styles, "默认中文字体应为宋体"
+    assert "Times New Roman" in xml and "宋体" in xml, "表格 run 也应带字体声明"
+    print("  ✓ docx 默认字体（Times New Roman + 宋体）")
+
+
+def test_find_span():
+    text = "The “quick” brown–fox jumps.  And runs."
+    assert core._find_span(text, "“quick”") == (4, 11)
+    assert core._find_span(text, '"quick"') == (4, 11), "弯引号应可匹配"
+    assert core._find_span(text, "brown–fox") == (12, 21)
+    assert core._find_span(text, "brown-fox") == (12, 21), "破折号应可匹配"
+    assert core._find_span(text, "jumps. And") == (22, 33), "空白应可折叠匹配"
+    assert core._find_span(text, "不存在") is None
+    print("  ✓ 标注片段宽容定位（引号/破折号/空白）")
+
+
+def test_compose_spans():
+    # 难点句整段 + 词级标注重叠：边界切分，rare 覆盖 hard
+    spans = [(0, 20, "hard"), (4, 10, "rare"), (10, 14, "domain")]
+    out = core._compose_spans(spans, 20)
+    assert out == [(0, 4, "hard"), (4, 10, "rare"), (10, 14, "domain"), (14, 20, "hard")], out
+    assert core._compose_spans([(1, 5, "rare")], 8) == [(1, 5, "rare")]
+    assert core._compose_spans([], 8) == []
+    print("  ✓ 高亮区间合成（优先级覆盖 + 边界切分）")
+
+
+def test_annotate_stage():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-annot-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        state = {
+            "filename": "a.pdf", "p1_done": True, "p2_done": True,
+            "paras": [], "pairs": [
+                {"source": "The Mirage was an obsolete aircraft by then. The cacophony of the engines was unbearable.",
+                 "target": "到那时，幻影战斗机已经过时了。发动机的刺耳噪声令人难以忍受。"},
+                {"source": "He refused to kowtow to the bureaucracy.",
+                 "target": "他拒绝向官僚作风屈膝。"},
+            ],
+            "auto_terms": {"Mirage": "幻影战斗机"},
+            "findings": [], "review_stats": {},
+        }
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "翻译教学专家" in system_prompt:
+                return json.dumps([
+                    {"seg": 1, "type": "domain", "src": "Mirage", "tgt": "幻影战斗机",
+                     "note": "机型专名译法"},
+                    {"seg": 1, "type": "rare", "src": "cacophony", "tgt": "刺耳噪声",
+                     "note": "生僻词"},
+                    {"seg": 1, "type": "hard", "src": "was an obsolete aircraft by then",
+                     "tgt": "到那时，幻影战斗机已经过时了",
+                     "note": "语序调整"},
+                    {"seg": 2, "type": "rare", "src": "kowtow", "tgt": "屈膝",
+                     "note": "文化负载词"},
+                    {"seg": 9, "type": "rare", "src": "x", "tgt": "y", "note": "越界应丢弃"},
+                ])
+            return "[]"
+
+        core.call_llm = llm
+        glossary = core.normalize_glossary(
+            [{"source": k, "target": v, "behavior": "translate", "status": "provisional"}
+             for k, v in state["auto_terms"].items()])
+        core.annotate_stage(state, "an0000000000000001", glossary, "DeepSeek", "k",
+                            "deepseek-chat", "简体中文")
+        ann = state["annotations"]
+        assert state["annotations_done"] is True
+        assert 0 in ann and 1 in ann
+        types0 = {it["type"] for it in ann[0]}
+        assert types0 == {"domain", "rare", "hard"}, types0
+        assert ann[0][0]["src_span"] == [4, 10], "Mirage 应定位在原文中"
+        assert ann[1][0]["src_span"] is not None and ann[1][0]["tgt_span"] is not None
+        # 术语表确定性覆盖 + 数量上限
+        assert any(it["type"] == "domain" for it in ann[0])
+        assert len(ann[0]) <= 6
+        # JSON 落盘后键为字符串：从磁盘加载再渲染，三种颜色都应出现
+        import zipfile
+        state_disk = core.load_job_state("an0000000000000001")
+        buf = core.pairs_to_word(state_disk["pairs"],
+                                 annotations=state_disk.get("annotations"))
+        with zipfile.ZipFile(io.BytesIO(buf.getvalue())) as z:
+            xml = z.read("word/document.xml").decode("utf-8")
+        for color in ("C00000", "BF8F00", "008080"):
+            assert f'w:val="{color}"' in xml, f"缺少颜色 {color}"
+        assert "图例" in xml
+        print("  ✓ 三色自动标注（LLM + 术语表覆盖 + 区间定位 + docx 渲染）")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_termbase_parsing():
     buf = core.dict_to_excel({"MT": "机器翻译", "CAT": "计算机辅助翻译"})
     entries = core.normalize_glossary(core.parse_termbase(buf))
@@ -595,6 +693,10 @@ if __name__ == "__main__":
     test_misc_helpers()
     test_parse_translation_array()
     test_doc_generation()
+    test_docx_fonts()
+    test_find_span()
+    test_compose_spans()
+    test_annotate_stage()
     test_termbase_parsing()
     test_glossary_and_checks()
     test_batches()

@@ -80,6 +80,8 @@ def main():
     ap.add_argument("--out", default=str(Path.home() / "Downloads" / "MTI-翻译输出"))
     ap.add_argument("--no-review", action="store_true", help="关闭独立审校与翻译记忆")
     ap.add_argument("--no-report", action="store_true", help="不生成实践报告（默认生成）")
+    ap.add_argument("--no-annotate", action="store_true",
+                    help="关闭三色自动标注（生僻词/专业名词/难点句高亮，默认开启）")
     ap.add_argument("--job-id", default=None, help="续跑指定任务 ID（跳过自动计算）")
     args = ap.parse_args()
 
@@ -115,6 +117,7 @@ def main():
         user_glossary=[], style_rules="保持学术书面语与叙事风格；人名、地名、机构名、飞机型号、"
                                       "引用标注、URL 保留原文；标点遵循中文规范。",
         enable_review=not args.no_review,
+        enable_annotate=not args.no_annotate,
         on_status=on_status, on_caption=on_caption,
     )
 
@@ -124,7 +127,8 @@ def main():
             core.paragraphs_to_word(state["paras"]).getvalue())
     if state.get("p2_done") and state.get("pairs"):
         (out_dir / "阶段2_双语对照.docx").write_bytes(
-            core.pairs_to_word(state["pairs"]).getvalue())
+            core.pairs_to_word(state["pairs"],
+                               annotations=state.get("annotations")).getvalue())
     if state.get("p3_md"):
         (out_dir / "阶段3_实践报告.md").write_text(state["p3_md"], encoding="utf-8")
     (out_dir / "审查报告.md").write_text(core.findings_report_md(state), encoding="utf-8")

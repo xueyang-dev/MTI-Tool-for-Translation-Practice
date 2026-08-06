@@ -25,6 +25,9 @@ with st.sidebar:
     enable_report = st.checkbox("📝 自动生成实践报告", value=True)
     enable_review = st.checkbox("🔍 独立审校 (Review)", value=True,
                                 help="翻译后由独立审校 pass 检查语义/术语问题；通过审校的段落才会进入翻译记忆")
+    enable_annotate = st.checkbox("🎨 自动标注学习重点（红/黄/青绿）", value=True,
+                                  help="生僻词标红、专业名词（特殊译法）标黄、翻译难点句标青绿，"
+                                       "在双语对照表中同时高亮原文与译文")
     translation_theory = st.selectbox("案例分析理论", [
         "目的论 (Skopos Theory)",
         "交际翻译与语义翻译 (Newmark)",
@@ -110,6 +113,7 @@ if st.button("🚀 开始 / 继续处理 (断点续传)", type="primary", use_co
                         enable_report=enable_report, translation_theory=translation_theory,
                         user_glossary=user_glossary,
                         style_rules=style_rules, enable_review=enable_review,
+                        enable_annotate=enable_annotate,
                         on_status=lambda label: status.update(label=label, state="running"),
                         on_caption=lambda text: st.caption(text),
                     )
@@ -163,7 +167,8 @@ if saved_jobs_after:
                 if state.get("p2_done") and state.get("pairs"):
                     st.download_button(
                         "📥 2. 双语对照表",
-                        core.pairs_to_word(state["pairs"]),
+                        core.pairs_to_word(state["pairs"],
+                                           annotations=state.get("annotations")),
                         file_name=f"阶段2_双语对照_{filename}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         key=f"d2_{job['job_id']}", use_container_width=True)

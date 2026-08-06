@@ -679,6 +679,178 @@ def review_translation_batch(sources, targets, glossary_text, style_rules, targe
     return [], True
 
 
+# ================= 自动标注（三色学习重点）=================
+# 红=生僻词/难词；黄=专业名词（特殊译法）；青绿=翻译难点句（特别译法）。
+ANNOT_BATCH_SIZE = 10
+ANNOT_MAX_PER_SEG = {"rare": 3, "domain": 3, "hard": 2}
+
+
+def _annotator_system(target_lang):
+    return (f"你是一位翻译教学专家。请从下列{target_lang}双语对照中标注三类学习重点：\n"
+            "1. rare：生僻词/难词（原文用词生僻，或译文用词值得学习）；\n"
+            "2. domain：专业领域名词，译文采用了专门/约定俗成的译法（如术语表、行话、专名译法）；\n"
+            "3. hard：翻译难度高的句子，译文使用了特别翻译技巧（语序调整、词性转换、拆合句、"
+            "文化负载词处理、比喻/双关处理等）。\n"
+            "规则：\n"
+            "- 每个段落最多 2 个 rare、2 个 domain、1 个 hard；标注真正有价值的，宁缺毋滥；\n"
+            "- src 必须是原文中的原文字符串，tgt 必须是对应译文中的字符串（hard 可以是整句/整段）；\n"
+            "- note 用一句话说明标注理由或所用译法；\n"
+            '严格输出 JSON 数组，每项格式：{"seg": 1, "type": "rare", "src": "...", '
+            '"tgt": "...", "note": "..."}。seg 为段落序号（从 1 开始）。不要输出任何解释文字。')
+
+
+def annotate_batch(pairs_slice, target_lang, provider, api_key, model):
+    """标注一个批次，返回 [{seg, type, src, tgt, note}]（seg 为 0 基）；解析失败返回 []。"""
+    numbered = "\n\n".join(
+        f"--- 段落 {i + 1} ---\n原文：{p['source']}\n译文：{p['target']}"
+        for i, p in enumerate(pairs_slice))
+    sys_prompt = _annotator_system(target_lang)
+    user_prompt = f"待标注双语段落：\n{numbered}"
+    for _attempt in range(2):
+        try:
+            res = call_llm(provider, api_key, model, sys_prompt, user_prompt, temperature=0.2)
+            arr = parse_json_array(res)
+            if arr is None:
+                return []
+            out = []
+            for item in arr:
+                if not isinstance(item, dict):
+                    continue
+                seg = item.get("seg")
+                if not isinstance(seg, int) or not (1 <= seg <= len(pairs_slice)):
+                    continue
+                atype = item.get("type")
+                if atype not in ANNOTATION_COLORS:
+                    continue
+                src = str(item.get("src") or "").strip()
+                tgt = str(item.get("tgt") or "").strip()
+                note = str(item.get("note") or "").strip()
+                if not src:
+                    continue
+                out.append({"seg": seg - 1, "type": atype, "src": src,
+                            "tgt": tgt, "note": note})
+            return out
+        except Exception:
+            return []
+    return []
+
+
+def _compose_spans(spans, text_len):
+    """按边界切分 + 优先级（rare>domain>hard）覆盖，返回互不重叠的 (start,end,type) 列表。
+
+    难点句常覆盖整段，词级标注嵌在其中：切到所有起点/终点后，每段取覆盖它的最高优先级。
+    """
+    priority = {"rare": 0, "domain": 1, "hard": 2}
+    clipped = []
+    for s, e, t in spans:
+        s = max(0, min(int(s), text_len))
+        e = max(s, min(int(e), text_len))
+        if s < e:
+            clipped.append((s, e, t))
+    if not clipped:
+        return []
+    bounds = sorted({0, text_len} | {x for s, e, _ in clipped for x in (s, e)})
+    composed = []
+    for a, b in zip(bounds, bounds[1:]):
+        if a >= b:
+            continue
+        mid = (a + b) / 2
+        covering = [(priority[t], t) for s, e, t in clipped if s <= mid < e]
+        if covering:
+            composed.append((a, b, min(covering)[1]))
+    return composed
+
+
+def annotate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
+                   on_caption=None):
+    """三色自动标注：LLM 识别 + 术语表确定性覆盖（专业名词=黄色必标）。"""
+    if state.get("annotations_done"):
+        return state
+    pairs = state["pairs"]
+    annotations = {int(k): v for k, v in (state.get("annotations") or {}).items()}
+    batches = make_batches([p["source"] for p in pairs], batch_size=ANNOT_BATCH_SIZE,
+                           max_chars=2600)
+    start_bi = state.get("annotations_done_batches", 0)
+    if start_bi:
+        if on_caption:
+            on_caption(f"↩️ 从第 {start_bi + 1}/{len(batches)} 批继续标注...")
+
+    # 1) LLM 标注
+    failed_batches = 0
+    for bi in range(start_bi, len(batches)):
+        batch_srcs = batches[bi]
+        offset = sum(len(b) for b in batches[:bi])
+        slice_pairs = pairs[offset:offset + len(batch_srcs)]
+        if on_caption and bi % 10 == 0:
+            on_caption(f"🎨 自动标注第 {offset + 1}-{offset + len(slice_pairs)} 段"
+                       f"（共 {len(pairs)} 段，批次 {bi + 1}/{len(batches)}）...")
+        items = annotate_batch(slice_pairs, target_lang, provider, api_key, model)
+        if not items:
+            failed_batches += 1
+        for item in items:
+            gi = offset + item["seg"]
+            src, tgt, atype, note = item["src"], item["tgt"], item["type"], item["note"]
+            src_span = _find_span(pairs[gi]["source"], src)
+            tgt_span = _find_span(pairs[gi]["target"], tgt) if tgt else None
+            if atype == "hard":
+                # 难句兜底：找不到精确片段时标整段
+                if src_span is None:
+                    src_span = (0, len(pairs[gi]["source"]))
+                if tgt_span is None:
+                    tgt_span = (0, len(pairs[gi]["target"])) if pairs[gi]["target"] else None
+            elif src_span is None:
+                continue  # 词级标注必须在原文中定位
+            annotations.setdefault(gi, []).append(
+                {"type": atype, "src_span": list(src_span) if src_span else None,
+                 "tgt_span": list(tgt_span) if tgt_span else None, "note": note})
+        # 每批落盘：断点粒度 = 一个批次
+        state["annotations"] = annotations
+        state["annotations_done_batches"] = bi + 1
+        save_job_state(job_id, state)
+
+    # 2) 术语表确定性覆盖：专业名词（特殊译法）-> 黄色
+    for gi, pr in enumerate(pairs):
+        for entry in glossary:
+            term = (entry.get("source") or "").strip()
+            if len(term) < 2 or term not in pr["source"]:
+                continue
+            span = _find_span(pr["source"], term)
+            tgt_span = None
+            tgt_term = (entry.get("target") or "").strip()
+            if tgt_term:
+                tgt_span = _find_span(pr["target"], tgt_term)
+            annotations.setdefault(gi, []).append(
+                {"type": "domain", "src_span": list(span) if span else None,
+                 "tgt_span": list(tgt_span) if tgt_span else None,
+                 "note": f"术语：{term} -> {tgt_term or '保留原文'}"})
+
+    # 3) 数量上限 + 去重
+    cleaned = {}
+    for gi, items in annotations.items():
+        seen, kept = set(), []
+        counts = {"rare": 0, "domain": 0, "hard": 0}
+        for it in items:
+            key = (it["type"], it["src_span"] and tuple(it["src_span"]),
+                   it["tgt_span"] and tuple(it["tgt_span"]))
+            if key in seen:
+                continue
+            seen.add(key)
+            if counts[it["type"]] >= ANNOT_MAX_PER_SEG[it["type"]]:
+                continue
+            counts[it["type"]] += 1
+            kept.append(it)
+        if kept:
+            cleaned[gi] = kept
+    state["annotations"] = cleaned
+    state["annotations_done"] = True
+    state["annotations_failed_batches"] = failed_batches
+    save_job_state(job_id, state)
+    if on_caption:
+        total = sum(len(v) for v in cleaned.values())
+        on_caption(f"✅ 自动标注完成：{total} 处（失败批次 {failed_batches}/{len(batches)}）")
+    return state
+
+
 def translate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
                     style_rules, enable_review, on_status=None, on_caption=None):
     """阶段二：语义批次翻译 + 确定性检查/修复 + 独立审校 + 翻译记忆。
@@ -878,6 +1050,42 @@ def findings_report_md(state):
 
 
 # ================= 文档/表格生成 =================
+EN_FONT = "Times New Roman"
+CN_FONT = "宋体"
+
+# 自动标注三色：生僻词=红、专业名词（特殊译法）=黄、翻译难点句=青绿
+ANNOTATION_COLORS = {"rare": "C00000", "domain": "BF8F00", "hard": "008080"}
+ANNOTATION_LABELS = {"rare": "生僻词/难词", "domain": "专业名词（特殊译法）",
+                     "hard": "翻译难点句（特别译法）"}
+
+
+def _apply_doc_fonts(doc):
+    """默认字体：西文 Times New Roman，中文宋体（Normal + 标题样式一并设置）。"""
+    from docx.oxml.ns import qn
+    for style_name in ("Normal", "Heading 1", "Heading 2", "Heading 3", "Title"):
+        try:
+            style = doc.styles[style_name]
+        except KeyError:
+            continue
+        style.font.name = EN_FONT
+        rpr = style.element.get_or_add_rPr()
+        rfonts = rpr.get_or_add_rFonts()
+        rfonts.set(qn("w:ascii"), EN_FONT)
+        rfonts.set(qn("w:hAnsi"), EN_FONT)
+        rfonts.set(qn("w:eastAsia"), CN_FONT)
+
+
+def _apply_run_fonts(run):
+    """单个 run 的字体（表格单元格里的 run 不受 Normal 样式继承影响时兜底）。"""
+    from docx.oxml.ns import qn
+    run.font.name = EN_FONT
+    rpr = run._element.get_or_add_rPr()
+    rfonts = rpr.get_or_add_rFonts()
+    rfonts.set(qn("w:ascii"), EN_FONT)
+    rfonts.set(qn("w:hAnsi"), EN_FONT)
+    rfonts.set(qn("w:eastAsia"), CN_FONT)
+
+
 def dict_to_excel(term_dict):
     df = pd.DataFrame(list(term_dict.items()), columns=["Source", "Target"])
     output = io.BytesIO()
@@ -889,6 +1097,7 @@ def dict_to_excel(term_dict):
 
 def paragraphs_to_word(paragraphs):
     doc = Document()
+    _apply_doc_fonts(doc)
     doc.add_heading('阶段一：清洗后原文提取', 0)
     for p in paragraphs:
         doc.add_paragraph(p)
@@ -898,17 +1107,102 @@ def paragraphs_to_word(paragraphs):
     return out
 
 
-def pairs_to_word(pairs):
-    """双语对照表 -> Word 表格。"""
+def _find_span(text, needle):
+    """宽容定位子串：统一引号/破折号/省略号、折叠空白后查找，返回 (start, end) 或 None。"""
+    if not needle or not text:
+        return None
+    if needle in text:
+        pos = text.find(needle)
+        return pos, pos + len(needle)
+    mapping = []
+    norm_chars = []
+    for orig_idx, ch in enumerate(text):
+        ch2 = ch.replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
+        ch2 = ch2.replace("–", "-").replace("—", "-").replace("…", "...")
+        if ch2.isspace():
+            if norm_chars and norm_chars[-1] != " ":
+                norm_chars.append(" ")
+                mapping.append(None)
+            continue
+        norm_chars.append(ch2)
+        mapping.append(orig_idx)
+    norm_text = "".join(norm_chars)
+    needle2 = needle.replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
+    needle2 = needle2.replace("–", "-").replace("—", "-").replace("…", "...")
+    needle2 = re.sub(r"\s+", " ", needle2).strip()
+    pos = norm_text.find(needle2)
+    if pos < 0:
+        return None
+    start = None
+    for i in range(pos, len(mapping)):
+        if mapping[i] is not None:
+            start = mapping[i]
+            break
+    end = None
+    for i in range(min(pos + len(needle2), len(mapping)) - 1, -1, -1):
+        if mapping[i] is not None:
+            end = mapping[i] + 1
+            break
+    if start is None or end is None:
+        return None
+    return start, end
+
+
+def _colored_cell(cell, text, spans):
+    """把一个单元格按 spans（(start,end,type) 已排序不重叠）拆成带色 run。"""
+    from docx.shared import RGBColor
+    cursor = 0
+    first = True
+    for start, end, atype in spans:
+        if start > cursor:
+            run = cell.paragraphs[0].add_run(text[cursor:start])
+            _apply_run_fonts(run)
+        run = cell.paragraphs[0].add_run(text[start:end])
+        _apply_run_fonts(run)
+        run.font.color.rgb = RGBColor.from_string(ANNOTATION_COLORS[atype])
+        if atype in ("rare", "domain"):
+            run.bold = True
+        cursor = end
+        first = False
+    if cursor < len(text):
+        run = cell.paragraphs[0].add_run(text[cursor:])
+        _apply_run_fonts(run)
+    if first and not text:
+        cell.paragraphs[0].add_run("")
+
+
+def pairs_to_word(pairs, annotations=None):
+    """双语对照表 -> Word 表格。
+
+    annotations: {seg: [{"type": "rare|domain|hard", "src_span": [s,e]|None,
+                         "tgt_span": [s,e]|None, "note": str}]}
+    """
     doc = Document()
+    _apply_doc_fonts(doc)
     table = doc.add_table(rows=1, cols=2)
     table.style = 'Table Grid'
     table.rows[0].cells[0].text = "原文"
     table.rows[0].cells[1].text = "译文"
-    for pair in pairs:
+    annot = {}
+    for k, v in (annotations or {}).items():
+        annot[int(k)] = v  # JSON 落盘后键为字符串，统一回 int
+    for i, pair in enumerate(pairs):
         row = table.add_row().cells
-        row[0].text = pair['source']
-        row[1].text = pair['target']
+        seg_annot = annot.get(i) or []
+        src_spans = _compose_spans(
+            [(it["src_span"][0], it["src_span"][1], it["type"])
+             for it in seg_annot if it.get("src_span")], len(pair['source']))
+        tgt_spans = _compose_spans(
+            [(it["tgt_span"][0], it["tgt_span"][1], it["type"])
+             for it in seg_annot if it.get("tgt_span")], len(pair['target']))
+        _colored_cell(row[0], pair['source'], src_spans)
+        _colored_cell(row[1], pair['target'], tgt_spans)
+    # 图例（放表格后，避免挤占首行）
+    p_legend = doc.add_paragraph()
+    run = p_legend.add_run("图例：红色 = 生僻词/难词；黄色 = 专业名词（特殊译法）；"
+                           "青绿色 = 翻译难点句（特别译法）。")
+    _apply_run_fonts(run)
+    run.font.size = None
     out = io.BytesIO()
     doc.save(out)
     out.seek(0)
@@ -925,6 +1219,7 @@ def _add_formatted_runs(paragraph, text):
 
 def markdown_to_word(md_text, theory):
     doc = Document()
+    _apply_doc_fonts(doc)
     md_text = re.sub(r'```markdown|```', '', md_text).strip()
     title = doc.add_heading(f'翻译实践报告：基于{theory}', 0)
     title.alignment = 1
@@ -1145,6 +1440,7 @@ def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_ke
 def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                      target_lang, auto_term, enable_report, translation_theory,
                      user_glossary=None, style_rules="", enable_review=True,
+                     enable_annotate=True,
                      on_status=None, on_caption=None):
     """执行单个文档的完整流程；每个里程碑实时落盘，刷新/重启后均可继续。"""
     _ensure_output_dir()
@@ -1155,7 +1451,8 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     warnings = state.setdefault("warnings", [])
 
     # 全部完成 -> 直接返回
-    if state["p1_done"] and state["p2_done"] and (not enable_report or state["p3_done"]):
+    if state["p1_done"] and state["p2_done"] and (not enable_report or state["p3_done"]) \
+            and (not enable_annotate or state.get("annotations_done")):
         return state
 
     # ---------------- 阶段一：排版清洗 ----------------
@@ -1214,6 +1511,13 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                         style_rules, enable_review, on_status=on_status, on_caption=on_caption)
         state["p2_done"] = True
         save_job_state(job_id, state)
+
+    # ---------------- 阶段 2.5：三色自动标注 ----------------
+    if enable_annotate and state["p2_done"] and not state.get("annotations_done"):
+        if on_status:
+            on_status("【阶段 2.5】自动标注学习重点（红=生僻词 / 黄=专业名词 / 青绿=难点句）...")
+        annotate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
+                       on_caption=on_caption)
 
     # ---------------- 阶段三：报告生成 ----------------
     if enable_report and not state["p3_done"]:
