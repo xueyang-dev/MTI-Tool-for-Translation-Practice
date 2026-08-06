@@ -40,6 +40,7 @@ def _default_new_fields() -> Dict[str, Any]:
         "delivery_manifest": {},
         "exported_assets": [],
         "quality_mode": False,
+        "quality_bypass": False,
         "delivery_notes": "",
     }
 

@@ -1529,6 +1529,22 @@ def save_document_profile(job_id, profile):
     return state
 
 
+def bypass_freeze(job_id, frozen_by="user"):
+    """快速模式跳过人工冻结：允许以 provisional 术语直接翻译（记录审计标记）。"""
+    state = load_job_state(job_id)
+    if state is None:
+        return None
+    state["quality_bypass"] = True
+    state.setdefault("human_actions", []).append({
+        "action": "bypass_freeze",
+        "note": "快速模式：跳过人工术语冻结，以 provisional 术语直接翻译",
+        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "actor": frozen_by,
+    })
+    save_job_state(job_id, state)
+    return state
+
+
 # ================= 阶段三：报告生成（Map-Reduce + 章节级断点）=================
 def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_key,
                         model, state, job_id, on_status=None):
@@ -1733,7 +1749,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     # ---------------- 高质量模式门禁：术语冻结后才能开始翻译 ----------------
     if mode == "quality":
         state["quality_mode"] = True
-        if not state.get("glossary_frozen"):
+        if not state.get("glossary_frozen") and not state.get("quality_bypass"):
             if on_status:
                 on_status("⏸ 高质量模式：等待人工术语审核与冻结（术语面板）...")
             msg = ("高质量模式：术语尚未冻结，翻译未开始。"
