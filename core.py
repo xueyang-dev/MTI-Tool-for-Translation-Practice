@@ -16,6 +16,8 @@ from docx import Document
 from google import genai
 from openai import OpenAI
 
+from mti_tool import state_migration as _state_migration
+
 # ================= 常量 =================
 # 任务进度与过程文件的本地存储目录（已加入 .gitignore）
 OUTPUT_DIR = Path("outputs")
@@ -1412,7 +1414,7 @@ def job_state_path(job_id):
 
 
 def new_job_state(filename):
-    return {
+    state = {
         "filename": filename,
         "p1_done": False,
         "p2_done": False,
@@ -1436,6 +1438,9 @@ def new_job_state(filename):
         "annotations_done": False,
         "annotations_done_offset": 0,
     }
+    # 术语治理 / 交付门禁新增字段（默认值集中在 state_migration，保持单一来源）
+    state.update(_state_migration._default_new_fields())
+    return state
 
 
 def load_job_state(job_id):
@@ -1443,9 +1448,10 @@ def load_job_state(job_id):
     if not p.is_file():
         return None
     try:
-        return json.loads(p.read_text(encoding="utf-8"))
+        raw = json.loads(p.read_text(encoding="utf-8"))
     except Exception:
         return None
+    return _state_migration.migrate_state(raw)
 
 
 def save_job_state(job_id, state):
@@ -1600,6 +1606,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     base = new_job_state(filename)
     state = load_job_state(job_id) or base
     state = {**base, **state}  # 兼容旧版本状态缺字段
+    state = _state_migration.migrate_state(state)
     state["report_enabled"] = bool(enable_report)
     warnings = state.setdefault("warnings", [])
 
@@ -1633,6 +1640,25 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         state["paras"] = paragraphs
         state["p1_done"] = True
         save_source(job_id, file_bytes)  # 留存源文件，刷新后无需重新上传
+        save_job_state(job_id, state)
+
+    # ---------------- 阶段 1.2：文档画像（分布式采样；失败仅警告，不阻断） ----------------
+    if not state.get("profile_done"):
+        if on_status:
+            on_status("【阶段1.2】文档画像（分布式采样 + 结构化校验）...")
+        from mti_tool.document_profile import profile_document
+        profile, profile_warnings = profile_document(
+            state["paras"], provider, api_key, model, target_lang)
+        state["document_profile"] = profile
+        state["profile_done"] = True
+        for w in profile_warnings:
+            if w not in warnings:
+                warnings.append(w)
+        if on_caption and profile:
+            on_caption(f"✅ 文档画像完成：领域「{profile.get('domain') or '未知'}」"
+                       f"· 文本类型「{profile.get('genre') or '未知'}」")
+        elif on_caption:
+            on_caption("⚠️ 文档画像失败，已跳过（可在 UI 中人工填写）。")
         save_job_state(job_id, state)
 
     # ---------------- 阶段 1.5：智能抽取术语 ----------------
