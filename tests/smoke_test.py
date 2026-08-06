@@ -165,6 +165,59 @@ def test_annotate_stage():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_annotation_filters():
+    # 常用词判定（含词形还原）
+    assert core._is_common_word("production")
+    assert core._is_common_word("grin")
+    assert core._is_common_word("rooster")
+    assert core._is_common_word("speedily"), "speedily 应还原为 speedy 判为常用"
+    assert core._is_common_word("grinning"), "grinning 应还原为 grin"
+    assert core._is_common_word("elementary")
+    assert not core._is_common_word("chicory")
+    assert not core._is_common_word("muezzin")
+
+    freq = {"chicory": 1, "grin": 20, "speedily": 2}
+    assert core._rare_ok("Chicory", freq)
+    assert not core._rare_ok("grin", freq), "常用词 + 高频出现都不算生僻"
+    assert not core._rare_ok("Production", freq)
+    assert not core._rare_ok("Speedily", freq), "speedily 是常用词 speedy 的副词形式"
+    assert not core._rare_ok("Elementary, my dear Watson", freq), "短语/名句不算生僻词"
+    assert not core._rare_ok("muezzin", {"muezzin": 20}), "全书反复出现不算生僻"
+
+    assert core._domain_ok("Spastic Bronchitis")
+    assert core._domain_ok("War of Attrition")
+    assert not core._domain_ok("Grandma Sarah and Grandpa Yaakov")
+    assert not core._domain_ok("Translation from Hebrew"), "全常用词短语不算专业名词"
+
+    # 术语表覆盖的 domain 不过滤（note 以"术语："开头）
+    pairs = [
+        {"source": "Compost is good for the soil. The chicory bloomed in spring.",
+         "target": "堆肥对土壤有益。春天菊苣开花了。"},
+        {"source": "Translation from Hebrew by the author.",
+         "target": "由作者自希伯来语译出。"},
+    ]
+    ann = {
+        0: [
+            {"type": "domain", "src_span": [0, 7], "tgt_span": [0, 2],
+             "note": "术语：Compost -> 堆肥"},
+            {"type": "rare", "src_span": [34, 41], "tgt_span": [13, 15],
+             "note": "生僻词"},
+            {"type": "rare", "src_span": [53, 59], "tgt_span": [19, 21],
+             "note": "滥标常用词"},
+        ],
+        1: [
+            {"type": "domain", "src_span": [0, 23], "tgt_span": [6, 9],
+             "note": "LLM 滥标"},
+        ],
+    }
+    cleaned = core._clean_annotations(ann, pairs)
+    types0 = [it["type"] for it in cleaned[0]]
+    assert types0 == ["domain", "rare"], types0  # 术语覆盖保留，chicory 保留，production 被挡
+    assert cleaned[0][0]["note"].startswith("术语：")
+    assert 1 not in cleaned, "全常用词短语 domain 应被过滤"
+    print("  ✓ 标注确定性过滤（常用词表/词形还原/称谓/全常用词短语/术语表豁免）")
+
+
 def test_termbase_parsing():
     buf = core.dict_to_excel({"MT": "机器翻译", "CAT": "计算机辅助翻译"})
     entries = core.normalize_glossary(core.parse_termbase(buf))
@@ -697,6 +750,7 @@ if __name__ == "__main__":
     test_find_span()
     test_compose_spans()
     test_annotate_stage()
+    test_annotation_filters()
     test_termbase_parsing()
     test_glossary_and_checks()
     test_batches()

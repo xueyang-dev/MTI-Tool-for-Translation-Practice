@@ -684,13 +684,134 @@ def review_translation_batch(sources, targets, glossary_text, style_rules, targe
 ANNOT_BATCH_SIZE = 10
 ANNOT_MAX_PER_SEG = {"rare": 3, "domain": 3, "hard": 2}
 
+# 常用英语词表（en_50k 字幕语料前 14000 词），用于把 LLM 滥标的"生僻词"挡回去
+_DATA_DIR = Path(__file__).resolve().parent / "data"
+_COMMON_WORDS = None
+
+
+def _common_words():
+    global _COMMON_WORDS
+    if _COMMON_WORDS is None:
+        try:
+            _COMMON_WORDS = set(
+                _DATA_DIR.joinpath("en_common.txt").read_text(encoding="utf-8").splitlines())
+        except OSError:
+            _COMMON_WORDS = set()
+    return _COMMON_WORDS
+
+
+_INFLECTION_SUFFIXES = (("ily", "y"), ("ness", ""), ("ment", ""), ("tion", ""),
+                        ("sion", ""), ("ing", ""), ("ed", ""), ("er", ""),
+                        ("est", ""), ("es", ""), ("ly", ""), ("s", ""))
+
+
+def _base_form(word):
+    """词形还原（一次）：grinning->grin、speedily->speedy、boxes->box。"""
+    w = word
+    for suffix, repl in _INFLECTION_SUFFIXES:
+        if w.endswith(suffix) and len(w) > len(suffix) + 2:
+            w = w[:-len(suffix)] + repl
+            break
+    if len(w) > 3 and w[-1] == w[-2] and w[-1] not in "eio":
+        w = w[:-1]  # grinning -> grinn -> grin
+    return w
+
+
+def _is_common_word(token):
+    """token 或其词形还原是否在常用词表内。"""
+    common = _common_words()
+    if not common:
+        return False
+    w = token.lower().strip('"\'(),;:!?')
+    if not w:
+        return True
+    if w in common:
+        return True
+    base = _base_form(w)
+    return base != w and base in common
+
+
+_KINSHIP_TITLE_RE = re.compile(
+    r"^(?:grandma|grandpa|grandmother|grandfather|aunt|uncle|mr|mrs|ms|dr|sir|lady|lord|"
+    r"mother|father|mom|dad|brother|sister|captain|colonel|major|general|rabbi|"
+    r"professor|doctor)\b", re.IGNORECASE)
+
+
+def _rare_ok(span_text, token_freq):
+    """生僻词门槛：单 token、非常用词（含词形还原）、全书出现次数少。"""
+    span = (span_text or "").strip()
+    if not span or " " in span or "\u00a0" in span:
+        return False  # 只接受单词（可带连字符），短语/名句一律不要
+    w = span.lower().strip('"\'(),;:!?')
+    if len(w) < 4:
+        return False
+    if _is_common_word(w):
+        return False
+    if token_freq.get(w, 0) >= 8:
+        return False  # 全书反复出现的词不算生僻
+    return True
+
+
+def _domain_ok(span_text):
+    """专业名词门槛：称谓+人名、全常用词短语不算专业名词。"""
+    span = (span_text or "").strip()
+    if not span:
+        return False
+    if _KINSHIP_TITLE_RE.match(span):
+        return False  # Grandma Sarah / Mr. Smith 之类
+    tokens = re.findall(r"[A-Za-z]+(?:['’\-][A-Za-z]+)*", span)
+    if not tokens:
+        return False
+    if all(_is_common_word(t) for t in tokens):
+        return False  # Translation from Hebrew 之类全是常用词
+    return True
+
+
+def _clean_annotations(annotations, pairs):
+    """过滤 + 去重 + 数量上限；术语表覆盖的 domain（note 以"术语："开头）不参与过滤。"""
+    token_freq = {}
+    for pr in pairs:
+        for tok in re.findall(r"[A-Za-z]+", pr["source"].lower()):
+            token_freq[tok] = token_freq.get(tok, 0) + 1
+    cleaned = {}
+    for gi, items in annotations.items():
+        gi = int(gi)  # JSON 落盘后键为字符串
+        src_text = pairs[gi]["source"]
+        seen, kept, counts = set(), [], {"rare": 0, "domain": 0, "hard": 0}
+        for it in items:
+            atype = it["type"]
+            s_span = it.get("src_span")
+            span_text = src_text[s_span[0]:s_span[1]] if s_span else ""
+            overlay = atype == "domain" and str(it.get("note", "")).startswith("术语：")
+            if atype == "rare" and not _rare_ok(span_text, token_freq):
+                continue
+            if atype == "domain" and not overlay and not _domain_ok(span_text):
+                continue
+            key = (atype, tuple(s_span) if s_span else None,
+                   tuple(it["tgt_span"]) if it.get("tgt_span") else None)
+            if key in seen:
+                continue
+            seen.add(key)
+            if counts[atype] >= ANNOT_MAX_PER_SEG[atype]:
+                continue
+            counts[atype] += 1
+            kept.append(it)
+        if kept:
+            cleaned[gi] = kept
+    return cleaned
+
 
 def _annotator_system(target_lang):
     return (f"你是一位翻译教学专家。请从下列{target_lang}双语对照中标注三类学习重点：\n"
-            "1. rare：生僻词/难词（原文用词生僻，或译文用词值得学习）；\n"
+            "1. rare：真正的生僻词/难词——英语母语者也未必认识的低频书面词，"
+            "如 chicory、muezzin、cacophony。只标注单个单词（最多一个带连字符的复合词）。\n"
+            "   严禁标注日常常用词（如 production、grin、rooster、speedily、elementary），"
+            "严禁标注短语、引用句或名句（如 'Elementary, my dear Watson'）。\n"
             "2. domain：专业领域名词，译文采用了专门/约定俗成的译法（如术语表、行话、专名译法）；\n"
+            "   严禁标注亲属称谓（如 Grandma Sarah）、全常用词短语（如 Translation from Hebrew）、"
+            "普通日常表达。\n"
             "3. hard：翻译难度高的句子，译文使用了特别翻译技巧（语序调整、词性转换、拆合句、"
-            "文化负载词处理、比喻/双关处理等）。\n"
+            "文化负载词处理、比喻/双关处理等）；普通直译句不要标注。\n"
             "规则：\n"
             "- 每个段落最多 2 个 rare、2 个 domain、1 个 hard；标注真正有价值的，宁缺毋滥；\n"
             "- src 必须是原文中的原文字符串，tgt 必须是对应译文中的字符串（hard 可以是整句/整段）；\n"
@@ -824,23 +945,8 @@ def annotate_stage(state, job_id, glossary, provider, api_key, model, target_lan
                  "tgt_span": list(tgt_span) if tgt_span else None,
                  "note": f"术语：{term} -> {tgt_term or '保留原文'}"})
 
-    # 3) 数量上限 + 去重
-    cleaned = {}
-    for gi, items in annotations.items():
-        seen, kept = set(), []
-        counts = {"rare": 0, "domain": 0, "hard": 0}
-        for it in items:
-            key = (it["type"], it["src_span"] and tuple(it["src_span"]),
-                   it["tgt_span"] and tuple(it["tgt_span"]))
-            if key in seen:
-                continue
-            seen.add(key)
-            if counts[it["type"]] >= ANNOT_MAX_PER_SEG[it["type"]]:
-                continue
-            counts[it["type"]] += 1
-            kept.append(it)
-        if kept:
-            cleaned[gi] = kept
+    # 3) 确定性过滤（常用词/称谓/全常用词短语）+ 去重 + 数量上限
+    cleaned = _clean_annotations(annotations, pairs)
     state["annotations"] = cleaned
     state["annotations_done"] = True
     state["annotations_failed_batches"] = failed_batches
