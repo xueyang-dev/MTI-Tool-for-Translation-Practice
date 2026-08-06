@@ -140,6 +140,9 @@ def is_rate_limited(err):
 # 句末终结符（用于判断段落是否未完结、需要与下一段合并）
 _SENTENCE_TERMINAL = set('.!?"”’…:;)')
 
+# 纯装饰符号行（章节分隔花饰等），无字母/数字，不是正文
+_ORNAMENT_RE = re.compile(r"^[\s*•·▪◦‣❦❧—–\-]{1,12}$")
+
 # 常见缩写（句点不计入句界）
 _ABBREV_RE = re.compile(
     r"\b(?:Lt|Col|Gen|Maj|Capt|Sgt|Brig|Mr|Mrs|Ms|Dr|St|No|Vol|pp|"
@@ -194,7 +197,8 @@ def extract_pdf_paragraphs(file_bytes):
         for lines in blocks:
             lines = [(t, x) for t, x in lines
                      if re.sub(r"\d+", "#", t.strip()) not in boilerplate
-                     and not re.fullmatch(r"\d{1,4}", t.strip())]
+                     and not re.fullmatch(r"\d{1,4}", t.strip())
+                     and not _ORNAMENT_RE.match(t.strip())]
             if not lines:
                 continue
             # 首行缩进 -> 新段落
@@ -231,7 +235,7 @@ def extract_pdf_paragraphs(file_bytes):
             merged[-1] = merged[-1] + " " + para
         else:
             merged.append(para)
-    return merged
+    return [p for p in merged if not _ORNAMENT_RE.match(p)]
 
 
 def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
@@ -569,6 +573,12 @@ def load_tm():
         except Exception:
             return {}
     return {}
+
+
+def _tm_eligible(source, target):
+    """翻译记忆资格：源文必须有字母/数字（纯符号装饰行不入库），译文非空。"""
+    return bool(re.search(r"[A-Za-z0-9\u4e00-\u9fff]", source or "")) \
+        and bool((target or "").strip())
 
 
 def save_tm(tm):
@@ -1014,6 +1024,10 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                 batch_pairs[i] = {"source": clean_src, "target": hit["target"],
                                   "reviewed": True, "from_tm": True}
                 state["tm_used_count"] = state.get("tm_used_count", 0) + 1
+            elif not re.search(r"[A-Za-z0-9\u4e00-\u9fff]", clean_src):
+                # 纯符号段落（章节分隔装饰等）：不是正文，原样保留，不调模型
+                batch_pairs[i] = {"source": clean_src, "target": clean_src,
+                                  "reviewed": True, "from_tm": False}
             else:
                 to_translate.append((i, clean_src))
 
@@ -1112,7 +1126,8 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
             for j, p in enumerate(batch_pairs):
                 seg_findings = [f for f in findings_all if f.get("segment_index") == offset + j
                                 and f["severity"] in ("blocking", "actionable")]
-                if not seg_findings and not p["from_tm"]:
+                if not seg_findings and not p["from_tm"] \
+                        and _tm_eligible(p["source"], p["target"]):
                     p["reviewed"] = True
                     tm[p["source"]] = {"target": p["target"], "reviewed": True}
                     stats["reviewed_segments"] += 1

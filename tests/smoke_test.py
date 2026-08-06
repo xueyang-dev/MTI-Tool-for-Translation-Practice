@@ -301,11 +301,13 @@ def _make_pdf():
     page.insert_text((indent_x, 100), "The quick brown fox jumps over the lazy dog while the kit-", fontsize=11)
     page.insert_text((body_x, 114), "ten slept on the mat, completely unaware of the world around", fontsize=11)
     page.insert_text((body_x, 128), "and humming a quiet tune that drifted softly through", fontsize=11)
+    page.insert_text((body_x, 160), "*", fontsize=11)  # 章节分隔装饰符
     page.insert_text((306, 780), "1", fontsize=9)
     page2 = doc.new_page()
     page2.insert_text((body_x, 72), "the empty rooms of the old house.", fontsize=11)
     page2.insert_text((indent_x, 100), '"What are you doing?" she asked, looking up from the book.', fontsize=11)
     page2.insert_text((indent_x, 128), '"Nothing much," he replied with a shrug.', fontsize=11)
+    page2.insert_text((body_x, 160), "* * *", fontsize=11)
     page2.insert_text((306, 780), "2", fontsize=9)
     buf = io.BytesIO(doc.tobytes())
     doc.close()
@@ -320,9 +322,50 @@ def test_pdf_extraction():
     assert any(p.startswith('"What are you doing?"') for p in paras), "对白应为独立段落"
     assert any(p.startswith('"Nothing much,"') for p in paras), "对白换段应保持独立"
     assert any("softly through the empty rooms" in p for p in paras), "跨页未完结段落应合并"
+    assert not any(p.strip() == "*" or p.strip() == "* * *" for p in paras), \
+        "纯符号装饰行（*）应被剔除"
     assert not any(p[:1].islower() for p in paras), "不应残留小写开头的碎句"
     assert "Chapter One" in joined
     print("  ✓ PDF 确定性段落提取（缩进分段/连字符/跨页合并/页码剔除/碎片兜底）")
+
+
+def test_symbol_segment_passthrough_and_tm_gate():
+    assert not core._tm_eligible("*", "我脸红了。")
+    assert not core._tm_eligible("— — —", "某某译文")
+    assert not core._tm_eligible("* * * *", "某某译文")
+    assert core._tm_eligible("I blushed.", "我脸红了。")
+    assert not core._tm_eligible("hello", "")
+
+    tmp = Path(tempfile.mkdtemp(prefix="mti-sym-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["这是第一段，内容足够长。", "* * * *", "这是第二段，内容足够长。"])
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "术语管理专家" in system_prompt:
+                return '[]'
+            if "翻译审校专家" in system_prompt:
+                return '[]'
+            if "学术翻译专家" in system_prompt:
+                return json.dumps([f"译文：{s}" for s, _ in _numbered_sources(user_prompt)])
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        state = core.run_job_pipeline(
+            "sy0000000000000001", "s.docx", docx_bytes,
+            provider="DeepSeek", api_key="k", model="deepseek-chat",
+            target_lang="简体中文", auto_term=False, enable_report=False,
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+        assert state["pairs"][1]["source"] == "* * * *"
+        assert state["pairs"][1]["target"] == "* * * *", "纯符号段应原样保留，不调模型"
+        tm = core.load_tm()
+        assert "* * * *" not in tm, "纯符号段不应进入翻译记忆"
+        assert len(tm) == 2, "只有两个真实段落入 TM"
+        print("  ✓ 纯符号段直通 + 翻译记忆资格门槛")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def test_completeness_check():
@@ -755,6 +798,7 @@ if __name__ == "__main__":
     test_glossary_and_checks()
     test_batches()
     test_pdf_extraction()
+    test_symbol_segment_passthrough_and_tm_gate()
     test_completeness_check()
     test_review_truncated_suggestion_rollback()
     test_job_store()
