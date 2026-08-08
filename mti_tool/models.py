@@ -356,11 +356,31 @@ def glossary_hash(entries: List[GlossaryEntry]) -> str:
     """由规范化后的冻结条目确定性生成哈希。
 
     相同条目、顺序不同 -> 相同哈希；任何条目内容变化 -> 哈希变化。
+    forbidden / evidence 列表顺序、无关空白、键顺序不进入语义哈希；
+    frozen_at / frozen_by / version 不属于条目内容，不参与哈希。
     """
-    norm = normalize_glossary(entries)
     # 按规范化内容排序实现顺序无关
-    canonical = sorted((_stable_json(e) for e in norm), key=lambda s: (len(s), s))
+    canonical = sorted(
+        (c for c in (_canonical_entry_json(e) for e in entries) if c is not None),
+        key=lambda s: (len(s), s))
     return hashlib.sha256(_stable_json(canonical).encode("utf-8")).hexdigest()
+
+
+def _canonical_entry_json(entry: Any) -> Optional[str]:
+    """条目 -> 语义稳定的规范化 JSON 字符串。
+
+    forbidden 排序、evidence 按稳定 JSON 排序、occurrences 已排序；
+    无关空白在 normalize 中剥离。用于 glossary_hash 与 entries_equal。
+    """
+    norm = normalize_glossary_entry(entry)
+    if norm is None:
+        return None
+    norm = dict(norm)
+    norm["forbidden"] = sorted(norm["forbidden"])
+    norm["evidence"] = sorted(
+        json.dumps(ev, ensure_ascii=False, sort_keys=True)
+        for ev in norm["evidence"])
+    return _stable_json(norm)
 
 
 def normalize_frozen_glossary(raw: Any) -> Optional[FrozenGlossary]:
@@ -397,8 +417,9 @@ def validate_frozen_glossary(fg: Optional[FrozenGlossary]) -> List[str]:
 def entries_equal(a: List[GlossaryEntry], b: List[GlossaryEntry]) -> bool:
     """按内容比较两组条目（忽略顺序），用于判断冻结后是否发生修改。"""
     def key(entries: List[GlossaryEntry]) -> List[str]:
-        return sorted((_stable_json(normalize_glossary_entry(e)) for e in entries),
-                      key=lambda s: (len(s), s))
+        return sorted(
+            (c for c in (_canonical_entry_json(e) for e in entries) if c is not None),
+            key=lambda s: (len(s), s))
     return key(a) == key(b)
 
 

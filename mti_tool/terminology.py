@@ -326,6 +326,76 @@ def glossary_to_terms(entries: List[models.GlossaryEntry]) -> Dict[str, str]:
             if e["behavior"] == "translate" and e["target"]}
 
 
+# ---------------- 术语表依赖失效（glossary staleness）----------------
+
+_SEMANTIC_FIELDS = ("source", "target", "preferred", "behavior", "status")
+
+
+def _semantic_entry_key(e: models.GlossaryEntry) -> str:
+    """术语决策的语义键：source/target/preferred/behavior/status + 排序后的 forbidden。"""
+    e = models.normalize_glossary_entry(e) or {}
+    payload = {k: e.get(k) for k in _SEMANTIC_FIELDS}
+    payload["forbidden"] = sorted(e.get("forbidden") or [])
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+
+
+def stale_segments_for_glossary(state: Dict[str, Any]) -> List[int]:
+    """返回受冻结术语表变更影响的 segment indexes（纯函数，不修改状态）。
+
+    规则：
+    - pair 记录了 glossary_hash_used 时：按注入 entry 的语义变化精确判定；
+    - 无记录（旧任务 / 快速模式）时：保守扫描“当前冻结中新增或收紧的
+      锁定/保留约束”是否命中本段原文；
+    - 语义未变化的术语不使段落失效（不做整本失效）。
+    """
+    pairs = state.get("pairs") or []
+    frozen = state.get("glossary_frozen") or {}
+    versions = [v for v in (state.get("glossary_versions") or [])
+                if isinstance(v, dict)]
+    current = models.normalize_glossary(frozen.get("entries") or [])
+    cur_by_source = {e["source"].casefold(): e for e in current}
+    ver_by_hash = {
+        v.get("glossary_hash"): models.normalize_glossary(v.get("entries") or [])
+        for v in versions
+    }
+    stale: List[int] = []
+    for i, p in enumerate(pairs):
+        used_hash = p.get("glossary_hash_used")
+        used = ver_by_hash.get(used_hash) if used_hash else None
+        used_by_source = {e["source"].casefold(): e for e in used} if used else {}
+        src = p.get("source") or ""
+        affected = False
+        if used is not None:
+            used_id_map = {e["id"]: e for e in used}
+            for uid in set(p.get("glossary_entry_ids") or []):
+                ue = used_id_map.get(uid)
+                if ue is None:
+                    continue
+                if not term_matches(ue["source"], src):
+                    continue  # 注入是批次级的；只有本段实际出现该术语才算依赖
+                ce = cur_by_source.get(ue["source"].casefold())
+                if ce is None:
+                    continue  # 约束被移除：不算失效
+                if _semantic_entry_key(ue) != _semantic_entry_key(ce):
+                    affected = True
+                    break
+        if not affected:
+            # 新增或收紧的约束命中本段原文 -> 失效
+            for key, ce in cur_by_source.items():
+                old = used_by_source.get(key)
+                old_enforced = bool(old and (old["behavior"] == "preserve"
+                                             or old["status"] == "locked"))
+                new_enforced = ce["behavior"] == "preserve" \
+                    or ce["status"] == "locked"
+                if new_enforced and not old_enforced \
+                        and term_matches(ce["source"], src):
+                    affected = True
+                    break
+        if affected:
+            stale.append(i)
+    return stale
+
+
 # ---------------- 术语 QA（entry_id / segment_id 级）----------------
 
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._\-]{1,}$")
@@ -339,11 +409,33 @@ def _preserve_severity(source: str) -> str:
     return "actionable"
 
 
+def _scope_applies(e: models.GlossaryEntry,
+                   segment_id: Optional[int],
+                   section_profile: Optional[Dict[str, Any]]) -> bool:
+    """条目 scope 是否适用于当前段落/批次。
+
+    - global / document / 空 scope：适用；
+    - section:<id>：需要 section_profile 匹配；
+    - segment:<id>：需要段号匹配；
+    - 未知 scope：保守不适用（避免跨范围误报）。
+    """
+    scope = (e.get("scope") or "").strip()
+    if not scope or scope in ("global", "document"):
+        return True
+    if scope.startswith("section:"):
+        return bool(section_profile) and \
+            section_profile.get("section_id") == scope[8:]
+    if scope.startswith("segment:"):
+        return segment_id is not None and str(segment_id) == scope[8:]
+    return False
+
+
 def check_glossary_compliance(
     src: str,
     tgt: str,
     glossary: List[models.GlossaryEntry],
     segment_id: Optional[int] = None,
+    section_profile: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """锁定术语的确定性合规检查（基于 entry_id + segment_id）。
 
@@ -354,6 +446,8 @@ def check_glossary_compliance(
     findings: List[Dict[str, Any]] = []
     for e in models.normalize_glossary(glossary):
         if e["status"] != "locked":
+            continue
+        if not _scope_applies(e, segment_id, section_profile):
             continue
         if e["behavior"] == "preserve":
             if term_matches(e["source"], src) and not term_matches(e["source"], tgt):
@@ -384,6 +478,7 @@ def check_glossary_compliance(
 def detect_glossary_conflicts(
     pairs: List[Dict[str, str]],
     glossary: List[models.GlossaryEntry],
+    sections: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """跨段扫描：同一 locked 术语在同一范围内出现多种译法时报告冲突。
 
@@ -394,6 +489,10 @@ def detect_glossary_conflicts(
     for e in models.normalize_glossary(glossary):
         if e["status"] != "locked" or e["behavior"] != "translate":
             continue
+        scope = (e.get("scope") or "").strip()
+        if scope.startswith("segment:"):
+            continue  # 单段条目不可能自身冲突
+        want_section = scope[8:] if scope.startswith("section:") else None
         preferred = e.get("preferred") or e.get("target")
         if not preferred:
             continue
@@ -402,6 +501,15 @@ def detect_glossary_conflicts(
             src, tgt = (p.get("source") or ""), (p.get("target") or "")
             if not term_matches(e["source"], src):
                 continue
+            if want_section is not None:
+                sec_id = None
+                for sec in sections or []:
+                    s, en = sec.get("start_segment"), sec.get("end_segment")
+                    if s is not None and en is not None and s <= i <= en:
+                        sec_id = sec.get("section_id")
+                        break
+                if sec_id != want_section:
+                    continue
             if preferred in tgt:
                 key = f"preferred:{preferred}"
             else:

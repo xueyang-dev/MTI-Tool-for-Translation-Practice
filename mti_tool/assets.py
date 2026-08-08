@@ -119,14 +119,22 @@ def validate_tbx(xml_bytes: bytes,
 # ---------------- TMX ----------------
 
 def tmx_eligible(state: Dict[str, Any], index: int, pair: Dict[str, Any]) -> bool:
-    """TMX 入库资格：审校通过，且该段无未解决的 blocking/actionable。"""
-    if not pair.get("reviewed"):
+    """TMX 入库资格：审校通过，且该段无未解决的 blocking/actionable。
+
+    accepted_for_delivery != trusted TM：
+    通过人工“接受风险 / 标记已修复”解决的 finding 不代表译文经审校验证，
+    该类段落不得进入 TMX final memory。stale 段同样排除。
+    """
+    if not pair.get("reviewed") or pair.get("stale_due_to_glossary"):
         return False
     for f in state.get("findings") or []:
-        if f.get("resolved"):
-            continue
         if f.get("segment_index") == index \
                 and f.get("severity") in ("blocking", "actionable"):
+            if f.get("resolved"):
+                res = f.get("resolution") or {}
+                if res.get("action") in ("accepted_risk", "human_fixed"):
+                    return False
+                continue
             return False
     return True
 

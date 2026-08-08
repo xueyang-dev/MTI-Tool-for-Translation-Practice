@@ -154,7 +154,11 @@ def retranslate_segments(
                                        style_rules, target_lang, provider, api_key,
                                        model)[0]
             tgt = core.clean_xml_chars(tgt).replace("\n", " ")
-            findings = core.check_translation_batch([src], [tgt], glossary, target_lang)
+            section_profile = core._batch_section_profile(
+                state.get("document_profile"), idx, 1)
+            findings = core.check_translation_batch(
+                [src], [tgt], glossary, target_lang,
+                section_profile=section_profile)
             fixable = [f for f in findings if f["severity"] in ("blocking", "actionable")]
             if fixable:
                 repaired = core.repair_batch([src], [tgt], fixable, glossary_text,

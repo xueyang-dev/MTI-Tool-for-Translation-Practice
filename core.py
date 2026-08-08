@@ -355,10 +355,12 @@ def glossary_to_terms(glossary):
             for e in glossary if e["behavior"] == "translate" and e["target"]}
 
 
-def check_glossary_compliance(src, tgt, glossary):
+def check_glossary_compliance(src, tgt, glossary, segment_id=None,
+                              section_profile=None):
     """锁定术语的确定性合规检查（委托 mti_tool.terminology：entry_id/segment_id 级）。"""
     from mti_tool.terminology import check_glossary_compliance as _qa
-    return _qa(src, tgt, glossary)
+    return _qa(src, tgt, glossary, segment_id=segment_id,
+               section_profile=section_profile)
 
 
 # ================= 确定性检查（对齐 localize-anything 的机械检查）=================
@@ -442,8 +444,9 @@ def is_incomplete_translation(src, tgt):
     return False
 
 
-def check_translation_batch(sources, targets, glossary, target_lang):
-    """确定性检查一批译文：空译、保留项丢失、源语残留、锁定术语合规。"""
+def check_translation_batch(sources, targets, glossary, target_lang,
+                            section_profile=None):
+    """确定性检查一批译文：空译、保留项丢失、源语残留、锁定术语合规（scope 感知）。"""
     findings = []
     for i, (src, tgt) in enumerate(zip(sources, targets)):
         if not tgt.strip():
@@ -465,7 +468,8 @@ def check_translation_batch(sources, targets, glossary, target_lang):
         for residual, sev in find_residuals(src, tgt, target_lang):
             findings.append({"segment_index": i, "type": "check", "severity": sev,
                              "reason": f"疑似残留源语片段「{residual}」"})
-        findings.extend(check_glossary_compliance(src, tgt, glossary))
+        findings.extend(check_glossary_compliance(
+            src, tgt, glossary, segment_id=i, section_profile=section_profile))
         for f in findings:
             if "segment_index" not in f:
                 f["segment_index"] = i
@@ -957,6 +961,11 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
     - 独立审校：actionable 建议经确定性复验后应用，blocking 记录给用户确认；
     - 翻译记忆：仅审校通过的段落入库，精确命中直接复用。
     """
+    # 高质量模式后端门禁：术语未冻结（且未显式跳过）时，任何入口都禁止开始翻译。
+    if state.get("quality_mode") and not state.get("glossary_frozen") \
+            and not state.get("quality_bypass"):
+        raise RuntimeError(
+            "高质量模式：术语尚未冻结，禁止开始翻译（请在术语审核面板冻结后继续）")
     tm = load_tm()
     paras = state["paras"]
     pairs = state["pairs"]
@@ -985,6 +994,8 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
         glossary_block as _glossary_block,
         select_glossary_for_segments as _select_glossary,
     )
+    frozen_hash = (state.get("glossary_frozen") or {}).get("glossary_hash")
+    sections = (document_profile or {}).get("sections") or []
 
     for bi in range(start_batch, len(batches)):
         batch = batches[bi]
@@ -1057,7 +1068,10 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
         batch_targets = [p["target"] for p in batch_pairs]
         for p in batch_pairs:
             p["glossary_entry_ids"] = list(injected_ids)
-        findings = check_translation_batch(batch_sources, batch_targets, glossary, target_lang)
+            p["glossary_hash_used"] = frozen_hash
+        findings = check_translation_batch(
+            batch_sources, batch_targets, glossary, target_lang,
+            section_profile=section_profile)
 
         # 3) 确定性问题自动修复（一轮）
         fixable = [f for f in findings if f["severity"] in ("blocking", "actionable")]
@@ -1077,7 +1091,9 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                                 continue
                             p["target"] = candidate
                 batch_targets = [p["target"] for p in batch_pairs]
-                findings = check_translation_batch(batch_sources, batch_targets, glossary, target_lang)
+                findings = check_translation_batch(
+                    batch_sources, batch_targets, glossary, target_lang,
+                    section_profile=section_profile)
             except Exception:
                 pass  # 修复失败则保留原译文与 finding
 
@@ -1105,7 +1121,8 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                         old_target = batch_pairs[idx]["target"]
                         batch_pairs[idx]["target"] = suggested
                         recheck = check_translation_batch(
-                            [batch_sources[idx]], [suggested], glossary, target_lang)
+                            [batch_sources[idx]], [suggested], glossary, target_lang,
+                            section_profile=section_profile)
                         if any(f["severity"] in ("blocking", "actionable") for f in recheck):
                             batch_pairs[idx]["target"] = old_target  # 复验不过则回滚
                             record["suggested_target"] = suggested
@@ -1115,10 +1132,11 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
 
         # 审校可能修改过译文：对最终译文整体复验一次确定性检查
         findings = check_translation_batch(
-            batch_sources, [p["target"] for p in batch_pairs], glossary, target_lang)
+            batch_sources, [p["target"] for p in batch_pairs], glossary, target_lang,
+            section_profile=section_profile)
 
         # 批内冲突检测（跨段同术语多译法）——在 TM 入库前执行
-        for cf in _detect_conflicts(batch_pairs, glossary):
+        for cf in _detect_conflicts(batch_pairs, glossary, sections=sections):
             cf["segment_index"] = offset + cf["segment_id"]
             findings_all.append(cf)
 
@@ -1148,7 +1166,7 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
     batch_conflict_keys = {(f.get("type"), f.get("entry_id"),
                             f.get("segment_index"), True)
                            for f in findings_all if f.get("conflict")}
-    for cf in _detect_conflicts(pairs, glossary):
+    for cf in _detect_conflicts(pairs, glossary, sections=sections):
         cf["segment_index"] = cf["segment_id"]
         key = (cf.get("type"), cf.get("entry_id"), cf.get("segment_index"), True)
         if key not in batch_conflict_keys:
@@ -1509,6 +1527,64 @@ def save_glossary_draft(job_id, entries):
     return state
 
 
+def _apply_glossary_staleness(state):
+    """把受冻结术语表变更影响的段落标记 stale，并清除其 TM 信任。
+
+    权威集合：每次调用都重新计算（先清旧标记/旧 stale finding，
+    再标记当前受影响段）。stale 段：
+    - stale_due_to_glossary = True，reviewed = False，from_tm = False；
+    - 追加 blocking finding（type=glossary_stale），交付回到 review_required；
+    - 从 translation_memory.json 中清除，防止后续任务精确命中旧译文。
+    """
+    from mti_tool import delivery as _delivery
+    from mti_tool.terminology import stale_segments_for_glossary
+
+    stale = stale_segments_for_glossary(state)
+    pairs = state.get("pairs") or []
+    for p in pairs:
+        p.pop("stale_due_to_glossary", None)
+    state["findings"] = [f for f in state.get("findings") or []
+                         if f.get("type") != "glossary_stale"]
+    if not stale:
+        return state, []
+
+    fg = state.get("glossary_frozen") or {}
+    for i in stale:
+        p = pairs[i]
+        p["stale_due_to_glossary"] = True
+        p["reviewed"] = False
+        p["from_tm"] = False
+        state["findings"].append({
+            "segment_index": i,
+            "severity": "blocking",
+            "type": "glossary_stale",
+            "entry_id": None,
+            "reason": f"冻结术语表已变更（当前 v{fg.get('version')}），本段需复核或重译",
+        })
+
+    # 受影响段不得继续作为可信翻译记忆
+    tm = load_tm()
+    dirty = False
+    for i in stale:
+        src = pairs[i]["source"]
+        if src in tm:
+            del tm[src]
+            dirty = True
+    if dirty:
+        save_tm(tm)
+
+    stats = state.setdefault("review_stats", {})
+    stats["blocking"] = sum(1 for f in state["findings"]
+                            if f["severity"] == "blocking")
+    stats["actionable"] = sum(1 for f in state["findings"]
+                              if f["severity"] == "actionable")
+    stats["informational"] = sum(1 for f in state["findings"]
+                                 if f["severity"] == "informational")
+    state["has_blocking"] = stats["blocking"] > 0
+    state["delivery_status"] = _delivery.compute_delivery_status(state)
+    return state, stale
+
+
 def set_glossary_entry_status(job_id, entry_ids, status):
     """批量修改术语状态（candidate/provisional/locked/rejected）。"""
     if status not in ("candidate", "provisional", "locked", "rejected"):
@@ -1528,17 +1604,28 @@ def freeze_glossary(job_id, entries=None, frozen_by="user"):
     """冻结术语表：生成新版本 + 确定性 glossary_hash。
 
     修改后再次冻结 -> 新版本追加到 glossary_versions，不悄悄覆盖旧冻结状态。
+    相同 canonical 内容再次冻结 -> 不创建新版本（幂等）。
+    冻结新版本后立即对已翻译段落执行术语依赖失效（stale 标记 + TM 清除）。
     """
     state = load_job_state(job_id)
     if state is None:
         return None
     norm = normalize_glossary(entries if entries is not None
                               else state.get("glossary") or [])
+    versions = state.get("glossary_versions") or []
+    if versions and isinstance(versions[-1], dict) \
+            and _models.entries_equal(versions[-1].get("entries") or [], norm):
+        # 相同内容：不创建新版本（决策 A），保持原 frozen 快照
+        state["glossary"] = norm
+        state["glossary_frozen"] = versions[-1]
+        state["stage"] = "GLOSSARY_FROZEN"
+        save_job_state(job_id, state)
+        return state
     source_hash = ""
     src = job_dir(job_id) / "source.bin"
     if src.is_file():
         source_hash = hashlib.sha256(src.read_bytes()).hexdigest()
-    version = len(state.get("glossary_versions") or []) + 1
+    version = len(versions) + 1
     frozen = {
         "version": version,
         "source_hash": source_hash,
@@ -1549,10 +1636,13 @@ def freeze_glossary(job_id, entries=None, frozen_by="user"):
     }
     state["glossary"] = norm
     state["glossary_frozen"] = frozen
-    state.setdefault("glossary_versions", []).append(frozen)
+    versions.append(frozen)
+    state["glossary_versions"] = versions
     state["stage"] = "GLOSSARY_FROZEN"
     if state.get("delivery_status") not in ("approved", "final"):
         state["delivery_status"] = "draft"
+    # 术语决策变化 -> 立即失效受影响段落
+    _apply_glossary_staleness(state)
     save_job_state(job_id, state)
     return state
 
@@ -1751,6 +1841,12 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     state = _state_migration.migrate_state(state)
     state["report_enabled"] = bool(enable_report)
     warnings = state.setdefault("warnings", [])
+
+    # 术语依赖失效：必须在“全部完成”早退之前执行，
+    # 否则冻结术语表变更后的旧译文会继续以 reviewed/final/TM 状态存在。
+    state, stale_segs = _apply_glossary_staleness(state)
+    if stale_segs:
+        save_job_state(job_id, state)
 
     # 全部完成 -> 直接返回
     if state["p1_done"] and state["p2_done"] and (not enable_report or state["p3_done"]) \
