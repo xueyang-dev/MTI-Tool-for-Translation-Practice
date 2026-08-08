@@ -82,6 +82,8 @@ def main():
     ap.add_argument("--no-report", action="store_true", help="不生成实践报告（默认生成）")
     ap.add_argument("--no-annotate", action="store_true",
                     help="关闭三色自动标注（生僻词/专业名词/难点句高亮，默认开启）")
+    ap.add_argument("--quality", action="store_true",
+                    help="高质量模式：术语审核冻结后才能开始翻译（默认快速模式）")
     ap.add_argument("--job-id", default=None, help="续跑指定任务 ID（跳过自动计算）")
     args = ap.parse_args()
 
@@ -118,6 +120,7 @@ def main():
                                       "引用标注、URL 保留原文；标点遵循中文规范。",
         enable_review=not args.no_review,
         enable_annotate=not args.no_annotate,
+        mode="quality" if args.quality else "quick",
         on_status=on_status, on_caption=on_caption,
     )
 

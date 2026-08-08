@@ -15,6 +15,7 @@ import streamlit as st
 import core
 from mti_tool import assets as _assets
 from mti_tool import delivery as _delivery
+from mti_tool import report_evidence as _report_evidence
 
 # ================= 页面全局设置 =================
 st.set_page_config(page_title="MTI 翻译实践小助手", page_icon="🎓", layout="wide")
@@ -531,6 +532,13 @@ if saved_jobs_after:
                         file_name=f"{_asset_prefix(state)}delivery_manifest_{filename}.json",
                         mime="application/json", key=f"mf_{job['job_id']}",
                         use_container_width=True)
+                st.download_button(
+                    "🧾 案例证据包 (.jsonl)",
+                    _report_evidence.export_segment_evidence_jsonl(
+                        state, job["job_id"]).encode("utf-8"),
+                    file_name=f"{_asset_prefix(state)}segment_evidence_{filename}.jsonl",
+                    mime="application/x-jsonlines",
+                    key=f"ev_{job['job_id']}", use_container_width=True)
                 unresolved = _delivery.unresolved_findings(state)
                 if dstatus == "review_required" and unresolved:
                     chosen = []
@@ -586,6 +594,7 @@ if saved_jobs_after:
 
             if state.get("p3_md"):
                 st.markdown(state["p3_md"])
+                st.caption("⚠️ 报告为 AI 生成初稿：案例需对照双语表逐条人工核查后再使用。")
 
             if st.button("🗑 删除该任务及本地进度", key=f"del_{job['job_id']}"):
                 core.delete_job(job["job_id"])

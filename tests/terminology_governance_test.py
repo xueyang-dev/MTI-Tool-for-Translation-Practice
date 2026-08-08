@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import core
 from mti_tool import document_profile, models, state_migration, terminology
 from mti_tool import assets, delivery
+from mti_tool import report_evidence
 
 
 def test_document_profile_normalize_validate():
@@ -933,6 +934,129 @@ def test_export_all_assets():
     print("  ✓ export_all：四类标准资产 + 全部校验通过")
 
 
+def test_segment_evidence_bundle():
+    state = core.new_job_state("ev.pdf")
+    fg = models.normalize_frozen_glossary({
+        "version": 1, "source_hash": "h",
+        "entries": [{"source": "Term X", "target": "术语X", "status": "locked"}],
+        "frozen_at": "2026-08-06T00:00:00", "frozen_by": "u"})
+    state.update(
+        pairs=[
+            {"source": "Term X appears here.", "target": "最终译文。",
+             "initial_target": "初译版本。", "reviewed": True, "from_tm": False,
+             "glossary_entry_ids": [fg["entries"][0]["id"]]},
+        ],
+        findings=[
+            {"segment_index": 0, "type": "check", "severity": "actionable",
+             "reason": "残留", "entry_id": fg["entries"][0]["id"]},
+            {"segment_index": 0, "type": "review", "severity": "actionable",
+             "reason": "建议调整", "suggested_target": "建议译文"},
+        ],
+        human_actions=[
+            {"finding_id": "segment:0", "action": "retranslated",
+             "note": "人工重译", "timestamp": "2026-08-06T00:00:00"},
+        ],
+        glossary_frozen=fg,
+        delivery_status="draft",
+    )
+    ev = report_evidence.build_segment_evidence(state, "ev0000000000000001", 0)
+    assert ev["available"] is True
+    assert ev["segment_id"] == "seg-ev0000000000000001-0000"
+    assert ev["source"] == "Term X appears here.", "原文必须逐字来自任务状态"
+    assert ev["final_target"] == "最终译文。"
+    assert ev["initial_target"] == "初译版本。"
+    assert ev["glossary_decisions"]["injected_entry_ids"] == [fg["entries"][0]["id"]]
+    assert ev["glossary_decisions"]["frozen_glossary_hash"] == fg["glossary_hash"]
+    assert ev["deterministic_findings"][0]["reason"] == "残留"
+    assert ev["review_findings"][0]["suggested_target"] == "建议译文"
+    assert ev["repair_history"][0]["suggested_target"] == "建议译文"
+    assert ev["human_actions"][0]["action"] == "retranslated"
+    # 越界段 -> available False
+    assert report_evidence.build_segment_evidence(state, "ev", 99)["available"] is False
+    # JSONL 导出：行数 = 段落数
+    text = report_evidence.export_segment_evidence_jsonl(
+        state, "ev0000000000000001")
+    assert len(text.splitlines()) == 1
+    print("  ✓ 段落证据包（segment_id/原文逐字/初译/术语决策/发现/修复/人工记录）")
+
+
+def test_report_prompt_evidence_contract():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-rep-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["The Skopos theory 是核心概念。",
+                                 "第二段也足够长以通过检查。"])
+        report_prompts = []
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "MTI（翻译硕士）导师" in system_prompt:
+                report_prompts.append((system_prompt, user_prompt))
+                return "## 章节内容\n\n案例 [seg-x-0000] 展示……"
+            if "翻译审校专家" in system_prompt:
+                return '[]'
+            if "学术翻译专家" in system_prompt:
+                return json.dumps([f"译文：{s}" for _, s in _numbered(user_prompt)])
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        state = core.run_job_pipeline(
+            "rp000000000000001", "r.docx", docx_bytes,
+            provider="DeepSeek", api_key="k", model="deepseek-chat",
+            target_lang="简体中文", auto_term=False, enable_report=True,
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[],
+            mode="quick")
+        assert report_prompts, "报告应被调用"
+        sys_prompt = report_prompts[0][0]
+        assert "segment_id" in sys_prompt and "从结果看" in sys_prompt
+        assert "不得改写后冒充" in sys_prompt and "证据不足" in sys_prompt
+        assert "初稿" in sys_prompt
+        all_user = "\n".join(up for _, up in report_prompts)
+        assert "[seg-rp000000000000001-0000]" in all_user, \
+            "语料证据必须带真实 segment_id"
+        assert "The Skopos theory 是核心概念。" in all_user, \
+            "原文必须逐字来自任务状态"
+        assert state["p3_done"] and state["p3_md"].count("## ") >= 4
+        print("  ✓ 报告 prompt 证据规约（segment_id/逐字原文/防冒充/初稿声明）")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_initial_target_recorded():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-init-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["请参考 https://example.com/ref 获取详细信息。"])
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "术语管理专家" in system_prompt:
+                return '[]'
+            if "翻译审校专家" in system_prompt:
+                return '[]'
+            if "学术翻译专家" in system_prompt:
+                if "以下译文未通过检查" in user_prompt:
+                    return json.dumps(["修正译文：请参考 https://example.com/ref 获取详细信息。"])
+                return json.dumps(["初译译文：请参考 获取详细信息。"])  # 故意丢失 URL
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        state = core.run_job_pipeline(
+            "in0000000000000002", "i.docx", docx_bytes,
+            provider="DeepSeek", api_key="k", model="deepseek-chat",
+            target_lang="简体中文", auto_term=False, enable_report=False,
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+        pair = state["pairs"][0]
+        assert pair["initial_target"] == "初译译文：请参考 获取详细信息。"
+        assert "https://example.com/ref" in pair["target"], "修复后的最终译文应含 URL"
+        assert pair["initial_target"] != pair["target"]
+        print("  ✓ initial_target 记录（初译 -> 修复后最终译文可追溯）")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("术语治理测试（模型/迁移/画像/术语候选）：")
     test_document_profile_normalize_validate()
@@ -961,4 +1085,7 @@ if __name__ == "__main__":
     test_jsonl_count_and_fields()
     test_manifest_matches_state()
     test_export_all_assets()
+    test_segment_evidence_bundle()
+    test_report_prompt_evidence_contract()
+    test_initial_target_recorded()
     print("\n全部通过 ✅")

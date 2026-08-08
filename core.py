@@ -1005,11 +1005,13 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
             hit = tm.get(clean_src)
             if hit and hit.get("reviewed") and hit.get("target"):
                 batch_pairs[i] = {"source": clean_src, "target": hit["target"],
+                                  "initial_target": hit["target"],
                                   "reviewed": True, "from_tm": True}
                 state["tm_used_count"] = state.get("tm_used_count", 0) + 1
             elif not re.search(r"[A-Za-z0-9\u4e00-\u9fff]", clean_src):
                 # 纯符号段落（章节分隔装饰等）：不是正文，原样保留，不调模型
                 batch_pairs[i] = {"source": clean_src, "target": clean_src,
+                                  "initial_target": clean_src,
                                   "reviewed": True, "from_tm": False}
             else:
                 to_translate.append((i, clean_src))
@@ -1046,7 +1048,9 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                                                    style_rules, target_lang, provider,
                                                    api_key, model)[0])
             for (i, src), tgt in zip(to_translate, targets):
-                batch_pairs[i] = {"source": src, "target": clean_xml_chars(tgt).replace('\n', ' '),
+                cleaned_tgt = clean_xml_chars(tgt).replace('\n', ' ')
+                batch_pairs[i] = {"source": src, "target": cleaned_tgt,
+                                  "initial_target": cleaned_tgt,
                                   "reviewed": False, "from_tm": False}
 
         batch_sources = [p["source"] for p in batch_pairs]
@@ -1623,15 +1627,13 @@ def delivery_status_label(state):
 # ================= 阶段三：报告生成（Map-Reduce + 章节级断点）=================
 def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_key,
                         model, state, job_id, on_status=None):
-    """四段式报告生成；每个章节完成后立即落盘，中途失败可从已完成的章节续写。"""
-    sample_texts = ""
-    char_count = 0
-    for pair in bilingual_pairs:
-        chunk = f"【原文】{pair['source']}\n【译文】{pair['target']}\n\n"
-        sample_texts += chunk
-        char_count += len(chunk)
-        if char_count > 8000:
-            break
+    """四段式报告生成（证据化）；每个章节完成后立即落盘，中途失败可续写。
+
+    语料证据来自任务状态（含真实 segment_id 与逐字原文/译文），
+    prompt 规约禁止模型改写原文冒充、禁止宣称译者真实意图。
+    """
+    from mti_tool.report_evidence import evidence_text_block
+    sample_texts = evidence_text_block(state, job_id)
 
     term_str = "\n".join(f"{k} -> {v}" for k, v in termbase_dict.items()) if termbase_dict else "无术语提取"
 
@@ -1653,9 +1655,12 @@ def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_ke
         (
             f"三、 基于【{theory}】的案例分析",
             f"这是本报告的最核心章节。请基于以下双语语料样本和【{theory}】的理论框架，撰写报告的【第三部分】。\n"
-            f"要求：精准抽取 4-5 个最具代表性的长难句或特殊表达案例。每个案例必须独立成段并包含：\n"
+            f"要求：精准抽取 4-5 个最具代表性的长难句或特殊表达案例。"
+            f"每个案例必须标注其真实 segment_id（形如 [seg-<job>-0000]，"
+            f"只准使用语料证据中出现的编号），并独立成段包含：\n"
             f"1. 原译文对照\n2. 翻译难点深度剖析\n"
-            f"3. 严谨的学理分析（明确指出具体的翻译技巧，并用【{theory}】的核心概念论证“为何如此翻译”）。\n"
+            f"3. 严谨的学理分析（从结果看可解释为哪种翻译技巧，并用【{theory}】的"
+            f"核心概念论证“为何可以如此翻译”；不得宣称技巧是译者的真实意图）。\n"
             f"本部分字数要求不少于 1500 字，必须极具学术深度。\n\n语料样本：\n{sample_texts}"
         ),
         (
@@ -1666,7 +1671,14 @@ def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_ke
         ),
     ]
     base_system_prompt = "你是一位拥有深厚学术背景的 MTI（翻译硕士）导师及资深学术期刊审稿人。" \
-                         "请严格使用学术书面语，逻辑严密，杜绝任何 AI 常见的口语化或套话表达。"
+                         "请严格使用学术书面语，逻辑严密，杜绝任何 AI 常见的口语化或套话表达。\n" \
+                         "【报告写作规约（必须遵守）】：\n" \
+                         "1. 案例分析必须引用真实 segment_id（如 [seg-xxx-0000]），不得编造编号；\n" \
+                         "2. 引用原文/译文必须逐字来自语料证据，不得改写后冒充原译文；\n" \
+                         "3. 讨论翻译技巧时不得宣称是译者（或模型）的真实意图，只能表述为" \
+                         "“从结果看，该译文可解释为……”；\n" \
+                         "4. 找不到足够证据时，明确写“证据不足”，不要编造细节；\n" \
+                         "5. 本报告是初稿，供人工核查后使用。"
 
     valid_titles = {title for title, _ in prompts}
     sections = [s for s in state.get("p3_sections", []) if s and s[0] in valid_titles]
