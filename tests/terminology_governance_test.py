@@ -1057,6 +1057,64 @@ def test_initial_target_recorded():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_evidence_provider_interface():
+    # 默认离线：noop provider 不发起调用
+    provider = terminology.get_provider("noop")
+    assert provider.fetch_evidence("Skopos") == []
+    # 未知 provider 回退 noop，保证无网络也正常工作
+    assert terminology.get_provider("不存在的服务").fetch_evidence("x") == []
+
+    class FakeExternal(terminology.TermEvidenceProvider):
+        name = "fake-external"
+
+        def fetch_evidence(self, term, domain=""):
+            return [{
+                "evidence_type": "external",
+                "source_name": "termbase.io",
+                "url": f"https://termbase.io/term/{term}",
+                "note": "真实来源返回",
+                "confidence": 0.9,
+            }]
+
+    evs = FakeExternal().fetch_evidence("Skopos")
+    assert len(evs) == 1
+    norm = models.normalize_evidence(evs[0])
+    assert norm["evidence_type"] == "external" and norm["url"], \
+        "真实 provider 返回的来源可保存 URL"
+    assert models.validate_evidence(norm) == []
+    print("  ✓ external evidence provider 接口（预留）+ 离线回退")
+
+
+def test_unfreeze_back_to_edit():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-unfreeze-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        jid = "uf0000000000000001"
+        state = core.new_job_state("u.docx")
+        state["glossary"] = models.normalize_glossary(
+            [{"source": "Term X", "target": "术语X"}])
+        core.save_job_state(jid, state)
+        frozen = core.freeze_glossary(jid, frozen_by="用户")
+        assert frozen["glossary_frozen"] is not None
+        assert len(frozen["glossary_versions"]) == 1
+        # 返回修改：解除冻结但保留条目与版本历史
+        back = core.unfreeze_glossary(jid)
+        assert back["glossary_frozen"] is None
+        assert back["stage"] == "TERMS_PREPARED"
+        assert len(back["glossary_versions"]) == 1
+        assert back["glossary"][0]["source"] == "Term X"
+        # 翻译开始后不允许解除冻结
+        refrozen = core.freeze_glossary(jid, frozen_by="用户")
+        refrozen["p2_done"] = True
+        core.save_job_state(jid, refrozen)
+        assert core.unfreeze_glossary(jid)["glossary_frozen"] is not None
+        print("  ✓ 返回修改（解除冻结 -> TERMS_PREPARED，版本历史保留）")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("术语治理测试（模型/迁移/画像/术语候选）：")
     test_document_profile_normalize_validate()
@@ -1088,4 +1146,6 @@ if __name__ == "__main__":
     test_segment_evidence_bundle()
     test_report_prompt_evidence_contract()
     test_initial_target_recorded()
+    test_evidence_provider_interface()
+    test_unfreeze_back_to_edit()
     print("\n全部通过 ✅")

@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import re
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from . import models
 from .document_profile import distributed_sample
@@ -45,6 +45,42 @@ def term_matches(term: str, text: str) -> bool:
 def find_occurrences(term: str, paragraphs: List[str]) -> List[int]:
     """返回术语在全部段落中的 segment_id 列表（不是只记第一次出现）。"""
     return [i for i, p in enumerate(paragraphs) if term_matches(term, p)]
+
+
+# ---------------- 外部证据 provider 接口（预留，默认不接入网络）----------------
+
+class TermEvidenceProvider(Protocol):
+    """真实外部证据 provider 接口（预留）。
+
+    当前版本不要求接入真实搜索服务，默认在无网络/无搜索 API 下正常工作
+    （NoopEvidenceProvider）。接入真实 provider 时：
+    - fetch_evidence 必须返回带真实 url 的 external 证据（url 由来源返回，
+      绝不允许模型自行编造）；
+    - 无法获取来源时返回 []（normalize_evidence 会把无 url 的 external
+      自动降级为 model_knowledge）。
+    """
+
+    name: str
+
+    def fetch_evidence(self, term: str,
+                       domain: str = "") -> List[models.TermEvidence]:
+        ...
+
+
+class NoopEvidenceProvider:
+    """默认空 provider：不发起任何网络/API 调用。"""
+
+    name = "noop"
+
+    def fetch_evidence(self, term: str,
+                       domain: str = "") -> List[models.TermEvidence]:
+        return []
+
+
+def get_provider(name: str = "noop") -> TermEvidenceProvider:
+    """按名称获取 provider（未注册/未知名称一律回退到 noop，保证离线可用）。"""
+    providers = {"noop": NoopEvidenceProvider()}
+    return providers.get(name, providers["noop"])
 
 
 # ---------------- 自动抽取 ----------------

@@ -1557,6 +1557,22 @@ def freeze_glossary(job_id, entries=None, frozen_by="user"):
     return state
 
 
+def unfreeze_glossary(job_id):
+    """返回修改：解除冻结（翻译开始前），回到 TERMS_PREPARED；旧冻结版本保留。"""
+    state = load_job_state(job_id)
+    if state is None:
+        return None
+    if state.get("p2_done"):
+        # 翻译已开始：不允许解除冻结，只能生成新版本（见 freeze_glossary）
+        return state
+    state["glossary_frozen"] = None
+    state["stage"] = "TERMS_PREPARED"
+    if state.get("delivery_status") not in ("approved", "final"):
+        state["delivery_status"] = "draft"
+    save_job_state(job_id, state)
+    return state
+
+
 def save_document_profile(job_id, profile):
     """人工填写/修改文档画像后保存。"""
     state = load_job_state(job_id)

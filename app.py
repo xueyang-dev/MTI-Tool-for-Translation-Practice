@@ -429,6 +429,11 @@ if active:
                      key=f"gt_{active}", use_container_width=True):
             st.session_state["pending_continue_job"] = active
             st.rerun()
+        if frozen and not bypassed:
+            if st.button("↩️ 返回修改（解除冻结）", key=f"gu_{active}",
+                         use_container_width=True):
+                core.unfreeze_glossary(active)
+                st.rerun()
         if not frozen and not bypassed:
             st.caption("⛔ 翻译未开始：请先「冻结术语表并继续翻译」，"
                        "或选择跳过冻结（快速模式）。")
