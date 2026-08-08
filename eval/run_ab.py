@@ -206,6 +206,76 @@ def export_glossary_from_job(job_id: str, lock: bool, out_path: Path) -> Path:
     return out_path
 
 
+# ---------------- 共享收尾（指标 / 增量 / 盲评包 / 报告）----------------
+
+def load_existing_runs(out_dir: Path):
+    """从已有 out_dir/runs/<arm>/<job>/state.json 恢复运行结果（report-only）。"""
+    states: Dict[str, Dict[str, Any]] = {}
+    metas: Dict[str, Dict[str, Any]] = {}
+    for arm in ("A", "B", "C", "D"):
+        meta_p = out_dir / "runs" / arm / "run_meta.json"
+        if not meta_p.is_file():
+            continue
+        meta = json.loads(meta_p.read_text(encoding="utf-8"))
+        job = meta.get("job_id")
+        sp = (out_dir / "runs" / arm / job / "state.json") if job else None
+        if sp is not None and sp.is_file():
+            states[arm] = json.loads(sp.read_text(encoding="utf-8"))
+            metas[arm] = meta
+    return states, metas
+
+
+def _metrics_for_states(states: Dict[str, Dict[str, Any]],
+                        glossary_entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    runs: Dict[str, Any] = {}
+    for arm, state in states.items():
+        runs[arm] = {
+            "terminology": terminology.compute_terminology_metrics(
+                state, glossary_entries),
+            "qa": qa_density.compute_qa_density(state),
+            "workflow": workflow.compute_workflow_metrics(state),
+        }
+    return runs
+
+
+def _finalize(out_dir: Path, states: Dict[str, Dict[str, Any]],
+              segments: List[str] | None,
+              glossary_entries: List[Dict[str, Any]],
+              meta: Dict[str, Any], seed: int) -> Dict[str, Any]:
+    """共享收尾：指标 -> 增量 -> 盲评包 -> JSON/CSV/MD。"""
+    runs = _metrics_for_states(states, glossary_entries)
+    delta_pairs = ["A_to_B", "A_to_C", "B_to_D", "A_to_D"]
+    deltas = aggregate.compute_deltas(runs, delta_pairs)
+    packet_rows, key_rows = [], []
+    packet_path = None
+    if segments and "A" in states and "B" in states:
+        packet_rows, key_rows = blind_review.sample_packet(
+            states["A"], states["B"], segments, glossary_entries, seed=seed)
+        packet_path, _key_path = blind_review.write_packet(
+            packet_rows, key_rows, out_dir / "blind_review")
+        print(f"盲评抽样包：{packet_path}（{len(packet_rows)} 段；"
+              f"key 文件 local-only）")
+    report = aggregate.build_report(
+        meta={**meta, "created_at":
+              datetime.now(timezone.utc).isoformat(timespec="seconds")},
+        runs=runs,
+        deltas=deltas,
+        human_review={
+            "status": "pending",
+            "packet": str(packet_path) if packet_path else None,
+            "segments": len(packet_rows),
+            "note": "blind review：Candidate A/B 随机映射，key 文件 local-only",
+        },
+    )
+    json_path = json_report.write_json_report(report, out_dir)
+    csv_report.write_terms_csv(runs, out_dir)
+    csv_report.write_findings_csv(states, out_dir)
+    md_path = markdown_report.write_markdown_report(report, out_dir)
+    print(f"\n✅ evaluation-report.json -> {json_path}")
+    print(f"   markdown -> {md_path}")
+    return report
+
+
 # ---------------- 主流程 ----------------
 
 def main(argv=None) -> int:
@@ -217,6 +287,9 @@ def main(argv=None) -> int:
     ap.add_argument("--corpus-override", default=None,
                     help="离线自测：跳过 outputs 语料构建，使用给定 corpus.docx"
                          "（同目录需有 corpus.jsonl / corpus_meta.json）")
+    ap.add_argument("--report-only", action="store_true",
+                    help="不运行任何臂：从已有 out_dir/runs/* 重算指标/报告/盲评包"
+                         "（用于修指标后复用已跑结果，不再消耗 API）")
     ap.add_argument("--glossary-from-job", default=None,
                     help="从 outputs/<job>/auto_terms 导出术语表（local-only）")
     ap.add_argument("--lock", action="store_true",
@@ -233,7 +306,7 @@ def main(argv=None) -> int:
             start, end = (int(x) for x in args.segments.split(":"))
             cfg["corpus"]["subset"] = [start, end]
     out_dir = Path(args.out or cfg.get("out_dir") or
-                   f"eval/results/{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+                   f"eval/results/{datetime.now().strftime('%Y%m%d-%H%M%S')}").resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print(eval_config.describe_run_matrix(arms))
@@ -241,8 +314,9 @@ def main(argv=None) -> int:
 
     # 术语表
     if args.glossary_from_job:
-        glossary_file = out_dir / "glossary_eval.json"
+        glossary_file = (out_dir / "glossary_eval.json").resolve()
         export_glossary_from_job(args.glossary_from_job, args.lock, glossary_file)
+        cfg["glossary"] = str(glossary_file)
         print(f"术语表已从历史任务导出（auto_locked={args.lock}）：{glossary_file}")
     else:
         glossary_file = Path(cfg["glossary"])
@@ -251,16 +325,42 @@ def main(argv=None) -> int:
                 f"术语表不存在：{glossary_file}；可用 --glossary-from-job <job> [--lock] 导出")
     glossary_entries = eval_config.resolve_glossary_entries(cfg)
 
+    if args.report_only:
+        print("report-only：复用已有运行结果重算指标与报告")
+        states, metas = load_existing_runs(out_dir)
+        if not states:
+            raise RuntimeError(f"{out_dir / 'runs'} 中没有可用的运行结果")
+        segments = load_corpus_segments(out_dir) \
+            if (out_dir / "corpus.jsonl").is_file() else None
+        corpus_meta = {}
+        cm_path = out_dir / "corpus_meta.json"
+        if cm_path.is_file():
+            corpus_meta = json.loads(cm_path.read_text(encoding="utf-8"))
+        meta = {
+            "baseline_ref": cfg["code"]["baseline_ref"],
+            "current_ref": {a: m.get("code_ref") for a, m in metas.items()},
+            "corpus": corpus_meta,
+            "glossary": str(glossary_file),
+            "glossary_auto_locked": args.lock,
+            "tm_seed": cfg.get("tm_seed"),
+            "run": cfg["run"],
+            "mock": args.mock,
+            "recomputed": True,
+        }
+        _finalize(out_dir, states, segments, glossary_entries, meta,
+                  seed=cfg.get("seed", 42))
+        return 0
+
     # 语料
     if args.corpus_override:
-        corpus_docx = Path(args.corpus_override)
+        corpus_docx = Path(args.corpus_override).resolve()
         corpus_meta = json.loads(
             (corpus_docx.parent / "corpus_meta.json").read_text(encoding="utf-8"))
         segments = load_corpus_segments(corpus_docx.parent)
     else:
         corpus_meta = build_corpus(cfg["corpus"]["job_id"],
                                    cfg["corpus"]["subset"], out_dir)
-        corpus_docx = out_dir / "corpus.docx"
+        corpus_docx = (out_dir / "corpus.docx").resolve()
         segments = load_corpus_segments(out_dir)
     print(f"语料：{corpus_meta['filename']} · "
           f"选段 {corpus_meta['selected_segments']}/{corpus_meta['full_segments']} · "
@@ -276,11 +376,10 @@ def main(argv=None) -> int:
     baseline_wt = ensure_baseline_worktree(baseline_ref)
     current_ref = _git_head(ROOT)
     api_key = os.environ.get("MTI_EVAL_API_KEY", "")
-    tm_seed = Path(cfg["tm_seed"]) if cfg.get("tm_seed") else None
+    tm_seed = Path(cfg["tm_seed"]).resolve() if cfg.get("tm_seed") else None
     if tm_seed is not None and not tm_seed.is_file():
         raise FileNotFoundError(f"TM 种子不存在：{tm_seed}")
 
-    runs: Dict[str, Dict[str, Any]] = {}
     states: Dict[str, Dict[str, Any]] = {}
     for arm in arms:
         code_root = baseline_wt if arm in ("A", "C") else ROOT
@@ -302,55 +401,19 @@ def main(argv=None) -> int:
         print(f"  完成：segments={run_meta.get('segments')} "
               f"llm_calls={run_meta.get('llm_calls')} "
               f"elapsed={run_meta.get('elapsed_s')}s")
-        runs[arm] = {
-            "terminology": terminology.compute_terminology_metrics(
-                states[arm], glossary_entries),
-            "qa": qa_density.compute_qa_density(states[arm]),
-            "workflow": workflow.compute_workflow_metrics(states[arm]),
-        }
 
-    delta_pairs = ["A_to_B", "A_to_C", "B_to_D", "A_to_D"]
-    deltas = aggregate.compute_deltas(runs, delta_pairs)
-
-    # 盲评抽样：A vs B（Governance 增量），也可用 --packet-arms 调整
-    packet_rows, key_rows = [], []
-    if "A" in states and "B" in states:
-        packet_rows, key_rows = blind_review.sample_packet(
-            states["A"], states["B"], segments, glossary_entries,
-            seed=cfg.get("seed", 42))
-        packet_dir = out_dir / "blind_review"
-        packet_path, key_path = blind_review.write_packet(
-            packet_rows, key_rows, packet_dir)
-        print(f"盲评抽样包：{packet_path}（{len(packet_rows)} 段；"
-              f"key 文件 local-only：{key_path}）")
-
-    report = aggregate.build_report(
-        meta={
-            "baseline_ref": baseline_ref,
-            "current_ref": current_ref,
-            "corpus": corpus_meta,
-            "glossary": str(glossary_file),
-            "glossary_auto_locked": args.lock,
-            "tm_seed": str(tm_seed) if tm_seed else None,
-            "run": cfg["run"],
-            "mock": args.mock,
-            "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        },
-        runs=runs,
-        deltas=deltas,
-        human_review={
-            "status": "pending",
-            "packet": str(packet_path) if packet_path else None,
-            "segments": len(packet_rows),
-            "note": "blind review：Candidate A/B 随机映射，key 文件 local-only",
-        },
-    )
-    json_path = json_report.write_json_report(report, out_dir)
-    csv_report.write_terms_csv(runs, out_dir)
-    csv_report.write_findings_csv(states, out_dir)
-    md_path = markdown_report.write_markdown_report(report, out_dir)
-    print(f"\n✅ evaluation-report.json -> {json_path}")
-    print(f"   markdown -> {md_path}")
+    meta = {
+        "baseline_ref": baseline_ref,
+        "current_ref": current_ref,
+        "corpus": corpus_meta,
+        "glossary": str(glossary_file),
+        "glossary_auto_locked": args.lock,
+        "tm_seed": str(tm_seed) if tm_seed else None,
+        "run": cfg["run"],
+        "mock": args.mock,
+    }
+    _finalize(out_dir, states, segments, glossary_entries, meta,
+              seed=cfg.get("seed", 42))
     return 0
 
 
