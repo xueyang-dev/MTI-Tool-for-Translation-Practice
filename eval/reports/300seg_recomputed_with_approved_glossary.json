@@ -1,0 +1,1424 @@
+{
+  "meta": {
+    "results_dir": "eval/results/round1",
+    "approved_glossary": "eval/approved_glossary.json",
+    "status": "pending_human_glossary_decisions",
+    "created_at": "2026-08-08T05:22:43+00:00",
+    "note": "report-only：未调用任何 provider；原始结果未被修改"
+  },
+  "original_auto_glossary_metrics": {
+    "A": {
+      "terminology": {
+        "locked_term_adoption_rate": 0.9492,
+        "forbidden_term_violations": 0,
+        "preserve_failures": 0,
+        "scope_conflicts": 0,
+        "per_term": [
+          {
+            "term": "Anti-aircraft guns",
+            "preferred": "高射炮",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Artificial horizon",
+            "preferred": "人工地平仪",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Autopilot",
+            "preferred": "自动驾驶仪",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Body donation to science",
+            "preferred": "遗体捐献",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Cadet",
+            "preferred": "飞行学员",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Certainty",
+            "preferred": "确定性",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Chemical fertilizers",
+            "preferred": "化学肥料",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Cockpit canopy",
+            "preferred": "座舱盖",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Collective",
+            "preferred": "集体农庄",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Compass",
+            "preferred": "罗盘",
+            "occurrences": 3,
+            "adopted": 3,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Compost",
+            "preferred": "堆肥",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Conquest",
+            "preferred": "征服",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Control tower",
+            "preferred": "塔台",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Emergency compass",
+            "preferred": "应急罗盘",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flare",
+            "preferred": "照明弹",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flight instruments",
+            "preferred": "飞行仪表",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flight training course",
+            "preferred": "飞行训练课程",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Formation",
+            "preferred": "编队",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Guide for the Perplexed",
+            "preferred": "迷途指津",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Heading",
+            "preferred": "航向",
+            "occurrences": 3,
+            "adopted": 2,
+            "rate": 0.6667,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Horizon",
+            "preferred": "地平线",
+            "occurrences": 7,
+            "adopted": 6,
+            "rate": 0.8571,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Instructor",
+            "preferred": "飞行教官",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Interception",
+            "preferred": "截击",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Kibbutz",
+            "preferred": "基布兹",
+            "occurrences": 7,
+            "adopted": 7,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Knots",
+            "preferred": "节（航速单位）",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Lottery ticket",
+            "preferred": "彩票",
+            "occurrences": 3,
+            "adopted": 3,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Napalm bomb",
+            "preferred": "凝固汽油弹",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Navigation computer",
+            "preferred": "导航计算机",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Navigator",
+            "preferred": "领航员",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Organic fertilization",
+            "preferred": "有机施肥",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Oxygen mask",
+            "preferred": "氧气面罩",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Perplexion",
+            "preferred": "困惑",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Radio frequency",
+            "preferred": "无线电频率",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Runway",
+            "preferred": "跑道",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Six-Day War",
+            "preferred": "六日战争",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Squadron",
+            "preferred": "中队",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Taxiing channel",
+            "preferred": "滑行频道",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Vertigo",
+            "preferred": "空间定向障碍",
+            "occurrences": 4,
+            "adopted": 4,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "War of Attrition",
+            "preferred": "消耗战",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Wheels down",
+            "preferred": "放下起落架",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          }
+        ]
+      },
+      "qa": {
+        "source_chars": 28922,
+        "blocking_per_1k_chars": 0.0,
+        "actionable_per_1k_chars": 0.0692,
+        "informational_per_1k_chars": 0.242,
+        "blocking_total": 0,
+        "actionable_total": 2,
+        "informational_total": 7,
+        "automatic_repair_rate": 0.0,
+        "adjusted_segments": 0,
+        "review_failed_batches": 0
+      },
+      "workflow": {
+        "total_segments": 300,
+        "review_pass_rate": 0.9933,
+        "reviewed_segments": 298,
+        "retranslation_rate": 0.0,
+        "retranslated_segments": 0,
+        "tm_reuse_rate": 0.0,
+        "tm_reused_segments": 0,
+        "stale_segments": 0,
+        "delivery_status": "draft"
+      }
+    },
+    "B": {
+      "terminology": {
+        "locked_term_adoption_rate": 0.9661,
+        "forbidden_term_violations": 0,
+        "preserve_failures": 0,
+        "scope_conflicts": 10,
+        "per_term": [
+          {
+            "term": "Anti-aircraft guns",
+            "preferred": "高射炮",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Artificial horizon",
+            "preferred": "人工地平仪",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Autopilot",
+            "preferred": "自动驾驶仪",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Body donation to science",
+            "preferred": "遗体捐献",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Cadet",
+            "preferred": "飞行学员",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Certainty",
+            "preferred": "确定性",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Chemical fertilizers",
+            "preferred": "化学肥料",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Cockpit canopy",
+            "preferred": "座舱盖",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Collective",
+            "preferred": "集体农庄",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Compass",
+            "preferred": "罗盘",
+            "occurrences": 3,
+            "adopted": 3,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Compost",
+            "preferred": "堆肥",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Conquest",
+            "preferred": "征服",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Control tower",
+            "preferred": "塔台",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Emergency compass",
+            "preferred": "应急罗盘",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flare",
+            "preferred": "照明弹",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flight instruments",
+            "preferred": "飞行仪表",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flight training course",
+            "preferred": "飞行训练课程",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Formation",
+            "preferred": "编队",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Guide for the Perplexed",
+            "preferred": "迷途指津",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Heading",
+            "preferred": "航向",
+            "occurrences": 3,
+            "adopted": 2,
+            "rate": 0.6667,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Horizon",
+            "preferred": "地平线",
+            "occurrences": 7,
+            "adopted": 6,
+            "rate": 0.8571,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Instructor",
+            "preferred": "飞行教官",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Interception",
+            "preferred": "截击",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Kibbutz",
+            "preferred": "基布兹",
+            "occurrences": 7,
+            "adopted": 7,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Knots",
+            "preferred": "节（航速单位）",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Lottery ticket",
+            "preferred": "彩票",
+            "occurrences": 3,
+            "adopted": 3,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Napalm bomb",
+            "preferred": "凝固汽油弹",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Navigation computer",
+            "preferred": "导航计算机",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Navigator",
+            "preferred": "领航员",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Organic fertilization",
+            "preferred": "有机施肥",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Oxygen mask",
+            "preferred": "氧气面罩",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Perplexion",
+            "preferred": "困惑",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Radio frequency",
+            "preferred": "无线电频率",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Runway",
+            "preferred": "跑道",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Six-Day War",
+            "preferred": "六日战争",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Squadron",
+            "preferred": "中队",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Taxiing channel",
+            "preferred": "滑行频道",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Vertigo",
+            "preferred": "空间定向障碍",
+            "occurrences": 4,
+            "adopted": 4,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "War of Attrition",
+            "preferred": "消耗战",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Wheels down",
+            "preferred": "放下起落架",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          }
+        ]
+      },
+      "qa": {
+        "source_chars": 28922,
+        "blocking_per_1k_chars": 0.0,
+        "actionable_per_1k_chars": 0.5878,
+        "informational_per_1k_chars": 0.4841,
+        "blocking_total": 0,
+        "actionable_total": 17,
+        "informational_total": 14,
+        "automatic_repair_rate": 0.0333,
+        "adjusted_segments": 10,
+        "review_failed_batches": 0
+      },
+      "workflow": {
+        "total_segments": 300,
+        "review_pass_rate": 0.9733,
+        "reviewed_segments": 292,
+        "retranslation_rate": 0.0,
+        "retranslated_segments": 0,
+        "tm_reuse_rate": 0.0,
+        "tm_reused_segments": 0,
+        "stale_segments": 0,
+        "delivery_status": "draft"
+      }
+    },
+    "C": {
+      "terminology": {
+        "locked_term_adoption_rate": 0.8814,
+        "forbidden_term_violations": 0,
+        "preserve_failures": 0,
+        "scope_conflicts": 0,
+        "per_term": [
+          {
+            "term": "Anti-aircraft guns",
+            "preferred": "高射炮",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Artificial horizon",
+            "preferred": "人工地平仪",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Autopilot",
+            "preferred": "自动驾驶仪",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Body donation to science",
+            "preferred": "遗体捐献",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Cadet",
+            "preferred": "飞行学员",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Certainty",
+            "preferred": "确定性",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Chemical fertilizers",
+            "preferred": "化学肥料",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Cockpit canopy",
+            "preferred": "座舱盖",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Collective",
+            "preferred": "集体农庄",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Compass",
+            "preferred": "罗盘",
+            "occurrences": 3,
+            "adopted": 3,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Compost",
+            "preferred": "堆肥",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Conquest",
+            "preferred": "征服",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Control tower",
+            "preferred": "塔台",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Emergency compass",
+            "preferred": "应急罗盘",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flare",
+            "preferred": "照明弹",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flight instruments",
+            "preferred": "飞行仪表",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flight training course",
+            "preferred": "飞行训练课程",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Formation",
+            "preferred": "编队",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Guide for the Perplexed",
+            "preferred": "迷途指津",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Heading",
+            "preferred": "航向",
+            "occurrences": 3,
+            "adopted": 1,
+            "rate": 0.3333,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Horizon",
+            "preferred": "地平线",
+            "occurrences": 7,
+            "adopted": 6,
+            "rate": 0.8571,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Instructor",
+            "preferred": "飞行教官",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Interception",
+            "preferred": "截击",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Kibbutz",
+            "preferred": "基布兹",
+            "occurrences": 7,
+            "adopted": 7,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Knots",
+            "preferred": "节（航速单位）",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Lottery ticket",
+            "preferred": "彩票",
+            "occurrences": 3,
+            "adopted": 3,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Napalm bomb",
+            "preferred": "凝固汽油弹",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Navigation computer",
+            "preferred": "导航计算机",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Navigator",
+            "preferred": "领航员",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Organic fertilization",
+            "preferred": "有机施肥",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Oxygen mask",
+            "preferred": "氧气面罩",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Perplexion",
+            "preferred": "困惑",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Radio frequency",
+            "preferred": "无线电频率",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Runway",
+            "preferred": "跑道",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Six-Day War",
+            "preferred": "六日战争",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Squadron",
+            "preferred": "中队",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Taxiing channel",
+            "preferred": "滑行频道",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Vertigo",
+            "preferred": "空间定向障碍",
+            "occurrences": 4,
+            "adopted": 4,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "War of Attrition",
+            "preferred": "消耗战",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Wheels down",
+            "preferred": "放下起落架",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          }
+        ]
+      },
+      "qa": {
+        "source_chars": 28922,
+        "blocking_per_1k_chars": 0.0692,
+        "actionable_per_1k_chars": 0.3458,
+        "informational_per_1k_chars": 0.2075,
+        "blocking_total": 2,
+        "actionable_total": 10,
+        "informational_total": 6,
+        "automatic_repair_rate": 0.0,
+        "adjusted_segments": 0,
+        "review_failed_batches": 0
+      },
+      "workflow": {
+        "total_segments": 300,
+        "review_pass_rate": 1.0,
+        "reviewed_segments": 300,
+        "retranslation_rate": 0.0,
+        "retranslated_segments": 0,
+        "tm_reuse_rate": 0.95,
+        "tm_reused_segments": 285,
+        "stale_segments": 0,
+        "delivery_status": "draft"
+      }
+    },
+    "D": {
+      "terminology": {
+        "locked_term_adoption_rate": 0.8814,
+        "forbidden_term_violations": 0,
+        "preserve_failures": 0,
+        "scope_conflicts": 10,
+        "per_term": [
+          {
+            "term": "Anti-aircraft guns",
+            "preferred": "高射炮",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Artificial horizon",
+            "preferred": "人工地平仪",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Autopilot",
+            "preferred": "自动驾驶仪",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Body donation to science",
+            "preferred": "遗体捐献",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Cadet",
+            "preferred": "飞行学员",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Certainty",
+            "preferred": "确定性",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Chemical fertilizers",
+            "preferred": "化学肥料",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Cockpit canopy",
+            "preferred": "座舱盖",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Collective",
+            "preferred": "集体农庄",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Compass",
+            "preferred": "罗盘",
+            "occurrences": 3,
+            "adopted": 3,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Compost",
+            "preferred": "堆肥",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Conquest",
+            "preferred": "征服",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Control tower",
+            "preferred": "塔台",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Emergency compass",
+            "preferred": "应急罗盘",
+            "occurrences": 2,
+            "adopted": 2,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flare",
+            "preferred": "照明弹",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flight instruments",
+            "preferred": "飞行仪表",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Flight training course",
+            "preferred": "飞行训练课程",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Formation",
+            "preferred": "编队",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Guide for the Perplexed",
+            "preferred": "迷途指津",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Heading",
+            "preferred": "航向",
+            "occurrences": 3,
+            "adopted": 1,
+            "rate": 0.3333,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Horizon",
+            "preferred": "地平线",
+            "occurrences": 7,
+            "adopted": 6,
+            "rate": 0.8571,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Instructor",
+            "preferred": "飞行教官",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Interception",
+            "preferred": "截击",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Kibbutz",
+            "preferred": "基布兹",
+            "occurrences": 7,
+            "adopted": 7,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Knots",
+            "preferred": "节（航速单位）",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Lottery ticket",
+            "preferred": "彩票",
+            "occurrences": 3,
+            "adopted": 3,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Napalm bomb",
+            "preferred": "凝固汽油弹",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Navigation computer",
+            "preferred": "导航计算机",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Navigator",
+            "preferred": "领航员",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Organic fertilization",
+            "preferred": "有机施肥",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Oxygen mask",
+            "preferred": "氧气面罩",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Perplexion",
+            "preferred": "困惑",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Radio frequency",
+            "preferred": "无线电频率",
+            "occurrences": 0,
+            "adopted": 0,
+            "rate": null,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Runway",
+            "preferred": "跑道",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Six-Day War",
+            "preferred": "六日战争",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Squadron",
+            "preferred": "中队",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Taxiing channel",
+            "preferred": "滑行频道",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Vertigo",
+            "preferred": "空间定向障碍",
+            "occurrences": 4,
+            "adopted": 4,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "War of Attrition",
+            "preferred": "消耗战",
+            "occurrences": 1,
+            "adopted": 1,
+            "rate": 1.0,
+            "forbidden_violations": 0
+          },
+          {
+            "term": "Wheels down",
+            "preferred": "放下起落架",
+            "occurrences": 1,
+            "adopted": 0,
+            "rate": 0.0,
+            "forbidden_violations": 0
+          }
+        ]
+      },
+      "qa": {
+        "source_chars": 28922,
+        "blocking_per_1k_chars": 0.1037,
+        "actionable_per_1k_chars": 1.1756,
+        "informational_per_1k_chars": 0.3458,
+        "blocking_total": 3,
+        "actionable_total": 34,
+        "informational_total": 10,
+        "automatic_repair_rate": 0.0667,
+        "adjusted_segments": 1,
+        "review_failed_batches": 0
+      },
+      "workflow": {
+        "total_segments": 300,
+        "review_pass_rate": 1.0,
+        "reviewed_segments": 300,
+        "retranslation_rate": 0.0,
+        "retranslated_segments": 0,
+        "tm_reuse_rate": 0.95,
+        "tm_reused_segments": 285,
+        "stale_segments": 0,
+        "delivery_status": "review_required"
+      }
+    }
+  },
+  "human_approved_glossary_metrics": null
+}

@@ -255,6 +255,14 @@ def _finalize(out_dir: Path, states: Dict[str, Dict[str, Any]],
             packet_rows, key_rows, out_dir / "blind_review")
         print(f"盲评抽样包：{packet_path}（{len(packet_rows)} 段；"
               f"key 文件 local-only）")
+        # 盲评包 v2：排除相同对，A/B 位置平衡
+        rows2, keys2 = blind_review.sample_packet_v2(
+            states["A"], states["B"], segments, glossary_entries, seed=seed)
+        packet2_path, key2_path = blind_review.write_packet(
+            rows2, keys2, out_dir / "blind_review", prefix="blind_review_v2")
+        informative2 = sum(1 for r in rows2 if r.get("identical") == "0")
+        print(f"盲评包 v2：{packet2_path}（{len(rows2)} 段，"
+              f"有效差异 {informative2}，key local-only：{key2_path}）")
     report = aggregate.build_report(
         meta={**meta, "created_at":
               datetime.now(timezone.utc).isoformat(timespec="seconds")},
@@ -263,7 +271,8 @@ def _finalize(out_dir: Path, states: Dict[str, Dict[str, Any]],
         human_review={
             "status": "pending",
             "packet": str(packet_path) if packet_path else None,
-            "segments": len(packet_rows),
+            "packet_v2": str(packet2_path) if packet2_path else None,
+            "segments": len(rows2) if rows2 else len(packet_rows),
             "note": "blind review：Candidate A/B 随机映射，key 文件 local-only",
         },
     )

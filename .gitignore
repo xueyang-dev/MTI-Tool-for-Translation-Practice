@@ -12,6 +12,10 @@ eval/results/
 eval/.worktrees/
 eval/run-local/
 
+# 人工术语审核表与审核结果：含真实上下文与决策，local-only
+eval/term_audit.csv
+eval/approved_glossary.json
+
 # Streamlit
 .streamlit/
 
