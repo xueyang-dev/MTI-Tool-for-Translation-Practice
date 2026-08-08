@@ -13,6 +13,7 @@ import pandas as pd
 import streamlit as st
 
 import core
+from mti_tool import assets as _assets
 from mti_tool import delivery as _delivery
 
 # ================= 页面全局设置 =================
@@ -498,6 +499,38 @@ if saved_jobs_after:
                     f"blocking {stats.get('blocking', 0)} · actionable {stats.get('actionable', 0)} · "
                     f"informational {stats.get('informational', 0)} · "
                     f"记忆复用 {state.get('tm_used_count', 0)} 段")
+                exported = _assets.export_all(
+                    state, job["job_id"], target_lang, ai_provider, ai_model,
+                    source_filename=filename)
+                ea1, ea2, ea3, ea4 = st.columns(4)
+                with ea1:
+                    st.download_button(
+                        "🏷 TBX 术语库",
+                        exported["terms.tbx"],
+                        file_name=f"{_asset_prefix(state)}terms_{filename}.tbx",
+                        mime="application/xml", key=f"tbx_{job['job_id']}",
+                        use_container_width=True)
+                with ea2:
+                    st.download_button(
+                        "🧠 TMX 翻译记忆",
+                        exported["memory.tmx"],
+                        file_name=f"{_asset_prefix(state)}memory_{filename}.tmx",
+                        mime="application/xml", key=f"tmx_{job['job_id']}",
+                        use_container_width=True)
+                with ea3:
+                    st.download_button(
+                        "🗒 JSONL 双语段落",
+                        exported["bilingual.jsonl"],
+                        file_name=f"{_asset_prefix(state)}bilingual_{filename}.jsonl",
+                        mime="application/x-jsonlines",
+                        key=f"jl_{job['job_id']}", use_container_width=True)
+                with ea4:
+                    st.download_button(
+                        "📦 交付清单 manifest",
+                        exported["delivery_manifest.json"],
+                        file_name=f"{_asset_prefix(state)}delivery_manifest_{filename}.json",
+                        mime="application/json", key=f"mf_{job['job_id']}",
+                        use_container_width=True)
                 unresolved = _delivery.unresolved_findings(state)
                 if dstatus == "review_required" and unresolved:
                     chosen = []

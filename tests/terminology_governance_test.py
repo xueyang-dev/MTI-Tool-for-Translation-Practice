@@ -2,6 +2,7 @@
 
 运行方式（项目根目录）：python tests/terminology_governance_test.py
 """
+import hashlib
 import json
 import shutil
 import sys
@@ -12,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
 from mti_tool import document_profile, models, state_migration, terminology
-from mti_tool import delivery
+from mti_tool import assets, delivery
 
 
 def test_document_profile_normalize_validate():
@@ -773,6 +774,165 @@ def test_pipeline_blocking_delivery_status():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_tbx_valid_xml():
+    glossary = models.normalize_glossary([
+        {"source": "Skopos theory", "target": "目的论", "status": "locked",
+         "preferred": "目的论", "forbidden": ["功能对等"], "domain": "翻译学",
+         "scope": "global", "note": "核心理论",
+         "evidence": [{"evidence_type": "user", "source_name": "导师批注",
+                       "note": "教学确认"}]},
+        {"source": "John Smith", "target": "约翰·史密斯", "behavior": "preserve",
+         "status": "locked", "scope": "document"},
+    ])
+    xml_bytes = assets.build_tbx(glossary)
+    assert xml_bytes.startswith(b"<?xml")
+    assert assets.validate_tbx(xml_bytes, expected_entries=2) == []
+    text = xml_bytes.decode("utf-8")
+    assert "Skopos theory" in text and "目的论" in text
+    assert "功能对等" in text and "prohibited" in text
+    assert "翻译学" in text and "global" in text and "核心理论" in text
+    assert "user" in text, "evidence type 应写入 TBX"
+    assert assets.validate_tbx(b"not xml", 1), "非法 XML 应报错"
+    assert assets.validate_tbx(xml_bytes, expected_entries=99), "数量不符应报错"
+    print("  ✓ TBX 导出（合法 XML + forbidden/status/domain/scope/note/evidence + 校验）")
+
+
+def test_tmx_only_reviewed_segments():
+    state = core.new_job_state("tmx.pdf")
+    state.update(
+        pairs=[
+            {"source": "A good sentence.", "target": "好句子。",
+             "reviewed": True, "from_tm": False},
+            {"source": "Blocked sentence.", "target": "被阻塞的句子。",
+             "reviewed": False, "from_tm": False},
+            {"source": "Reviewed but flagged.", "target": "已审但有 finding。",
+             "reviewed": True, "from_tm": False},
+        ],
+        findings=[{"segment_index": 2, "severity": "blocking", "type": "review",
+                   "reason": "语义错误"}],
+        delivery_status="review_required",
+    )
+    xml_bytes = assets.build_tmx(state, src_lang="en", tgt_lang="zh-CN",
+                                 job_id="tmx00000000000001")
+    assert assets.validate_tmx(xml_bytes, expected_tus=1) == [], \
+        "只有审校通过且无 blocking/actionable 的段落才能进入 TMX"
+    text = xml_bytes.decode("utf-8")
+    assert "A good sentence." in text and "好句子。" in text
+    assert "Blocked sentence." not in text
+    assert "Reviewed but flagged." not in text
+    assert 'srclang="en"' in text and 'xml:lang="zh-CN"' in text
+    assert "seg-tmx00000000000001-0000" in text, "应带 segment ID"
+    # 无审校通过段落 -> 空 TMX 也合法
+    empty_state = core.new_job_state("e.pdf")
+    empty_state["pairs"] = [{"source": "x", "target": "y", "reviewed": False,
+                             "from_tm": False}]
+    empty = assets.build_tmx(empty_state, job_id="e0000000000000000")
+    assert assets.validate_tmx(empty, expected_tus=0) == []
+    print("  ✓ TMX 导出（仅审校通过 + 无 blocking/actionable；含语言与 segment ID）")
+
+
+def test_jsonl_count_and_fields():
+    state = core.new_job_state("j.pdf")
+    state.update(
+        pairs=[
+            {"source": "Term A appears.", "target": "术语A出现。",
+             "reviewed": True, "from_tm": False,
+             "glossary_entry_ids": ["t-aaa", "t-bbb"]},
+            {"source": "Term B appears.", "target": "术语B出现。",
+             "reviewed": False, "from_tm": True, "glossary_entry_ids": []},
+        ],
+        findings=[{"segment_index": 1, "severity": "actionable", "type": "check",
+                   "reason": "残留"}],
+        delivery_status="draft",
+    )
+    text = assets.build_jsonl(state, job_id="json00000000000001")
+    assert assets.validate_jsonl(text, expected_lines=2) == []
+    lines = [json.loads(ln) for ln in text.splitlines()]
+    assert lines[0]["segment_id"] == "seg-json00000000000001-0000"
+    assert lines[0]["glossary_entry_ids"] == ["t-aaa", "t-bbb"]
+    assert lines[1]["findings"][0]["reason"] == "残留"
+    assert lines[1]["from_tm"] is True and lines[0]["reviewed"] is True
+    assert all(l["delivery_status"] == "draft" for l in lines)
+    # 数量校验
+    assert assets.validate_jsonl(text, expected_lines=3)
+    assert assets.validate_jsonl("{broken", 1)
+    print("  ✓ JSONL 导出（每段一行 + 字段完整 + 数量校验）")
+
+
+def test_manifest_matches_state():
+    state = core.new_job_state("m.pdf")
+    frozen = models.normalize_frozen_glossary({
+        "version": 2, "source_hash": "abc123",
+        "entries": [{"source": "Skopos", "target": "目的论", "status": "locked"}],
+        "frozen_at": "2026-08-06T00:00:00", "frozen_by": "tester"})
+    state.update(
+        p1_done=True, p2_done=True,
+        pairs=[{"source": "s1", "target": "t1", "reviewed": True, "from_tm": False},
+               {"source": "s2", "target": "t2", "reviewed": False, "from_tm": True},
+               {"source": "s3", "target": "t3", "reviewed": False, "from_tm": False}],
+        findings=[
+            {"segment_index": 2, "severity": "blocking", "type": "review",
+             "reason": "严重错误"},
+            {"segment_index": 0, "severity": "actionable", "type": "check",
+             "reason": "小问题"},
+            {"segment_index": 1, "severity": "informational", "type": "check",
+             "reason": "建议"},
+        ],
+        review_stats={"blocking": 1, "actionable": 1, "informational": 1},
+        tm_used_count=1,
+        delivery_status="review_required",
+        document_profile=models.normalize_document_profile(
+            {"domain": "历史", "confidence": 0.6}),
+        glossary_frozen=frozen,
+        _source_bin=b"source-bytes",
+    )
+    manifest = assets.build_delivery_manifest(
+        state, "man000000000000001", target_lang="简体中文",
+        provider="DeepSeek", model="deepseek-chat",
+        source_filename="m.pdf")
+    assert assets.validate_manifest(manifest, state) == []
+    assert manifest["segment_count"] == 3
+    assert manifest["tm_reused_count"] == 1
+    assert manifest["blocking"] == 1 and manifest["actionable"] == 1
+    assert manifest["informational"] == 1
+    assert manifest["delivery_status"] == "review_required"
+    assert len(manifest["unresolved_findings"]) == 2
+    assert manifest["frozen_glossary"]["glossary_hash"] == frozen["glossary_hash"]
+    assert manifest["source_hash"] == hashlib.sha256(b"source-bytes").hexdigest()
+    # 状态被篡改 -> 校验失败
+    bad = dict(manifest, segment_count=99)
+    assert assets.validate_manifest(bad, state)
+    print("  ✓ delivery_manifest 统计与任务状态一致")
+
+
+def test_export_all_assets():
+    state = core.new_job_state("all.pdf")
+    state.update(
+        p1_done=True, p2_done=True,
+        pairs=[{"source": "Term X is here.", "target": "术语X在此。",
+                "reviewed": True, "from_tm": False,
+                "glossary_entry_ids": ["t-x"]}],
+        glossary=models.normalize_glossary(
+            [{"source": "Term X", "target": "术语X", "status": "locked"}]),
+        findings=[], review_stats={"blocking": 0, "actionable": 0,
+                                   "informational": 0},
+        delivery_status="draft",
+    )
+    out = assets.export_all(state, "all000000000000001",
+                            target_lang="简体中文", provider="DeepSeek",
+                            model="deepseek-chat", source_filename="all.pdf",
+                            source_bin=b"pdf")
+    assert set(out) == {"terms.tbx", "memory.tmx", "bilingual.jsonl",
+                        "delivery_manifest.json"}
+    assert assets.validate_tbx(out["terms.tbx"], expected_entries=1) == []
+    assert assets.validate_tmx(out["memory.tmx"], expected_tus=1) == []
+    assert assets.validate_jsonl(out["bilingual.jsonl"].decode("utf-8"),
+                                 expected_lines=1) == []
+    manifest = json.loads(out["delivery_manifest.json"].decode("utf-8"))
+    assert assets.validate_manifest(manifest, state) == []
+    print("  ✓ export_all：四类标准资产 + 全部校验通过")
+
+
 if __name__ == "__main__":
     print("术语治理测试（模型/迁移/画像/术语候选）：")
     test_document_profile_normalize_validate()
@@ -796,4 +956,9 @@ if __name__ == "__main__":
     test_mark_fixed_then_final()
     test_retranslate_segments()
     test_pipeline_blocking_delivery_status()
+    test_tbx_valid_xml()
+    test_tmx_only_reviewed_segments()
+    test_jsonl_count_and_fields()
+    test_manifest_matches_state()
+    test_export_all_assets()
     print("\n全部通过 ✅")
