@@ -13,6 +13,7 @@ import pandas as pd
 import streamlit as st
 
 import core
+from mti_tool import delivery as _delivery
 
 # ================= 页面全局设置 =================
 st.set_page_config(page_title="MTI 翻译实践小助手", page_icon="🎓", layout="wide")
@@ -166,6 +167,11 @@ def _render_profile_editor(job_id, state):
             st.caption("⚠️ 画像未生成（AI 失败或已跳过），可在此人工填写后保存。")
 
 
+def _asset_prefix(state):
+    """draft/final 资产文件名前缀：非 final 一律明确标注 draft。"""
+    return "final_" if state.get("delivery_status") == "final" else "draft_"
+
+
 # ================= UI 界面绘制 =================
 st.title("🎓 MTI 翻译实践小助手 (Pro版)")
 
@@ -306,7 +312,10 @@ if tasks:
                             label=f"⚠️ {filename} 流程完成，但有 blocking 问题待确认（见资产面板审查报告）",
                             state="complete")
                     else:
-                        status.update(label=f"🎉 {filename} 全部流程圆满完成！", state="complete")
+                        status.update(
+                            label=f"✅ {filename} 流程完成（交付状态：draft，"
+                                  f"可在资产面板确认最终交付）",
+                            state="complete")
                 else:
                     status.update(
                         label=f"⏸ {filename} 进度已保存（当前阶段：{state.get('stage', '?')}），"
@@ -430,6 +439,15 @@ if saved_jobs_after:
         state = job["state"]
         filename = state.get("filename", "?")
         with st.expander(f"📁 资产面板: {filename}", expanded=True):
+            dstatus = state.get("delivery_status") or "draft"
+            if dstatus == "final":
+                st.success("✅ 交付状态：最终交付（final）")
+            elif dstatus == "review_required":
+                st.warning(f"⚠️ 交付状态：{core.delivery_status_label(state)}"
+                           "（存在 blocking，未最终交付）")
+            else:
+                st.caption(f"📦 交付状态：{core.delivery_status_label(state)}"
+                           "（当前为 draft 资产，尚未最终交付）")
             col_d1, col_d2, col_d3, col_d4 = st.columns(4)
 
             with col_d1:
@@ -437,7 +455,7 @@ if saved_jobs_after:
                     st.download_button(
                         "📥 1. 洗净后原文",
                         core.paragraphs_to_word(state["paras"]),
-                        file_name=f"阶段1_清洗原文_{filename}.docx",
+                        file_name=f"{_asset_prefix(state)}阶段1_清洗原文_{filename}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         key=f"d1_{job['job_id']}", use_container_width=True)
             with col_d2:
@@ -445,7 +463,7 @@ if saved_jobs_after:
                     st.download_button(
                         "🧠 1.5 提取术语库",
                         core.dict_to_excel(state["auto_terms"]),
-                        file_name=f"自动抽词库_{filename}.xlsx",
+                        file_name=f"{_asset_prefix(state)}自动抽词库_{filename}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key=f"dt_{job['job_id']}", use_container_width=True)
             with col_d3:
@@ -454,7 +472,7 @@ if saved_jobs_after:
                         "📥 2. 双语对照表",
                         core.pairs_to_word(state["pairs"],
                                            annotations=state.get("annotations")),
-                        file_name=f"阶段2_双语对照_{filename}.docx",
+                        file_name=f"{_asset_prefix(state)}阶段2_双语对照_{filename}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         key=f"d2_{job['job_id']}", use_container_width=True)
             with col_d4:
@@ -462,7 +480,7 @@ if saved_jobs_after:
                     st.download_button(
                         "📝 3. 翻译实践报告",
                         core.markdown_to_word(state["p3_md"], state.get("theory") or translation_theory),
-                        file_name=f"阶段3_实践报告_{filename}.docx",
+                        file_name=f"{_asset_prefix(state)}阶段3_实践报告_{filename}.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         key=f"d3_{job['job_id']}", use_container_width=True)
 
@@ -480,11 +498,56 @@ if saved_jobs_after:
                     f"blocking {stats.get('blocking', 0)} · actionable {stats.get('actionable', 0)} · "
                     f"informational {stats.get('informational', 0)} · "
                     f"记忆复用 {state.get('tm_used_count', 0)} 段")
+                unresolved = _delivery.unresolved_findings(state)
+                if dstatus == "review_required" and unresolved:
+                    chosen = []
+                    for f in unresolved:
+                        fid = _delivery.finding_id(f)
+                        label = (f"`{fid}` 段 {f.get('segment_index', -1) + 1} "
+                                 f"[{f.get('severity')}] {f.get('reason')}")
+                        if st.checkbox(label, key=f"fd_{job['job_id']}_{fid}"):
+                            chosen.append(fid)
+                    note = st.text_input("处理说明", key=f"fdnote_{job['job_id']}")
+                    dc1, dc2, dc3 = st.columns(3)
+                    if dc1.button("✅ 标记已人工修复", disabled=not chosen,
+                                  key=f"fdfix_{job['job_id']}",
+                                  use_container_width=True):
+                        core.mark_findings_resolved(job["job_id"], chosen,
+                                                    "human_fixed", note or "人工修复")
+                        st.rerun()
+                    if dc2.button("🔄 重新翻译选中段落", disabled=not chosen,
+                                  key=f"fdrt_{job['job_id']}",
+                                  use_container_width=True):
+                        idxs = sorted({
+                            f.get("segment_index") for f in unresolved
+                            if _delivery.finding_id(f) in chosen
+                            and isinstance(f.get("segment_index"), int)})
+                        core.retranslate_segments(
+                            job["job_id"], idxs, ai_provider, api_key, ai_model,
+                            target_lang, style_rules=style_rules,
+                            on_caption=lambda t: st.caption(t))
+                        st.rerun()
+                    if dc3.button("⚠️ 接受风险并进入 final",
+                                  key=f"fdacc_{job['job_id']}",
+                                  use_container_width=True):
+                        core.approve_delivery(job["job_id"], note or "接受风险",
+                                              accept_blocking=True)
+                        st.rerun()
+                elif dstatus != "final":
+                    note2 = st.text_input("交付说明（可选）", key=f"fdn_{job['job_id']}")
+                    if st.button("✅ 确认交付 (final)", key=f"fdok_{job['job_id']}"):
+                        core.approve_delivery(job["job_id"], note2 or "人工确认交付")
+                        st.rerun()
+                if state.get("human_actions"):
+                    with st.expander("📜 人工处理记录"):
+                        for ha in state["human_actions"][-20:]:
+                            st.caption(f"{ha.get('timestamp')} · {ha.get('action')} · "
+                                       f"{ha.get('finding_id')} · {ha.get('note')}")
                 if state.get("findings"):
                     st.download_button(
                         "🧾 审查报告 (.md)",
                         core.findings_report_md(state),
-                        file_name=f"审查报告_{filename}.md",
+                        file_name=f"{_asset_prefix(state)}审查报告_{filename}.md",
                         mime="text/markdown",
                         key=f"rr_{job['job_id']}", use_container_width=True)
 

@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
 from mti_tool import document_profile, models, state_migration, terminology
+from mti_tool import delivery
 
 
 def test_document_profile_normalize_validate():
@@ -361,7 +362,7 @@ def test_review_state_persist_and_restore():
                 ])
             if "学术翻译专家" in system_prompt:
                 calls["translate"] += 1
-                return json.dumps([f"译文：{s}" for s, _ in _numbered(user_prompt)])
+                return json.dumps([f"译文：{s}" for _, s in _numbered(user_prompt)])
             if "翻译审校专家" in system_prompt:
                 return '[]'
             return "报告章节内容。"
@@ -635,6 +636,143 @@ def test_batch_injection_log_and_prompt():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_delivery_gate_blocking_review_required():
+    # 翻译完成但有 blocking -> review_required，绝不自动 final
+    state = core.new_job_state("d.pdf")
+    state.update(p1_done=True, p2_done=True, has_blocking=True,
+                 delivery_status="review_required",
+                 findings=[{"segment_index": 0, "severity": "blocking",
+                            "type": "review", "reason": "语义严重错误"}])
+    assert delivery.compute_delivery_status(state) == "review_required"
+
+    # 未接受风险 -> 拒绝 final
+    state2, ok, errors = delivery.approve_delivery(dict(state))
+    assert ok is False and errors and "blocking" in errors[0]
+    assert state2["delivery_status"] == "review_required"
+
+    # 接受风险并填写说明 -> final + 人工处理记录
+    state3, ok3, errors3 = delivery.approve_delivery(
+        dict(state), note="客户确认可接受该风险", accept_blocking=True)
+    assert ok3 is True and errors3 == []
+    assert state3["delivery_status"] == "final" and state3["stage"] == "FINAL"
+    assert state3["findings"][0]["resolved"] is True
+    assert state3["findings"][0]["resolution"]["action"] == "accepted_risk"
+    records = state3["human_actions"]
+    assert any(r["action"] == "accepted_risk" and r["finding_id"].startswith("f-")
+               and r["note"] and r["timestamp"] for r in records)
+    assert any(r["action"] == "approve_final" for r in records)
+    print("  ✓ 交付门禁：blocking -> review_required；接受风险 -> final + 记录")
+
+
+def test_mark_fixed_then_final():
+    state = core.new_job_state("d2.pdf")
+    finding = {"segment_index": 3, "severity": "blocking", "type": "check",
+               "reason": "占位符丢失"}
+    state.update(p1_done=True, p2_done=True, has_blocking=True, findings=[finding])
+    fid = delivery.finding_id(finding)
+    state2, marked = delivery.mark_findings(dict(state), [fid], "human_fixed",
+                                            note="已人工补回占位符")
+    assert marked == [fid]
+    assert delivery.compute_delivery_status(state2) == "draft"
+    state3, ok, _ = delivery.approve_delivery(state2)
+    assert ok is True and state3["delivery_status"] == "final"
+    actions = [r["action"] for r in state3["human_actions"]]
+    assert actions == ["human_fixed", "approve_final"]
+    # finding_id 稳定：内容相同 -> 相同 ID；内容不同 -> 不同 ID
+    assert delivery.finding_id(finding) == fid
+    assert delivery.finding_id(dict(finding, reason="另一个原因")) != fid
+    assert delivery.finding_id({"id": "custom-1"}) == "custom-1"
+    print("  ✓ 人工修复 -> draft -> 确认 final；finding_id 稳定")
+
+
+def test_retranslate_segments():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-rt-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        long_src = "The squadron prepared for the long-range mission. " * 5
+        state = core.new_job_state("r2.docx")
+        state.update(
+            p1_done=True, p2_done=True, has_blocking=True,
+            paras=[long_src, "第二段足够长以通过检查。"],
+            pairs=[
+                {"source": long_src, "target": "只译了一句。", "reviewed": False,
+                 "from_tm": False, "glossary_entry_ids": []},
+                {"source": "第二段足够长以通过检查。", "target": "第二段的译文。",
+                 "reviewed": True, "from_tm": False, "glossary_entry_ids": []},
+            ],
+            findings=[
+                {"segment_index": 0, "severity": "blocking", "type": "check",
+                 "reason": "疑似漏译/截断：原文 250 字符，译文仅 6 字符"},
+            ],
+            review_stats={"blocking": 1, "actionable": 0, "informational": 0},
+            delivery_status="review_required",
+        )
+        core.save_job_state("rt0000000000000001", state)
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "学术翻译专家" in system_prompt:
+                if "以下译文未通过检查" in user_prompt:
+                    return json.dumps([f"完整译文：{s}" for _, s in _numbered(user_prompt)])
+                return json.dumps([f"完整译文：{s}" for _, s in _numbered(user_prompt)])
+            return "[]"
+
+        core.call_llm = llm
+        state2, fixed = core.retranslate_segments(
+            "rt0000000000000001", [0], "DeepSeek", "k", "deepseek-chat",
+            "简体中文", glossary=[])
+        assert fixed == [0]
+        assert state2["pairs"][0]["target"].startswith("完整译文：")
+        assert state2["pairs"][0]["reviewed"] is False, "重译段需重新审校"
+        assert not any(f["segment_index"] == 0 for f in state2["findings"]), \
+            "重译段的旧 finding 应清除"
+        assert state2["has_blocking"] is False
+        assert state2["delivery_status"] == "draft"
+        assert any(r["action"] == "retranslated" for r in state2["human_actions"])
+        # 落盘后可恢复
+        on_disk = core.load_job_state("rt0000000000000001")
+        assert on_disk["pairs"][0]["target"].startswith("完整译文：")
+        print("  ✓ 定点重译（fix_segments 能力复用）：替换译文/清 finding/重算交付")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_pipeline_blocking_delivery_status():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-deliv-"))
+    old_dir = core.OUTPUT_DIR
+    core.OUTPUT_DIR = tmp
+    try:
+        docx_bytes = _make_docx(["这是第一段，内容足够长以通过过滤。",
+                                 "这是第二段，内容足够长以通过过滤。"])
+
+        def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
+            if "翻译审校专家" in system_prompt:
+                return json.dumps([{"segment_index": 1, "severity": "blocking",
+                                    "reason": "语义严重错误，需人工确认"}])
+            if "学术翻译专家" in system_prompt:
+                return json.dumps([f"译文：{s}" for _, s in _numbered(user_prompt)])
+            return "报告章节内容。"
+
+        core.call_llm = llm
+        state = core.run_job_pipeline(
+            "dl0000000000000001", "d.docx", docx_bytes,
+            provider="DeepSeek", api_key="k", model="deepseek-chat",
+            target_lang="简体中文", auto_term=False, enable_report=False,
+            translation_theory="目的论 (Skopos Theory)", user_glossary=[])
+        assert state["delivery_status"] == "review_required", \
+            "翻译完成但有 blocking -> review_required，而不是 final"
+        assert state["stage"] == "REVIEW_REQUIRED"
+        # 通过 core 包装接受风险 -> final
+        state2, ok, _ = core.approve_delivery("dl0000000000000001",
+                                              note="人工确认", accept_blocking=True)
+        assert ok and state2["delivery_status"] == "final"
+        print("  ✓ 流水线 blocking -> review_required -> 接受风险 -> final")
+    finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 if __name__ == "__main__":
     print("术语治理测试（模型/迁移/画像/术语候选）：")
     test_document_profile_normalize_validate()
@@ -654,4 +792,8 @@ if __name__ == "__main__":
     test_glossary_qa_all_occurrences()
     test_conflict_detection()
     test_batch_injection_log_and_prompt()
+    test_delivery_gate_blocking_review_required()
+    test_mark_fixed_then_final()
+    test_retranslate_segments()
+    test_pipeline_blocking_delivery_status()
     print("\n全部通过 ✅")

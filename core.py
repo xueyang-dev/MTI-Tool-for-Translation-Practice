@@ -1580,6 +1580,46 @@ def bypass_freeze(job_id, frozen_by="user"):
     return state
 
 
+# ================= 交付状态与人工处理记录 =================
+def mark_findings_resolved(job_id, finding_ids, action, note="", actor="user"):
+    """标记 findings 已人工处理，并重算交付状态。"""
+    from mti_tool import delivery as _delivery
+    state = load_job_state(job_id)
+    if state is None:
+        return None
+    state, _marked = _delivery.mark_findings(state, finding_ids, action, note, actor)
+    state["delivery_status"] = _delivery.compute_delivery_status(state)
+    save_job_state(job_id, state)
+    return state
+
+
+def approve_delivery(job_id, note="", accept_blocking=False, actor="user"):
+    """人工交付确认 -> final；有未解决 blocking 且不接受风险时拒绝。"""
+    from mti_tool import delivery as _delivery
+    state = load_job_state(job_id)
+    if state is None:
+        return None, False, ["任务不存在"]
+    state, ok, errors = _delivery.approve_delivery(state, note, actor, accept_blocking)
+    save_job_state(job_id, state)
+    return state, ok, errors
+
+
+def retranslate_segments(job_id, indexes, provider, api_key, model, target_lang,
+                         style_rules="", glossary=None, on_status=None,
+                         on_caption=None):
+    """定点重译（抽取自 scripts/fix_segments.py 的能力）。"""
+    from mti_tool import delivery as _delivery
+    return _delivery.retranslate_segments(
+        job_id, indexes, provider, api_key, model, target_lang,
+        style_rules, glossary, on_status, on_caption)
+
+
+def delivery_status_label(state):
+    labels = {"draft": "草稿（draft）", "review_required": "待审（review_required）",
+              "approved": "已批准（approved）", "final": "最终交付（final）"}
+    return labels.get(state.get("delivery_status"), str(state.get("delivery_status")))
+
+
 # ================= 阶段三：报告生成（Map-Reduce + 章节级断点）=================
 def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_key,
                         model, state, job_id, on_status=None):
@@ -1804,6 +1844,8 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                         document_profile=state.get("document_profile"),
                         on_status=on_status, on_caption=on_caption)
         state["p2_done"] = True
+        state["delivery_status"] = "review_required" if state.get("has_blocking") \
+            else "draft"
         save_job_state(job_id, state)
 
     # ---------------- 阶段 2.5：三色自动标注 ----------------
