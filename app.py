@@ -224,11 +224,12 @@ with st.sidebar:
                 loaded_literature = json.load(literature_registry_file)
                 if isinstance(loaded_literature, dict):
                     loaded_literature = loaded_literature.get("sources") or \
+                        loaded_literature.get("literature_sources") or \
                         loaded_literature.get("literature_evidence") or []
                 if not isinstance(loaded_literature, list):
                     raise ValueError("JSON 顶层应为数组，或包含 sources 数组")
                 literature_sources = loaded_literature
-                st.caption(f"已载入 {len(literature_sources)} 条文献证据。")
+                st.caption(f"已载入 {len(literature_sources)} 条文献来源；正文证据将在任务内提取。")
             except Exception as e:
                 st.warning(f"文献注册表读取失败：{e}")
                 literature_sources = None
@@ -574,12 +575,25 @@ if saved_jobs_after:
                 else:
                     st.caption(f"学术状态：{core.academic_status_label(state)} · "
                                f"当前阶段 {academic.get('current_stage') or 'not_started'}")
+                if academic.get("quality_dimensions"):
+                    st.caption("质量维度：" + " · ".join(
+                        f"{key}={value}" for key, value in academic[
+                            "quality_dimensions"].items()))
 
                 aevidence = core.load_academic_artifact(job["job_id"], "evidence")
+                literature_sources_artifact = core.load_academic_artifact(
+                    job["job_id"], "literature_sources")
+                literature_evidence_artifact = core.load_academic_artifact(
+                    job["job_id"], "literature_evidence")
+                literature_claims_artifact = core.load_academic_artifact(
+                    job["job_id"], "literature_claims")
+                argument_artifact = core.load_academic_artifact(job["job_id"], "argument_plan")
                 selected_cases = core.load_academic_artifact(job["job_id"], "selected_cases")
                 outline_artifact = core.load_academic_artifact(job["job_id"], "outline")
                 validation_artifact = core.load_academic_artifact(job["job_id"], "validation")
                 review_artifact = core.load_academic_artifact(job["job_id"], "review")
+                literature_review_artifact = core.load_academic_artifact(
+                    job["job_id"], "literature_support_review")
                 if aevidence:
                     astats = aevidence.get("project_evidence", {}).get("statistics", {})
                     coverage = aevidence.get("coverage_policy", {})
@@ -592,6 +606,49 @@ if saved_jobs_after:
                     st.caption(
                         f"已选案例 {len((selected_cases or {}).get('cases') or [])} · "
                         f"提纲章节 {len((outline_artifact or {}).get('sections') or [])}")
+                if literature_sources_artifact:
+                    lit_sources = literature_sources_artifact.get("sources") or []
+                    lit_evidence_items = (literature_evidence_artifact or {}).get("items") or []
+                    lit_claim_items = (literature_claims_artifact or {}).get("items") or []
+                    grounded_count = sum(
+                        x.get("evidence_grounded_status") in {
+                            "grounded", "grounded_user_material"}
+                        for x in lit_claim_items)
+                    st.caption(
+                        f"文献来源 {len(lit_sources)} · 文献证据 {len(lit_evidence_items)} · "
+                        f"文献主张 {len(lit_claim_items)}（已落地 {grounded_count}）")
+                    if lit_sources:
+                        with st.expander("查看文献来源—证据—主张链"):
+                            source_options = {
+                                f"{x.get('source_id')} · {x.get('title') or '未命名来源'}":
+                                x.get("source_id") for x in lit_sources}
+                            selected_source_id = st.selectbox(
+                                "文献来源", source_options, key=f"lit_source_{job['job_id']}")
+                            selected_source_id = source_options[selected_source_id]
+                            selected_source = next(
+                                x for x in lit_sources
+                                if x.get("source_id") == selected_source_id)
+                            st.json({k: v for k, v in selected_source.items()
+                                     if k != "content_blocks"})
+                            source_evidence = [x for x in lit_evidence_items
+                                               if x.get("source_id") == selected_source_id]
+                            source_claims = [x for x in lit_claim_items
+                                             if x.get("source_id") == selected_source_id]
+                            source_lc_ids = {x.get("literature_claim_id") for x in source_claims}
+                            global_claims = [
+                                x for x in (argument_artifact or {}).get("claims") or []
+                                if source_lc_ids & set(x.get("literature_claims") or [])]
+                            global_claim_ids = {x.get("claim_id") for x in global_claims}
+                            source_sections = [
+                                x for x in (outline_artifact or {}).get("sections") or []
+                                if global_claim_ids & set(x.get("claims") or [])]
+                            st.caption(
+                                f"该来源：证据 {len(source_evidence)} · 文献主张 {len(source_claims)} · "
+                                f"全局论点 {len(global_claims)} · 章节 {len(source_sections)}")
+                            if source_evidence:
+                                st.dataframe(source_evidence, use_container_width=True)
+                            if source_claims:
+                                st.dataframe(source_claims, use_container_width=True)
                 if validation_artifact:
                     summary = validation_artifact.get("summary") or {}
                     st.caption(
@@ -601,6 +658,13 @@ if saved_jobs_after:
                     st.caption(
                         f"语义审稿：{review_artifact.get('status')} · "
                         f"问题 {len(review_artifact.get('issues') or [])}")
+                if literature_review_artifact:
+                    st.caption(
+                        f"文献支持审校：{literature_review_artifact.get('status')} · "
+                        f"问题 {len(literature_review_artifact.get('issues') or [])}")
+                    if literature_review_artifact.get("issues"):
+                        st.dataframe(literature_review_artifact["issues"],
+                                     use_container_width=True)
 
                 def _queue_academic(scope, section_id=None):
                     if not api_key:
@@ -610,7 +674,7 @@ if saved_jobs_after:
                     st.session_state["pending_continue_job"] = job["job_id"]
                     st.rerun()
 
-                ac1, ac2, ac3, ac4 = st.columns(4)
+                ac1, ac2, ac3, ac4, ac5 = st.columns(5)
                 if ac1.button("♻️ 重生成整篇", key=f"academic_all_{job['job_id']}",
                               use_container_width=True):
                     _queue_academic("all")
@@ -623,6 +687,9 @@ if saved_jobs_after:
                 if ac4.button("🔍 重新审稿", key=f"academic_review_{job['job_id']}",
                               use_container_width=True):
                     _queue_academic("review")
+                if ac5.button("📚 文献审校", key=f"literature_review_{job['job_id']}",
+                              use_container_width=True):
+                    _queue_academic("literature_review")
                 if outline_artifact and outline_artifact.get("sections"):
                     section_options = {
                         f"{x['section_id']} {x['title']}": x["section_id"]

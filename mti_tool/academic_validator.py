@@ -6,9 +6,10 @@ from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional
 
 from .academic_evidence import literature_index, segment_index, stable_hash
+from . import literature_evidence
 
-SCHEMA_VERSION = "academic-validation-v1"
-VALIDATOR_VERSION = "validator-v1"
+SCHEMA_VERSION = "academic-validation-v2"
+VALIDATOR_VERSION = "validator-v2"
 
 _SEGMENT_REF = re.compile(r"\[(seg-[A-Za-z0-9_-]+-\d{4,})\]")
 _QUOTE = re.compile(
@@ -21,6 +22,10 @@ _CITATION = re.compile(
 _TERM = re.compile(r"<!--term:([A-Za-z0-9_.:-]+)-->")
 _CLAIM = re.compile(r"<!--claim:([A-Za-z0-9_.:-]+)-->")
 _RQ = re.compile(r"<!--rq:([A-Za-z0-9_.:-]+)-->")
+_LIT_CLAIM = re.compile(r"<!--lit-claim:([A-Za-z0-9_.:-]+)-->")
+_LIT_EVIDENCE = re.compile(r"<!--lit-evidence:([A-Za-z0-9_.:-]+)-->")
+_LIT_QUOTE = re.compile(
+    r"^\s*>\s*\[LITERATURE\s+(LE-[A-Za-z0-9_-]+)\]:\s*(.*)$", re.MULTILINE)
 _FORMAL_AUTHOR_YEAR = re.compile(
     r"(?:\b[A-Z][A-Za-z'’-]+(?:\s+(?:&|and)\s+[A-Z][A-Za-z'’-]+)?\s*"
     r"\((?:19|20)\d{2}[a-z]?\)|\([A-Z][A-Za-z'’-]+(?:\s+et\s+al\.)?,\s*"
@@ -87,7 +92,7 @@ def expand_evidence_tokens(text: str, evidence: Dict[str, Any]) -> str:
         source = literature.get(key)
         if not source:
             return match.group(0)
-        citation = source.get("citation") or {}
+        citation = source.get("citation_metadata") or source.get("citation") or {}
         visible = str(citation.get("in_text") or "").strip()
         if not visible:
             authors = source.get("authors") or []
@@ -127,11 +132,20 @@ def validate_academic_report(
     argument_plan: Dict[str, Any],
     selected_cases: Dict[str, Any],
     outline: Dict[str, Any],
+    literature_sources_artifact: Optional[Dict[str, Any]] = None,
+    literature_evidence_artifact: Optional[Dict[str, Any]] = None,
+    literature_claims_artifact: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Validate identity, provenance, statistics, citations and structure."""
     issues: List[Dict[str, Any]] = []
     segs = segment_index(evidence)
-    literature = literature_index(evidence)
+    if literature_sources_artifact is None:
+        literature_sources_artifact = {
+            "sources": list(literature_index(evidence).values())}
+    literature = literature_evidence.source_index(literature_sources_artifact)
+    lit_evidence = literature_evidence.evidence_index(
+        literature_evidence_artifact or {})
+    lit_claims = literature_evidence.claim_index(literature_claims_artifact or {})
     claims = {str(c.get("claim_id")): c for c in argument_plan.get("claims", [])}
     rqs = {str(r.get("rq_id")): r for r in research_model.get("research_questions", [])}
     glossary = {str(x.get("id")): x for x in
@@ -142,6 +156,168 @@ def validate_academic_report(
 
     if not report_md.strip():
         issues.append(_issue("empty_report", "报告内容为空。"))
+
+    # Literature source -> exact block -> literature evidence -> literature
+    # claim -> global claim integrity.  Source existence alone is never support.
+    for source_id, source in literature.items():
+        citation = source.get("citation_metadata") or source.get("citation") or {}
+        if citation.get("title") and _norm(citation.get("title")) != _norm(source.get("title")):
+            issues.append(_issue(
+                "literature_metadata_mismatch",
+                f"来源 {source_id} 的 citation title 与注册题名不一致。",
+                evidence_id=source_id))
+        if citation.get("year") and str(citation.get("year")) != str(source.get("year")):
+            issues.append(_issue(
+                "literature_metadata_mismatch",
+                f"来源 {source_id} 的 citation year 与注册年份不一致。",
+                evidence_id=source_id))
+        citation_authors = citation.get("authors")
+        if citation_authors and [_norm(x) for x in citation_authors] != [
+                _norm(x) for x in source.get("authors") or []]:
+            issues.append(_issue(
+                "literature_metadata_mismatch",
+                f"来源 {source_id} 的 citation authors 与注册作者不一致。",
+                evidence_id=source_id))
+        block_hashes = []
+        for block in source.get("content_blocks") or []:
+            identity = {
+                "source_id": source_id, "location": block.get("location"),
+                "text": block.get("text"), "provenance": block.get("provenance"),
+                "origin_id": block.get("origin_id"),
+            }
+            expected_block_hash = stable_hash(identity)
+            expected_block_id = "LB-" + expected_block_hash[:16]
+            if block.get("content_hash") != expected_block_hash or block.get(
+                    "block_id") != expected_block_id:
+                issues.append(_issue(
+                    "literature_source_block_hash_mismatch",
+                    f"来源 {source_id} 的 block {block.get('block_id')} 哈希或身份无效。",
+                    evidence_id=block.get("block_id")))
+            block_hashes.append({
+                "block_id": block.get("block_id"),
+                "content_hash": block.get("content_hash"),
+            })
+        if block_hashes or source.get("source_file_hash"):
+            expected_source_hash = stable_hash({
+                "binary_hash": source.get("source_file_hash"), "blocks": block_hashes})
+            if source.get("content_hash") != expected_source_hash:
+                issues.append(_issue(
+                    "literature_source_content_hash_mismatch",
+                    f"来源 {source_id} 的内容哈希与保存 block/file snapshot 不一致。",
+                    evidence_id=source_id))
+
+    for evidence_id, item in lit_evidence.items():
+        source_id = str(item.get("source_id") or "")
+        source = literature.get(source_id)
+        if not source:
+            issues.append(_issue(
+                "literature_evidence_source_missing",
+                f"文献证据 {evidence_id} 指向不存在的来源 {source_id}。",
+                evidence_id=evidence_id))
+            continue
+        if item.get("source_content_hash") != source.get("content_hash"):
+            issues.append(_issue(
+                "literature_source_hash_mismatch",
+                f"文献证据 {evidence_id} 的来源内容哈希与来源快照不一致。",
+                evidence_id=evidence_id))
+        if item.get("evidence_type") == "metadata_only":
+            continue
+        block_id = item.get("source_block_id")
+        blocks = {x.get("block_id"): x for x in source.get("content_blocks") or []}
+        block = blocks.get(block_id)
+        if not block:
+            issues.append(_issue(
+                "invalid_literature_location",
+                f"文献证据 {evidence_id} 的 source block/location 不存在。",
+                evidence_id=evidence_id))
+            continue
+        if block.get("location") != item.get("location"):
+            issues.append(_issue(
+                "invalid_literature_location",
+                f"文献证据 {evidence_id} 的精确位置与来源快照不一致。",
+                evidence_id=evidence_id))
+        if str(block.get("text") or "") != str(item.get("evidence_text") or ""):
+            issues.append(_issue(
+                "literature_evidence_text_mismatch",
+                f"文献证据 {evidence_id} 的逐字文本与来源快照不一致。",
+                evidence_id=evidence_id))
+        expected_hash = stable_hash({k: v for k, v in item.items() if k != "content_hash"})
+        if item.get("content_hash") != expected_hash:
+            issues.append(_issue(
+                "literature_evidence_hash_mismatch",
+                f"文献证据 {evidence_id} 的内容哈希无效。",
+                evidence_id=evidence_id))
+
+    for literature_claim_id, claim in lit_claims.items():
+        source_id = str(claim.get("source_id") or "")
+        if source_id not in literature:
+            issues.append(_issue(
+                "literature_claim_source_missing",
+                f"文献主张 {literature_claim_id} 指向不存在的来源 {source_id}。",
+                evidence_id=literature_claim_id))
+        support_ids = [str(x) for x in claim.get("supporting_evidence_ids") or []]
+        if not support_ids:
+            issues.append(_issue(
+                "literature_claim_without_evidence",
+                f"文献主张 {literature_claim_id} 没有逐字证据支持。",
+                evidence_id=literature_claim_id))
+        for evidence_id in support_ids:
+            item = lit_evidence.get(evidence_id)
+            if not item:
+                issues.append(_issue(
+                    "literature_claim_unknown_evidence",
+                    f"文献主张 {literature_claim_id} 引用未知证据 {evidence_id}。",
+                    evidence_id=evidence_id))
+            elif item.get("source_id") != source_id or not item.get("eligible_for_claim"):
+                issues.append(_issue(
+                    "literature_claim_evidence_mismatch",
+                    f"文献主张 {literature_claim_id} 与证据 {evidence_id} 的来源或资格不匹配。",
+                    evidence_id=evidence_id))
+        expected_claim_hash = stable_hash(
+            {k: v for k, v in claim.items() if k != "content_hash"})
+        if claim.get("content_hash") != expected_claim_hash:
+            issues.append(_issue(
+                "literature_claim_hash_mismatch",
+                f"文献主张 {literature_claim_id} 的内容哈希无效。",
+                evidence_id=literature_claim_id))
+
+    for global_claim_id, global_claim in claims.items():
+        literature_claim_ids = [str(x) for x in global_claim.get("literature_claims") or []]
+        literature_evidence_ids = [str(x) for x in global_claim.get("literature_evidence") or []]
+        for literature_claim_id in literature_claim_ids:
+            if literature_claim_id not in lit_claims:
+                issues.append(_issue(
+                    "global_claim_unknown_literature_claim",
+                    f"全局论点 {global_claim_id} 引用未知文献主张 {literature_claim_id}。",
+                    claim_id=global_claim_id, evidence_id=literature_claim_id))
+        allowed_support = {
+            evidence_id for literature_claim_id in literature_claim_ids
+            for evidence_id in (lit_claims.get(literature_claim_id) or {}).get(
+                "supporting_evidence_ids") or []
+        }
+        for evidence_id in literature_evidence_ids:
+            if evidence_id in literature:
+                issues.append(_issue(
+                    "argument_plan_source_id_without_grounding",
+                    f"全局论点 {global_claim_id} 仅引用 paper/source ID {evidence_id}，没有文献主张与逐字证据。",
+                    claim_id=global_claim_id, evidence_id=evidence_id))
+            elif evidence_id not in lit_evidence:
+                issues.append(_issue(
+                    "global_claim_unknown_literature_evidence",
+                    f"全局论点 {global_claim_id} 引用未知文献证据 {evidence_id}。",
+                    claim_id=global_claim_id, evidence_id=evidence_id))
+            elif evidence_id not in allowed_support:
+                issues.append(_issue(
+                    "global_claim_literature_support_mismatch",
+                    f"全局论点 {global_claim_id} 的证据 {evidence_id} 不属于其文献主张。",
+                    claim_id=global_claim_id, evidence_id=evidence_id))
+        support_category = str(global_claim.get("support_category") or "")
+        if support_category in {"literature_supported", "mixed_evidence"} and not (
+                literature_claim_ids and literature_evidence_ids):
+            issues.append(_issue(
+                "global_claim_missing_literature_grounding",
+                f"全局论点 {global_claim_id} 标记为 {support_category}，但缺少文献主张或逐字证据。",
+                claim_id=global_claim_id))
 
     for seg_id in sorted(set(_SEGMENT_REF.findall(report_md))):
         if seg_id not in segs:
@@ -186,6 +362,31 @@ def validate_academic_report(
                 severity="warning",
                 suggested_action="改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"))
 
+    for evidence_id, quote in _LIT_QUOTE.findall(report_md):
+        item = lit_evidence.get(evidence_id)
+        if not item:
+            issues.append(_issue(
+                "unknown_literature_quote_evidence",
+                f"文献直接引语引用未知证据 {evidence_id}。",
+                evidence_id=evidence_id))
+        elif _norm(quote) != _norm(item.get("evidence_text")):
+            issues.append(_issue(
+                "literature_quote_mismatch",
+                f"文献直接引语与 {evidence_id} 的保存文本不一致。",
+                evidence_id=evidence_id))
+    for literature_claim_id in sorted(set(_LIT_CLAIM.findall(report_md))):
+        if literature_claim_id not in lit_claims:
+            issues.append(_issue(
+                "unknown_literature_claim_marker",
+                f"正文包含未知文献主张 marker：{literature_claim_id}。",
+                evidence_id=literature_claim_id))
+    for evidence_id in sorted(set(_LIT_EVIDENCE.findall(report_md))):
+        if evidence_id not in lit_evidence:
+            issues.append(_issue(
+                "unknown_literature_evidence_marker",
+                f"正文包含未知文献证据 marker：{evidence_id}。",
+                evidence_id=evidence_id))
+
     citation_ids = {a or b for a, b in _CITATION.findall(report_md)}
     for source_id in sorted(citation_ids):
         source = literature.get(source_id)
@@ -193,7 +394,8 @@ def validate_academic_report(
             issues.append(_issue(
                 "unknown_literature_citation", f"文献注册表中不存在：{source_id}",
                 evidence_id=source_id, suggested_action="删除或先登记并核验该来源。"))
-        elif not source.get("citation_allowed"):
+        elif not source.get("citation_allowed") or source.get(
+                "allowed_citation_status") == "not_allowed":
             issues.append(_issue(
                 "uncitable_literature_source",
                 f"来源 {source_id} 的状态不允许正式引用。",
@@ -292,6 +494,62 @@ def validate_academic_report(
                     f"章节 {section_id} 未标明对研究问题 {rq_id} 的回应。",
                     severity="warning", section_id=section_id))
 
+        planned_lit_claims = {str(x) for x in plan_section.get(
+            "literature_claims") or []}
+        planned_lit_evidence = {str(x) for x in plan_section.get(
+            "literature_evidence") or []}
+        if plan_section.get("literature") and not (
+                planned_lit_claims and planned_lit_evidence):
+            issues.append(_issue(
+                "outline_source_id_without_grounding",
+                f"章节 {section_id} 只规划了 paper/source ID，没有文献主张与逐字证据。",
+                section_id=section_id))
+        for literature_claim_id in planned_lit_claims:
+            if literature_claim_id not in lit_claims:
+                issues.append(_issue(
+                    "outline_unknown_literature_claim",
+                    f"章节 {section_id} 引用未知文献主张 {literature_claim_id}。",
+                    section_id=section_id, evidence_id=literature_claim_id))
+            elif f"<!--lit-claim:{literature_claim_id}-->" not in body:
+                issues.append(_issue(
+                    "missing_planned_literature_claim",
+                    f"章节 {section_id} 未落实文献主张 {literature_claim_id}。",
+                    section_id=section_id, evidence_id=literature_claim_id))
+        for evidence_id in planned_lit_evidence:
+            if evidence_id not in lit_evidence:
+                issues.append(_issue(
+                    "outline_unknown_literature_evidence",
+                    f"章节 {section_id} 引用未知文献证据 {evidence_id}。",
+                    section_id=section_id, evidence_id=evidence_id))
+            elif f"<!--lit-evidence:{evidence_id}-->" not in body and not re.search(
+                    r"\[LITERATURE\s+" + re.escape(evidence_id) + r"\]", body):
+                issues.append(_issue(
+                    "missing_planned_literature_evidence",
+                    f"章节 {section_id} 未使用文献证据 {evidence_id}。",
+                    section_id=section_id, evidence_id=evidence_id))
+        planned_sources = {str(x) for x in plan_section.get(
+            "literature_sources") or []}
+        planned_sources.update(
+            str(lit_evidence[x].get("source_id")) for x in planned_lit_evidence
+            if x in lit_evidence)
+        used_sources = {a or b for a, b in _CITATION.findall(body)}
+        for source_id in sorted(used_sources - planned_sources):
+            issues.append(_issue(
+                "section_literature_outside_plan",
+                f"章节 {section_id} 引用了计划外文献 {source_id}。",
+                section_id=section_id, evidence_id=source_id,
+                suggested_action="删除该引用，或先在论证计划中绑定文献主张与证据。"))
+        for literature_claim_id in set(_LIT_CLAIM.findall(body)) - planned_lit_claims:
+            issues.append(_issue(
+                "section_literature_claim_outside_plan",
+                f"章节 {section_id} 使用了计划外文献主张 {literature_claim_id}。",
+                section_id=section_id, evidence_id=literature_claim_id))
+        for evidence_id in set(_LIT_EVIDENCE.findall(body)) - planned_lit_evidence:
+            issues.append(_issue(
+                "section_literature_evidence_outside_plan",
+                f"章节 {section_id} 使用了计划外文献证据 {evidence_id}。",
+                section_id=section_id, evidence_id=evidence_id))
+
     selected_ids = {str(x.get("case_id")) for x in selected_cases.get("cases", [])}
     candidate_ids = {str(x.get("case_id")) for x in evidence.get("candidate_cases", [])}
     for case_id in selected_ids:
@@ -316,6 +574,9 @@ def validate_academic_report(
             "segment_references": len(_SEGMENT_REF.findall(report_md)),
             "statistics_markers": len(_STAT.findall(report_md)),
             "citation_markers": len(_CITATION.findall(report_md)),
+            "literature_claim_markers": len(_LIT_CLAIM.findall(report_md)),
+            "literature_evidence_markers": len(_LIT_EVIDENCE.findall(report_md)),
+            "literature_quote_markers": len(_LIT_QUOTE.findall(report_md)),
             "claim_markers": len(_CLAIM.findall(report_md)),
             "research_question_markers": len(_RQ.findall(report_md)),
         },
@@ -328,17 +589,26 @@ def validate_academic_report(
 def render_warnings_markdown(
     validation: Dict[str, Any],
     review: Optional[Dict[str, Any]] = None,
+    literature_review: Optional[Dict[str, Any]] = None,
     evidence: Optional[Dict[str, Any]] = None,
+    quality_dimensions: Optional[Dict[str, str]] = None,
 ) -> str:
     lines = ["# 学术证据与质量警告", ""]
     lines.append(f"- 确定性验证：{validation.get('status', 'unknown')}")
     if review:
         lines.append(f"- 语义审稿：{review.get('status', 'unknown')}")
+    if literature_review:
+        lines.append(f"- 文献支持审校：{literature_review.get('status', 'unknown')}")
+    if quality_dimensions:
+        lines.extend(["", "## 质量维度", ""])
+        lines.extend(f"- {key}: {value}" for key, value in quality_dimensions.items())
     limitations = (evidence or {}).get("limitations") or []
     if limitations:
         lines.extend(["", "## 缺失或受限证据", ""])
         lines.extend(f"- {item}" for item in limitations)
-    all_issues = list(validation.get("issues") or []) + list((review or {}).get("issues") or [])
+    all_issues = list(validation.get("issues") or []) \
+        + list((review or {}).get("issues") or []) \
+        + list((literature_review or {}).get("issues") or [])
     if all_issues:
         lines.extend(["", "## 未解决问题", ""])
         for item in all_issues:

@@ -1,16 +1,16 @@
 # 学术写作子系统：现状审计与迁移设计
 
-## 当前流水线
+## 迁移前流水线（历史审计）
 
-当前阶段三由 `core.run_job_pipeline` 调用 `core.generate_mti_report`。后者从
+迁移前阶段三由 `core.run_job_pipeline` 调用 `core.generate_mti_report`。后者从
 `report_evidence.evidence_text_block` 取得从第 0 段开始、最多约 9000 字符的
 连续双语前缀，分别调用四个章节 prompt，再把返回文本拼成 Markdown。
 `p3_sections` 负责章节级断点续写，`p3_done` 表示四章已生成，`p3_md` 用于
 Streamlit 展示和 `markdown_to_word` 导出 DOCX。
 
-## 当前状态模型
+## 迁移前状态模型
 
-任务状态保存在 `outputs/<job_id>/state.json`。与学术写作有关的字段只有
+任务状态保存在 `outputs/<job_id>/state.json`。迁移前与学术写作有关的字段只有
 `report_enabled`、`p3_sections`、`p3_md`、`p3_done` 和 `theory`。这些字段没有
 记录证据、研究问题、论点、案例、提纲、验证、审稿或依赖版本，因而无法判断
 旧章节是否因翻译、理论或 prompt 变化而失效。
@@ -52,19 +52,24 @@ Streamlit 展示和 `markdown_to_word` 导出 DOCX。
 ```text
 Academic Evidence
 → Research Model
+→ Literature Source Snapshot
+→ Literature Evidence
+→ Literature Claim
 → Argument Plan
 → Case Selection
 → Academic Outline
 → Section Writing
 → Deterministic Validation
 → Semantic Review
+→ Literature Support Review
 → Targeted Repair
 ```
 
 实现采用三个职责模块：证据与候选挖掘、学术编排与版本依赖、确定性验证。
 每个阶段输出独立 JSON artifact，并在 `academic_state` 中记录内容 hash、版本、
-状态和失效原因。写作调用只接收当前 section 所需的 claim / case / literature /
-statistics，语义审稿返回结构化 issue，修订仅重写受影响 section，最多一轮自动
+状态和失效原因。写作调用只接收当前 section 所需的 global claim / case /
+Literature Claim / Literature Evidence / citation metadata / statistics，语义审稿返回
+结构化 issue，修订仅重写受影响 section，最多一轮自动
 修复。最终 `pass` / `pass_with_warnings` / `review_required` / `fail` 状态由验证与
 审稿结果共同决定，不能由写作者自行宣告。
 
@@ -75,21 +80,27 @@ dependency hash、实现版本与更新时间：
 
 | 文件 | 核心内容 |
 |---|---|
-| `academic-evidence.json` | PROJECT/LITERATURE/AUTHOR 三类证据、全量段落、确定性统计、候选案例 |
+| `academic-evidence.json` | 全量项目段落、确定性统计、过程证据与候选案例 |
 | `research-model.json` | 研究主题、RQ、理论、方法、分析维度、输入来源状态 |
-| `argument-plan.json` | claim → RQ → project/literature evidence → planned section |
+| `literature-sources.json` | 来源元数据、允许引用状态、内容可用性、精确 source blocks 与哈希 |
+| `literature-evidence.jsonl` | Literature Evidence → source / block / exact location / exact text / provenance / hash |
+| `literature-claims.jsonl` | Literature Claim → source / supporting evidence / 类型 / 置信度 / 落地状态 |
+| `argument-plan.json` | Global Claim → RQ → project evidence / Literature Claim / Literature Evidence / support category |
 | `selected-cases.json` | 经论点相关性与证据完整度选择的案例 |
-| `academic-outline.json` | section → purpose/RQ/claim/case/literature/statistic/允许结论 |
-| `academic-sections.json` | 分节正文、摘要与 section dependency hash |
+| `academic-outline.json` | section → purpose/RQ/global claim/case/Literature Claim/Literature Evidence/statistic/允许结论 |
+| `academic-sections.json` | 分节正文、摘要、结构化 provenance 与 section dependency hash |
 | `academic-validation.json` | 确定性错误、警告与初验/复验历史 |
 | `academic-review.json` | 独立语义审稿的结构化 issue |
+| `literature-support-review.json` | 文献支持强度、引文语境、释义忠实度与 claim-source 对齐问题 |
 | `academic-repair-history.json` | 定点修订章节、issue、前后 hash |
 | `academic-evidence-warnings.md` | 面向用户的证据缺口与未解决问题 |
 
 ### 失效传播
 
-- 翻译证据变化：重建 evidence，并通过 dependency hash 重建规划和正文。
-- RQ、理论或文献变化：保留翻译 evidence，失效 research model 下游。
+- 翻译证据变化：重建 project evidence 及其规划下游，但保留文献来源、证据和文献主张。
+- RQ 或理论变化：保留 project/literature evidence，失效 research model 与论证下游。
+- 文献 metadata 变化：更新 source 与引用/写作下游，不重建逐字 evidence 或 Literature Claim。
+- 文献正文、笔记或摘录变化：失效 Literature Evidence、Literature Claim 与论证下游，不重建 project evidence。
 - planner/case/outline 版本变化：失效相应规划下游。
 - writer 版本变化：保留 evidence、research model、argument plan、cases、outline，
   只失效 sections、validation、review 和 repair history。
@@ -97,8 +108,8 @@ dependency hash、实现版本与更新时间：
 
 ### 已知限制
 
-- literature registry 的 `verified` 状态由导入者提供；本迭代不联网核验 DOI 或全文。
-- validator 能验证引用身份和登记元数据，但不能证明文献内容确实支持全部语义主张。
+- 文献元数据核验状态由导入者提供；本流水线不联网发现或核验 DOI，也不把 metadata-only 来源冒充为落地证据。
+- validator 能确定性验证来源、位置、逐字文本、哈希和关系；“释义是否过强”等语义支持问题仍由独立 Literature Support Review 判断。
 - 历史任务没有记录的 initial target、术语注入和修复过程无法追溯补建。
 - 语义学术审稿仍依赖模型判断；运行时只保证它与写作者分阶段、问题结构化且可定位。
 

@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import academic_evidence, academic_validator, academic_writer
+from mti_tool import academic_evidence, academic_validator, academic_writer, literature_evidence
 import core
 from docx import Document
 
@@ -71,9 +71,8 @@ def test_whole_corpus_evidence_and_candidates():
 
 
 def _artifacts_for_validation():
-    evidence = academic_evidence.build_academic_evidence(
-        _state(), JOB,
-        literature_sources=[{
+    evidence = academic_evidence.build_academic_evidence(_state(), JOB)
+    sources = literature_evidence.build_literature_sources([{
             "source_id": "nida1964", "title": "Toward a Science of Translating",
             "authors": ["Eugene Nida"], "year": 1964,
             "source_status": "verified", "citation_allowed": True,
@@ -95,13 +94,13 @@ def _artifacts_for_validation():
          "claims": ["C1"], "cases": [], "literature": [],
          "required_statistics": [], "minimum_chars": 20},
     ]}
-    return evidence, research, argument, selected, outline
+    return evidence, research, argument, selected, outline, sources
 
 
 def test_validator_rejects_fabrication():
-    evidence, research, argument, selected, outline = _artifacts_for_validation()
+    evidence, research, argument, selected, outline, sources = _artifacts_for_validation()
     expanded = academic_validator.expand_evidence_tokens(
-        "理论来源为 [@nida1964]。", evidence)
+        "理论来源为 [@nida1964]。", {**evidence, "literature_sources": sources["sources"]})
     assert "<!--cite:nida1964-->" in expanded and "[@nida1964]" not in expanded
     seg = f"seg-{JOB}-0000"
     report = f"""## 1 研究设计
@@ -112,7 +111,7 @@ def test_validator_rejects_fabrication():
 [seg-{JOB}-9999] <!--term:unknown-->
 """
     result = academic_validator.validate_academic_report(
-        report, evidence, research, argument, selected, outline)
+        report, evidence, research, argument, selected, outline, sources)
     types = {x["type"] for x in result["issues"]}
     assert {"invented_segment_id", "wrong_segment_quote", "wrong_project_statistic",
             "unknown_literature_citation", "unknown_terminology_decision",
@@ -130,7 +129,7 @@ def test_dependency_staleness():
                "version": "old"}
         for name, filename in academic_writer.ARTIFACT_FILES.items()
     }
-    changed = dict(academic_writer.VERSIONS, writer_version="academic-writer-v2")
+    changed = dict(academic_writer.VERSIONS, writer_version="academic-writer-v3-test")
     academic_writer.sync_versions(state, changed)
     assert "evidence" in state["academic_state"]["artifacts"]
     assert "argument_plan" in state["academic_state"]["artifacts"]
@@ -238,8 +237,7 @@ def test_end_to_end_pipeline_and_targeted_repair():
         required = set(academic_writer.ARTIFACT_FILES.values()) | {
             "academic-evidence-warnings.md"}
         assert required.issubset({x.name for x in tmp.iterdir()})
-        assert state["p3_done"] and state["academic_state"]["quality_status"] == \
-            "pass_with_warnings"
+        assert state["p3_done"] and state["academic_state"]["quality_status"] == "pass"
         initial = state["academic_state"]["validation_history"][0]
         final = state["academic_state"]["validation_history"][-1]
         assert any(x["type"] == "invented_segment_id" for x in initial["issues"])

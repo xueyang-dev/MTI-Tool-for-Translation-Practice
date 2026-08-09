@@ -16,11 +16,22 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from . import assets
 from . import report_evidence
 
-SCHEMA_VERSION = "academic-evidence-v1"
+SCHEMA_VERSION = "academic-evidence-v2"
 ALLOWED_SOURCE_STATUSES = {
-    "verified", "user_provided", "imported_notes", "unverified_candidate",
+    "metadata_verified", "user_provided", "imported_unverified", "candidate",
+    "rejected",
 }
-CITABLE_SOURCE_STATUSES = {"verified", "user_provided"}
+CITABLE_SOURCE_STATUSES = {"metadata_verified", "user_provided"}
+ALLOWED_CONTENT_STATUSES = {
+    "full_text_available", "partial_text_available", "notes_only", "metadata_only",
+}
+
+_LEGACY_SOURCE_STATUS = {
+    "verified": "metadata_verified",
+    "user_provided": "user_provided",
+    "imported_notes": "imported_unverified",
+    "unverified_candidate": "candidate",
+}
 
 _SUBORDINATION = re.compile(
     r"\b(?:although|because|before|after|while|whereas|which|that|who|whom|"
@@ -53,32 +64,76 @@ def normalize_literature_registry(
         if not source_id or source_id in seen:
             continue
         seen.add(source_id)
-        status = str(raw.get("source_status") or "unverified_candidate").strip()
+        status = str(raw.get("verification_status") or raw.get("source_status")
+                     or "candidate").strip()
+        status = _LEGACY_SOURCE_STATUS.get(status, status)
         if status not in ALLOWED_SOURCE_STATUSES:
-            status = "unverified_candidate"
+            status = "candidate"
         authors = raw.get("authors") or []
         if isinstance(authors, str):
             authors = [x.strip() for x in re.split(r"[;；]", authors) if x.strip()]
-        citation = raw.get("citation") if isinstance(raw.get("citation"), dict) else {}
+        citation = raw.get("citation_metadata")
+        if not isinstance(citation, dict):
+            citation = raw.get("citation") if isinstance(raw.get("citation"), dict) else {}
+        citation = dict(citation)
+        if isinstance(citation.get("authors"), str):
+            citation["authors"] = [x.strip() for x in re.split(
+                r"[;；]", citation["authors"]) if x.strip()]
+        notes = raw.get("notes") or []
+        if isinstance(notes, str):
+            notes = [notes]
+        excerpts = raw.get("manual_excerpts") or []
+        if isinstance(excerpts, str):
+            excerpts = [excerpts]
+        extracted = raw.get("extracted_passages") or []
+        if isinstance(extracted, str):
+            extracted = [extracted]
+        concepts = raw.get("concepts") or []
+        if isinstance(concepts, str):
+            concepts = [x.strip() for x in re.split(r"[;；,，]", concepts) if x.strip()]
+        content_status = str(raw.get("content_availability") or "").strip()
+        if content_status not in ALLOWED_CONTENT_STATUSES:
+            if raw.get("content") or raw.get("source_text") or raw.get("local_source_path"):
+                content_status = "full_text_available"
+            elif excerpts or extracted:
+                content_status = "partial_text_available"
+            elif notes:
+                content_status = "notes_only"
+            else:
+                content_status = "metadata_only"
+        citation_allowed = bool(raw.get(
+            "citation_allowed",
+            str(raw.get("allowed_citation_status") or "") == "allowed"
+            or status in CITABLE_SOURCE_STATUSES,
+        ))
         entry = {
             "source_id": source_id,
             "title": str(raw.get("title") or "").strip(),
             "authors": [str(x).strip() for x in authors if str(x).strip()],
             "year": raw.get("year"),
-            "citation": citation,
-            "concepts": [str(x).strip() for x in (raw.get("concepts") or [])
+            "source_type": str(raw.get("source_type") or "unspecified").strip(),
+            "citation_metadata": citation,
+            "local_source_path": str(raw.get("local_source_path") or "").strip() or None,
+            "import_identity": raw.get("import_identity") or None,
+            "verification_status": status,
+            "allowed_citation_status": "allowed" if citation_allowed else "not_allowed",
+            "content_availability": content_status,
+            "concepts": [str(x).strip() for x in concepts
                          if str(x).strip()],
-            "notes": [str(x).strip() for x in (raw.get("notes") or [])
-                      if str(x).strip()],
-            "source_status": status,
-            "citation_allowed": bool(
-                raw.get("citation_allowed", status in CITABLE_SOURCE_STATUSES)),
+            "notes": notes,
+            "manual_excerpts": excerpts,
+            "extracted_passages": extracted,
+            "content": raw.get("content", raw.get("source_text")),
+            "content_format": str(raw.get("content_format") or "").strip() or None,
+            "citation_allowed": citation_allowed,
             "verification": raw.get("verification") or None,
         }
         # User-provided metadata may be cited, but remains visibly distinct from
         # independently verified literature.
-        if status not in CITABLE_SOURCE_STATUSES:
+        if status not in CITABLE_SOURCE_STATUSES or status == "rejected" or not (
+                entry["title"] and entry["authors"] and entry["year"]):
             entry["citation_allowed"] = False
+            entry["allowed_citation_status"] = "not_allowed"
         out.append(entry)
     return out
 
@@ -326,18 +381,11 @@ def build_academic_evidence(
         })
 
     candidates = mine_candidate_cases(segments, glossary, max_candidates=max_candidates)
-    literature = normalize_literature_registry(literature_sources)
     statistics = _project_statistics(state, segments)
     limitations = []
     if any(s["availability"]["initial_target"] == "not_recorded" for s in segments):
         limitations.append(
             "Historical job: initial translations, glossary injection, or repair history may be unavailable.")
-    if not literature:
-        limitations.append(
-            "No literature registry was provided; formal theoretical citations and literature-derived claims are unavailable.")
-    elif any(x.get("source_status") == "user_provided" for x in literature):
-        limitations.append(
-            "User-provided literature metadata is citable by policy but has not been independently verified by this runtime.")
     artifact = {
         "schema_version": SCHEMA_VERSION,
         "job_id": job_id,
@@ -361,7 +409,6 @@ def build_academic_evidence(
             "document_profile": state.get("document_profile"),
             "glossary": glossary,
         },
-        "literature_evidence": literature,
         "author_analysis": [],
         "candidate_cases": candidates,
         "limitations": limitations,
@@ -381,4 +428,11 @@ def candidate_index(evidence: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
 
 
 def literature_index(evidence: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
-    return {s["source_id"]: s for s in evidence.get("literature_evidence", [])}
+    sources = evidence.get("sources")
+    if not isinstance(sources, list):
+        sources = evidence.get("literature_sources")
+    if not isinstance(sources, list):
+        # academic-evidence-v1 compatibility: this field contained source
+        # metadata despite its misleading name.
+        sources = evidence.get("literature_evidence", [])
+    return {s["source_id"]: s for s in sources if isinstance(s, dict) and s.get("source_id")}

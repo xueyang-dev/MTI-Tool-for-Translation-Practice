@@ -14,29 +14,37 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from . import academic_evidence
 from . import academic_validator
+from . import literature_evidence
 
-PIPELINE_VERSION = "academic-pipeline-v1"
+PIPELINE_VERSION = "academic-pipeline-v2"
 VERSIONS = {
     "evidence_version": academic_evidence.SCHEMA_VERSION,
     "research_model_version": "research-model-v1",
-    "literature_version": "literature-registry-v1",
-    "argument_plan_version": "argument-planner-v1",
+    "literature_sources_version": literature_evidence.SOURCES_VERSION,
+    "literature_evidence_version": literature_evidence.EVIDENCE_VERSION,
+    "literature_claims_version": literature_evidence.CLAIMS_VERSION,
+    "argument_plan_version": "argument-planner-v2",
     "case_selection_version": "case-selector-v1",
-    "outline_version": "academic-outline-v1",
-    "writer_version": "academic-writer-v1",
+    "outline_version": "academic-outline-v2",
+    "writer_version": "academic-writer-v2",
     "validator_version": academic_validator.VALIDATOR_VERSION,
     "reviewer_version": "academic-reviewer-v1",
+    "literature_reviewer_version": "literature-support-reviewer-v1",
 }
 
 ARTIFACT_FILES = {
     "evidence": "academic-evidence.json",
     "research_model": "research-model.json",
+    "literature_sources": "literature-sources.json",
+    "literature_evidence": "literature-evidence.jsonl",
+    "literature_claims": "literature-claims.jsonl",
     "argument_plan": "argument-plan.json",
     "selected_cases": "selected-cases.json",
     "outline": "academic-outline.json",
     "sections": "academic-sections.json",
     "validation": "academic-validation.json",
     "review": "academic-review.json",
+    "literature_support_review": "literature-support-review.json",
     "repair_history": "academic-repair-history.json",
 }
 
@@ -56,6 +64,7 @@ def default_academic_state() -> Dict[str, Any]:
         "artifact_history": [],
         "validation_history": [],
         "review_history": [],
+        "literature_review_history": [],
         "repair_history": [],
         "forced_sections": [],
         "stale_reasons": [],
@@ -72,7 +81,7 @@ def _state(state: Dict[str, Any]) -> Dict[str, Any]:
             current.setdefault(key, value)
         base = current
     for key in ("artifacts", "artifact_history", "validation_history",
-                "review_history", "repair_history", "forced_sections",
+                "review_history", "literature_review_history", "repair_history", "forced_sections",
                 "stale_reasons", "versions"):
         if not isinstance(base.get(key), (dict if key in ("artifacts", "versions") else list)):
             base[key] = {} if key in ("artifacts", "versions") else []
@@ -95,6 +104,45 @@ def _read_json(path: Path) -> Optional[Dict[str, Any]]:
         return None
 
 
+def _write_jsonl(path: Path, value: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    metadata = {k: v for k, v in value.items() if k not in {"items", "content_hash"}}
+    metadata["record_type"] = "artifact_metadata"
+    lines = [json.dumps(metadata, ensure_ascii=False, sort_keys=True)]
+    lines.extend(json.dumps(item, ensure_ascii=False, sort_keys=True)
+                 for item in value.get("items") or [])
+    tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    tmp.replace(path)
+
+
+def _read_jsonl(path: Path) -> Optional[Dict[str, Any]]:
+    try:
+        records = [json.loads(line) for line in path.read_text(
+            encoding="utf-8").splitlines() if line.strip()]
+    except Exception:
+        return None
+    if not records:
+        return None
+    metadata = records[0] if records[0].get("record_type") == "artifact_metadata" else {}
+    items = records[1:] if metadata else records
+    value = {k: v for k, v in metadata.items() if k != "record_type"}
+    value["items"] = items
+    value["content_hash"] = academic_evidence.stable_hash(items)
+    return value
+
+
+def _write_artifact(path: Path, value: Dict[str, Any]) -> None:
+    if path.suffix == ".jsonl":
+        _write_jsonl(path, value)
+    else:
+        _write_json(path, value)
+
+
+def _read_artifact(path: Path) -> Optional[Dict[str, Any]]:
+    return _read_jsonl(path) if path.suffix == ".jsonl" else _read_json(path)
+
+
 def _save_artifact(
     state: Dict[str, Any], artifact_dir: Path, name: str, value: Dict[str, Any],
     dependency_hash: str, version: str,
@@ -105,7 +153,7 @@ def _save_artifact(
         academic["artifact_history"].append({**old, "name": name,
                                               "superseded_at": _now()})
     filename = ARTIFACT_FILES[name]
-    _write_json(artifact_dir / filename, value)
+    _write_artifact(artifact_dir / filename, value)
     academic["artifacts"][name] = {
         "file": filename,
         "content_hash": value.get("content_hash") or academic_evidence.stable_hash(value),
@@ -124,7 +172,7 @@ def _load_valid_artifact(
     record = _state(state)["artifacts"].get(name) or {}
     if record.get("dependency_hash") != dependency_hash or record.get("version") != version:
         return None
-    value = _read_json(artifact_dir / ARTIFACT_FILES[name])
+    value = _read_artifact(artifact_dir / ARTIFACT_FILES[name])
     if not value:
         return None
     content_hash = value.get("content_hash") or academic_evidence.stable_hash(value)
@@ -153,23 +201,46 @@ def sync_versions(state: Dict[str, Any], versions: Optional[Dict[str, str]] = No
     academic = _state(state)
     old = academic.get("versions") or {}
     if old:
-        if old.get("evidence_version") != versions["evidence_version"] \
-                or old.get("literature_version") != versions["literature_version"]:
+        if old.get("evidence_version") != versions["evidence_version"]:
             _invalidate_names(state, list(ARTIFACT_FILES), "evidence schema/version changed")
+        elif old.get("literature_sources_version") != versions["literature_sources_version"]:
+            _invalidate_names(state, [
+                "literature_sources", "literature_evidence", "literature_claims",
+                "argument_plan", "outline", "sections", "validation", "review",
+                "literature_support_review", "repair_history",
+            ], "literature source schema/version changed")
+        elif old.get("literature_evidence_version") != versions["literature_evidence_version"]:
+            _invalidate_names(state, [
+                "literature_evidence", "literature_claims", "argument_plan", "outline",
+                "sections", "validation", "review", "literature_support_review",
+                "repair_history",
+            ], "literature evidence schema/version changed")
+        elif old.get("literature_claims_version") != versions["literature_claims_version"]:
+            _invalidate_names(state, [
+                "literature_claims", "argument_plan", "outline", "sections",
+                "validation", "review", "literature_support_review", "repair_history",
+            ], "literature claim schema/version changed")
         elif old.get("research_model_version") != versions["research_model_version"] \
                 or old.get("argument_plan_version") != versions["argument_plan_version"] \
                 or old.get("case_selection_version") != versions["case_selection_version"] \
                 or old.get("outline_version") != versions["outline_version"]:
             _invalidate_names(state, ["research_model", "argument_plan", "selected_cases",
                                       "outline", "sections", "validation", "review",
-                                      "repair_history"], "academic planning version changed")
+                                      "literature_support_review", "repair_history"],
+                              "academic planning version changed")
         elif old.get("writer_version") != versions["writer_version"]:
-            _invalidate_names(state, ["sections", "validation", "review", "repair_history"],
+            _invalidate_names(state, ["sections", "validation", "review",
+                                      "literature_support_review", "repair_history"],
                               "writer version changed")
         elif old.get("validator_version") != versions["validator_version"]:
-            _invalidate_names(state, ["validation", "review"], "validator version changed")
+            _invalidate_names(state, ["validation", "review", "literature_support_review"],
+                              "validator version changed")
         elif old.get("reviewer_version") != versions["reviewer_version"]:
             _invalidate_names(state, ["review"], "reviewer version changed")
+        elif old.get("literature_reviewer_version") != \
+                versions["literature_reviewer_version"]:
+            _invalidate_names(state, ["literature_support_review"],
+                              "literature reviewer version changed")
     academic["versions"] = versions
 
 
@@ -180,14 +251,18 @@ def invalidate_academic_state(
     if scope == "all":
         names = list(ARTIFACT_FILES)
     elif scope == "planning":
-        names = ["argument_plan", "selected_cases", "outline", "sections",
-                 "validation", "review", "repair_history"]
+        names = ["literature_claims", "argument_plan", "selected_cases", "outline",
+                 "sections", "validation", "review", "literature_support_review",
+                 "repair_history"]
     elif scope == "writer":
-        names = ["sections", "validation", "review", "repair_history"]
+        names = ["sections", "validation", "review", "literature_support_review",
+                 "repair_history"]
     elif scope == "validation":
-        names = ["validation", "review"]
+        names = ["validation", "review", "literature_support_review"]
     elif scope == "review":
         names = ["review"]
+    elif scope == "literature_review":
+        names = ["literature_support_review"]
     elif scope == "section":
         names = ["validation", "review"]
         if section_id and section_id not in _state(state)["forced_sections"]:
@@ -214,15 +289,30 @@ def prepare_academic_inputs(
     literature = list(
         literature_sources if literature_sources is not None
         else state.get("literature_sources") or [])
-    input_hash = academic_evidence.stable_hash({
-        "settings": settings,
-        "literature": academic_evidence.normalize_literature_registry(literature),
-    })
-    old_hash = academic.get("input_hash")
-    if old_hash and old_hash != input_hash:
+    settings_hash = academic_evidence.stable_hash(settings)
+    literature_input_hash = academic_evidence.stable_hash(
+        academic_evidence.normalize_literature_registry(literature))
+    old_settings_hash = academic.get("research_settings_hash")
+    if old_settings_hash and old_settings_hash != settings_hash:
         _invalidate_names(state, ["research_model", "argument_plan", "selected_cases",
                                   "outline", "sections", "validation", "review",
-                                  "repair_history"], "research/literature settings changed")
+                                  "literature_support_review", "repair_history"],
+                          "research settings changed")
+        state["p3_done"] = False
+    elif not old_settings_hash and academic.get("input_hash") and \
+            academic.get("input_hash") != academic_evidence.stable_hash({
+                "settings": settings_hash, "literature": literature_input_hash}):
+        _invalidate_names(state, ["research_model", "argument_plan", "selected_cases",
+                                  "outline", "sections", "validation", "review",
+                                  "literature_support_review", "repair_history"],
+                          "legacy academic inputs changed")
+        state["p3_done"] = False
+    old_literature_hash = academic.get("literature_input_hash")
+    if old_literature_hash and old_literature_hash != literature_input_hash:
+        _invalidate_names(state, [
+            "literature_sources", "argument_plan", "outline", "sections", "validation", "review",
+            "literature_support_review", "repair_history",
+        ], "literature inputs changed")
         state["p3_done"] = False
     elif state.get("p3_done") and not academic.get("artifacts"):
         # Old prompt-only report: force the compatibility wrapper to back it up
@@ -243,9 +333,16 @@ def prepare_academic_inputs(
     })
     old_translation_hash = academic.get("translation_evidence_hash")
     if old_translation_hash and old_translation_hash != translation_hash:
-        _invalidate_names(state, list(ARTIFACT_FILES), "translation evidence changed")
+        _invalidate_names(state, [
+            "evidence", "research_model", "argument_plan", "selected_cases", "outline",
+            "sections", "validation", "review", "literature_support_review",
+            "repair_history",
+        ], "translation evidence changed")
     academic["translation_evidence_hash"] = translation_hash
-    academic["input_hash"] = input_hash
+    academic["research_settings_hash"] = settings_hash
+    academic["literature_input_hash"] = literature_input_hash
+    academic["input_hash"] = academic_evidence.stable_hash({
+        "settings": settings_hash, "literature": literature_input_hash})
     state["research_settings"] = settings
     state["literature_sources"] = literature
     return settings, literature
@@ -379,7 +476,9 @@ def _fallback_argument_plan(
             "claim": f"对 {rq['rq_id']} 的回答必须限定在已记录项目证据与可核验文献范围内。",
             "research_question": rq["rq_id"],
             "project_evidence": case_ids + (["metric:total_segments"] if stats else []),
+            "literature_claims": [],
             "literature_evidence": [],
+            "support_category": "project_evidence_only",
             "analysis_type": "AUTHOR_ANALYSIS",
             "confidence": "low",
             "planned_sections": [str(i + 1)],
@@ -392,13 +491,18 @@ def _fallback_argument_plan(
 def build_argument_plan(
     research_model: Dict[str, Any], evidence: Dict[str, Any],
     call_llm: Callable, provider: str, api_key: str, model: str,
+    literature_sources_artifact: Optional[Dict[str, Any]] = None,
+    literature_evidence_artifact: Optional[Dict[str, Any]] = None,
+    literature_claims_artifact: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     system = (
         "你是学术论证规划器。只规划可由输入证据支持的主要论点，不写正文，不补造文献。"
         "必须区分 PROJECT_EVIDENCE、LITERATURE_EVIDENCE 和 AUTHOR_ANALYSIS。"
         "输出 JSON：{\"claims\":[{\"claim_id\":\"C1\",\"claim\":\"...\","
         "\"research_question\":\"RQ1\",\"project_evidence\":[\"seg-...\"或\"metric:...\"],"
-        "\"literature_evidence\":[\"source-id\"],\"analysis_type\":\"AUTHOR_ANALYSIS\","
+        "\"literature_claims\":[\"LC-001\"],\"literature_evidence\":[\"LE-...\"],"
+        "\"support_category\":\"project_evidence_only|literature_supported|mixed_evidence|"
+        "author_analysis\",\"analysis_type\":\"AUTHOR_ANALYSIS\","
         "\"confidence\":\"low|medium|high\",\"planned_sections\":[\"1\"],"
         "\"reasoning\":\"...\",\"counterargument\":\"...\"}]}。"
     )
@@ -406,7 +510,11 @@ def build_argument_plan(
         "research_model": research_model,
         "project_statistics": evidence.get("project_evidence", {}).get("statistics", {}),
         "candidate_cases": _candidate_summaries(evidence),
-        "literature_registry": evidence.get("literature_evidence", []),
+        "literature_sources": [
+            {k: v for k, v in x.items() if k != "content_blocks"}
+            for x in (literature_sources_artifact or {}).get("sources", [])],
+        "literature_claims": (literature_claims_artifact or {}).get("items", []),
+        "literature_evidence": (literature_evidence_artifact or {}).get("items", []),
     }
     raw = _call_json(call_llm, provider, api_key, model, system,
                      json.dumps(payload, ensure_ascii=False)) or _fallback_argument_plan(
@@ -415,8 +523,17 @@ def build_argument_plan(
     valid_segments = set(academic_evidence.segment_index(evidence))
     valid_metrics = {f"metric:{x}" for x in
                      evidence.get("project_evidence", {}).get("statistics", {})}
-    valid_lit = set(academic_evidence.literature_index(evidence))
+    source_index = literature_evidence.source_index(literature_sources_artifact or {})
+    literature_claims = {
+        claim_id: claim for claim_id, claim in literature_evidence.claim_index(
+            literature_claims_artifact or {}).items()
+        if (source_index.get(claim.get("source_id")) or {}).get("citation_allowed")
+        and claim.get("evidence_grounded_status") != "evidence_missing"
+    }
+    valid_lit_evidence = literature_evidence.evidence_index(
+        literature_evidence_artifact or {})
     claims = []
+    rejected_source_only = 0
     for i, item in enumerate(raw.get("claims") or []):
         if not isinstance(item, dict):
             continue
@@ -424,9 +541,30 @@ def build_argument_plan(
         claim_text = str(item.get("claim") or "").strip()
         project = [str(x) for x in item.get("project_evidence") or []
                    if str(x) in valid_segments or str(x) in valid_metrics]
-        literature = [str(x) for x in item.get("literature_evidence") or []
-                      if str(x) in valid_lit]
-        if not claim_text or rq not in valid_rqs or not (project or literature):
+        lit_claim_ids = [str(x) for x in item.get("literature_claims") or []
+                         if str(x) in literature_claims]
+        allowed_lit_evidence = {
+            evidence_id for claim_id in lit_claim_ids
+            for evidence_id in literature_claims[claim_id].get(
+                "supporting_evidence_ids") or []
+        }
+        raw_lit_evidence = [str(x) for x in item.get("literature_evidence") or []]
+        literature = [x for x in raw_lit_evidence
+                      if x in valid_lit_evidence and x in allowed_lit_evidence]
+        rejected_source_only += sum(
+            x not in valid_lit_evidence for x in raw_lit_evidence)
+        requested_category = str(item.get("support_category") or "")
+        if project and lit_claim_ids and literature:
+            support_category = "mixed_evidence"
+        elif lit_claim_ids and literature:
+            support_category = "literature_supported"
+        elif project:
+            support_category = "project_evidence_only"
+        else:
+            support_category = "author_analysis"
+        if requested_category == "author_analysis" and not project and not literature:
+            support_category = "author_analysis"
+        if not claim_text or rq not in valid_rqs:
             continue
         analysis_type = str(item.get("analysis_type") or "AUTHOR_ANALYSIS")
         if analysis_type not in ("PROJECT_EVIDENCE", "LITERATURE_EVIDENCE",
@@ -437,7 +575,9 @@ def build_argument_plan(
             "claim": claim_text,
             "research_question": rq,
             "project_evidence": project,
+            "literature_claims": lit_claim_ids if literature else [],
             "literature_evidence": literature,
+            "support_category": support_category,
             "analysis_type": analysis_type,
             "confidence": str(item.get("confidence") or "low"),
             "planned_sections": _as_list(item.get("planned_sections")) or ["3"],
@@ -450,6 +590,7 @@ def build_argument_plan(
         "schema_version": VERSIONS["argument_plan_version"],
         "claims": claims,
         "planner_fallback": bool(raw.get("planner_fallback")),
+        "rejected_source_only_support": rejected_source_only,
     }
     artifact["content_hash"] = academic_evidence.stable_hash(
         {k: v for k, v in artifact.items() if k != "content_hash"})
@@ -509,21 +650,25 @@ def _fallback_outline(
     total = int(research_model.get("target_words") or 4200)
     return {"sections": [
         {"section_id": "1", "title": "翻译项目与研究设计", "purpose": "界定项目、研究问题、方法与证据边界。",
-         "research_questions": rqs, "claims": claims[:1], "cases": [], "literature": [],
+         "research_questions": rqs, "claims": claims[:1], "cases": [],
+         "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": ["total_segments", "translated_segments"],
          "target_words": round(total * .2), "minimum_chars": 300,
          "allowed_conclusions": ["仅陈述证据库可支持的项目特征"]},
         {"section_id": "2", "title": "翻译过程、术语与质量控制", "purpose": "分析术语、TM、审校和修复证据。",
-         "research_questions": rqs[-1:], "claims": claims[-1:], "cases": cases[:2], "literature": [],
+         "research_questions": rqs[-1:], "claims": claims[-1:], "cases": cases[:2],
+         "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": ["reviewed_segments", "tm_reuse_count", "actionable_findings"],
          "target_words": round(total * .25), "minimum_chars": 350,
          "allowed_conclusions": ["区分可观察流程效果与推断"]},
         {"section_id": "3", "title": "理论框架下的案例分析", "purpose": "用完整证据链分析代表性翻译决策。",
-         "research_questions": rqs, "claims": claims, "cases": cases, "literature": [],
+         "research_questions": rqs, "claims": claims, "cases": cases,
+         "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": [], "target_words": round(total * .4), "minimum_chars": 600,
          "allowed_conclusions": ["理论解释必须表述为作者分析而非真实心理意图"]},
         {"section_id": "4", "title": "结论、局限与反思", "purpose": "回答研究问题并限定结论外推。",
-         "research_questions": rqs, "claims": claims, "cases": [], "literature": [],
+         "research_questions": rqs, "claims": claims, "cases": [],
+         "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": ["repaired_segments", "term_conflicts"],
          "target_words": round(total * .15), "minimum_chars": 250,
          "allowed_conclusions": ["结论强度不得超过项目与文献证据"]},
@@ -534,12 +679,18 @@ def build_academic_outline(
     research_model: Dict[str, Any], argument_plan: Dict[str, Any],
     selected_cases: Dict[str, Any], evidence: Dict[str, Any],
     call_llm: Callable, provider: str, api_key: str, model: str,
+    literature_sources_artifact: Optional[Dict[str, Any]] = None,
+    literature_evidence_artifact: Optional[Dict[str, Any]] = None,
+    literature_claims_artifact: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     system = (
         "你是 MTI 学术提纲规划器。提纲必须服务研究问题，并且只能引用给定 claim、case、"
-        "literature 和 statistic id。只输出 JSON：{\"sections\":[{\"section_id\":\"1\","
+        "literature claim、literature evidence 和 statistic id。只输出 JSON："
+        "{\"sections\":[{\"section_id\":\"1\","
         "\"title\":\"...\",\"purpose\":\"...\",\"research_questions\":[\"RQ1\"],"
-        "\"claims\":[\"C1\"],\"cases\":[\"seg-...\"],\"literature\":[\"source-id\"],"
+        "\"claims\":[\"C1\"],\"cases\":[\"seg-...\"],"
+        "\"literature_claims\":[\"LC-001\"],"
+        "\"literature_evidence\":[\"LE-...\"],"
         "\"required_statistics\":[\"total_segments\"],\"target_words\":900,"
         "\"minimum_chars\":300,\"allowed_conclusions\":[\"...\"]}]}。"
     )
@@ -547,7 +698,11 @@ def build_academic_outline(
         "research_model": research_model,
         "argument_plan": argument_plan,
         "selected_cases": selected_cases,
-        "available_literature_ids": list(academic_evidence.literature_index(evidence)),
+        "literature_sources": [
+            {k: v for k, v in x.items() if k != "content_blocks"}
+            for x in (literature_sources_artifact or {}).get("sources", [])],
+        "literature_claims": (literature_claims_artifact or {}).get("items", []),
+        "literature_evidence": (literature_evidence_artifact or {}).get("items", []),
         "available_statistics": list(evidence.get("project_evidence", {}).get("statistics", {})),
     }
     raw = _call_json(call_llm, provider, api_key, model, system,
@@ -556,13 +711,29 @@ def build_academic_outline(
     valid_claims = {x["claim_id"] for x in argument_plan.get("claims", [])}
     valid_cases = {x["case_id"] for x in selected_cases.get("cases", [])}
     valid_rqs = {x["rq_id"] for x in research_model.get("research_questions", [])}
-    valid_lit = set(academic_evidence.literature_index(evidence))
+    lit_sources = literature_evidence.source_index(literature_sources_artifact or {})
+    lit_evidence = literature_evidence.evidence_index(literature_evidence_artifact or {})
+    lit_claims = literature_evidence.claim_index(literature_claims_artifact or {})
     valid_stats = set(evidence.get("project_evidence", {}).get("statistics", {}))
     sections = []
     for i, item in enumerate(raw.get("sections") or []):
         if not isinstance(item, dict):
             continue
         section_id = str(item.get("section_id") or i + 1)
+        section_lit_claims = [str(x) for x in item.get("literature_claims") or []
+                              if str(x) in lit_claims]
+        allowed_evidence = {
+            evidence_id for claim_id in section_lit_claims
+            for evidence_id in lit_claims[claim_id].get("supporting_evidence_ids") or []
+        }
+        section_lit_evidence = [
+            str(x) for x in item.get("literature_evidence") or []
+            if str(x) in lit_evidence and str(x) in allowed_evidence
+        ]
+        section_sources = sorted({
+            lit_evidence[x]["source_id"] for x in section_lit_evidence
+            if lit_evidence[x].get("source_id") in lit_sources
+        })
         sections.append({
             "section_id": section_id,
             "title": str(item.get("title") or f"章节 {section_id}").strip(),
@@ -571,7 +742,9 @@ def build_academic_outline(
                                    if str(x) in valid_rqs],
             "claims": [str(x) for x in item.get("claims") or [] if str(x) in valid_claims],
             "cases": [str(x) for x in item.get("cases") or [] if str(x) in valid_cases],
-            "literature": [str(x) for x in item.get("literature") or [] if str(x) in valid_lit],
+            "literature_claims": section_lit_claims if section_lit_evidence else [],
+            "literature_evidence": section_lit_evidence,
+            "literature_sources": section_sources,
             "required_statistics": [str(x) for x in item.get("required_statistics") or []
                                     if str(x) in valid_stats],
             "target_words": max(200, int(item.get("target_words") or 700)),
@@ -591,6 +764,22 @@ def build_academic_outline(
     for rq_id in valid_rqs:
         if not any(rq_id in x["research_questions"] for x in sections):
             analysis["research_questions"].append(rq_id)
+    claims_by_id = {x["claim_id"]: x for x in argument_plan.get("claims", [])}
+    for section in sections:
+        for claim_id in section["claims"]:
+            global_claim = claims_by_id.get(claim_id) or {}
+            for literature_claim_id in global_claim.get("literature_claims") or []:
+                if literature_claim_id in lit_claims and literature_claim_id not in section[
+                        "literature_claims"]:
+                    section["literature_claims"].append(literature_claim_id)
+            for evidence_id in global_claim.get("literature_evidence") or []:
+                if evidence_id in lit_evidence and evidence_id not in section[
+                        "literature_evidence"]:
+                    section["literature_evidence"].append(evidence_id)
+        section["literature_sources"] = sorted({
+            lit_evidence[x]["source_id"] for x in section["literature_evidence"]
+            if x in lit_evidence and lit_evidence[x].get("source_id") in lit_sources
+        })
     artifact = {
         "schema_version": VERSIONS["outline_version"],
         "sections": sections,
@@ -606,11 +795,16 @@ def _section_packet(
     argument_plan: Dict[str, Any], selected_cases: Dict[str, Any],
     evidence: Dict[str, Any], outline: Dict[str, Any],
     prior_summaries: List[Dict[str, str]],
+    literature_sources_artifact: Optional[Dict[str, Any]] = None,
+    literature_evidence_artifact: Optional[Dict[str, Any]] = None,
+    literature_claims_artifact: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     claims = {x["claim_id"]: x for x in argument_plan.get("claims", [])}
     cases = {x["case_id"]: x for x in selected_cases.get("cases", [])}
     segments = academic_evidence.segment_index(evidence)
-    literature = academic_evidence.literature_index(evidence)
+    lit_sources = literature_evidence.source_index(literature_sources_artifact or {})
+    lit_evidence = literature_evidence.evidence_index(literature_evidence_artifact or {})
+    lit_claims = literature_evidence.claim_index(literature_claims_artifact or {})
     case_term_ids = set()
     for case_id in section.get("cases", []):
         case_term_ids.update((segments.get(case_id) or {}).get(
@@ -624,15 +818,22 @@ def _section_packet(
         "research_model": research_model,
         "global_outline": [
             {k: x.get(k) for k in ("section_id", "title", "purpose",
-                                    "research_questions", "claims", "cases")}
+                                    "research_questions", "claims", "cases",
+                                    "literature_claims", "literature_evidence")}
             for x in outline.get("sections", [])
         ],
         "current_section": section,
         "claims": [claims[x] for x in section.get("claims", []) if x in claims],
         "cases": [{**cases[x], "evidence": segments.get(x)} for x in section.get("cases", [])
                   if x in cases and x in segments],
-        "literature": [literature[x] for x in section.get("literature", [])
-                       if x in literature and literature[x].get("citation_allowed")],
+        "literature_sources": [
+            {k: v for k, v in lit_sources[x].items() if k != "content_blocks"}
+            for x in section.get("literature_sources", []) if x in lit_sources
+            and lit_sources[x].get("citation_allowed")],
+        "literature_claims": [lit_claims[x] for x in section.get(
+            "literature_claims", []) if x in lit_claims],
+        "literature_evidence": [lit_evidence[x] for x in section.get(
+            "literature_evidence", []) if x in lit_evidence],
         "statistics": {x: evidence.get("project_evidence", {}).get("statistics", {}).get(x)
                        for x in section.get("required_statistics", [])},
         "terminology_decisions": terminology,
@@ -645,6 +846,9 @@ def _section_packet(
             "project_statistic": "{{STAT:metric_name}}",
             "terminology_decision": "{{TERM:entry_id}}",
             "formal_citation": "[@source_id]",
+            "literature_quote": "> [LITERATURE LE-...]: exact evidence text",
+            "literature_claim_marker": "<!--lit-claim:LC-001-->",
+            "literature_evidence_marker": "<!--lit-evidence:LE-...-->",
         },
     }
 
@@ -659,6 +863,8 @@ def _write_section(
         "你是 MTI 证据约束型学术写作者。根据论点计划写当前章节，不得新增主要论点、"
         "项目事实或文献。引用案例时必须逐字复制 packet 中 source/final_target，使用指定"
         "SOURCE/TARGET 格式；项目数字只能用 {{STAT:key}}；正式文献只能用 [@source_id]；"
+        "文献直接引语必须逐字复制 literature_evidence 并使用 LITERATURE 格式；文献释义必须"
+        "同时保留 lit-claim 与 lit-evidence marker，并引用对应 source_id；"
         "项目术语决策用 {{TERM:entry_id}}。每个落实的 claim 和 RQ 分别保留 HTML marker。"
         "理论解释必须写成作者分析，例如‘从结果看可解释为’，不得冒充译者真实意图。"
         "无文献证据时，不得从模型记忆补作者、年份、书名或理论命题。只输出章节正文。"
@@ -678,6 +884,23 @@ def _write_section(
     return academic_validator.expand_evidence_tokens(text, packet_to_evidence(packet))
 
 
+def _packet_provenance(packet: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "global_claim_ids": [x.get("claim_id") for x in packet.get("claims", [])],
+        "project_evidence_ids": [x.get("case_id") for x in packet.get("cases", [])],
+        "literature_claim_ids": [x.get("literature_claim_id")
+                                 for x in packet.get("literature_claims", [])],
+        "literature_evidence_ids": [x.get("evidence_id")
+                                    for x in packet.get("literature_evidence", [])],
+        "literature_source_ids": [x.get("source_id")
+                                  for x in packet.get("literature_sources", [])],
+        "support_categories": sorted({
+            str(x.get("support_category")) for x in packet.get("claims", [])
+            if x.get("support_category")
+        }),
+    }
+
+
 def packet_to_evidence(packet: Dict[str, Any]) -> Dict[str, Any]:
     """Minimal evidence shape used for token expansion in a scoped packet."""
     glossary = list(packet.get("terminology_decisions") or [])
@@ -688,7 +911,7 @@ def packet_to_evidence(packet: Dict[str, Any]) -> Dict[str, Any]:
                 glossary.append(term)
     return {"project_evidence": {"statistics": packet.get("statistics", {}),
                                   "glossary": glossary},
-            "literature_evidence": packet.get("literature", [])}
+            "literature_sources": packet.get("literature_sources", [])}
 
 
 def _compose_report(sections: List[Dict[str, Any]]) -> str:
@@ -780,6 +1003,133 @@ def _semantic_review(
     return artifact
 
 
+def _literature_support_review(
+    report_md: str, argument_plan: Dict[str, Any], outline: Dict[str, Any],
+    literature_sources_artifact: Dict[str, Any],
+    literature_evidence_artifact: Dict[str, Any],
+    literature_claims_artifact: Dict[str, Any],
+    call_llm: Callable, provider: str, api_key: str, model: str,
+) -> Dict[str, Any]:
+    issue_types = {
+        "unsupported_by_evidence", "support_too_weak", "claim_too_broad",
+        "claim_stronger_than_source", "quotation_context_mismatch",
+        "paraphrase_distorts_source", "theory_case_mismatch",
+        "citation_present_but_not_supportive",
+    }
+    source_ids = set(literature_evidence.source_index(literature_sources_artifact))
+    evidence_ids = set(literature_evidence.evidence_index(literature_evidence_artifact))
+    literature_claim_ids = set(literature_evidence.claim_index(literature_claims_artifact))
+    global_claim_ids = {str(x.get("claim_id")) for x in argument_plan.get("claims", [])}
+    section_ids = {str(x.get("section_id")) for x in outline.get("sections", [])}
+    used_claim_ids = {
+        str(x) for claim in argument_plan.get("claims", [])
+        for x in claim.get("literature_claims") or []
+    }
+    if not used_claim_ids:
+        artifact = {
+            "schema_version": VERSIONS["literature_reviewer_version"],
+            "status": "not_applicable", "issues": [],
+            "reviewed_literature_claims": 0,
+        }
+        artifact["content_hash"] = academic_evidence.stable_hash(
+            {k: v for k, v in artifact.items() if k != "content_hash"})
+        return artifact
+    all_claims = literature_evidence.claim_index(literature_claims_artifact)
+    scoped_claims = [all_claims[x] for x in sorted(used_claim_ids) if x in all_claims]
+    scoped_evidence_ids = {
+        evidence_id for claim in scoped_claims
+        for evidence_id in claim.get("supporting_evidence_ids") or []
+    }
+    all_evidence = literature_evidence.evidence_index(literature_evidence_artifact)
+    scoped_evidence = [all_evidence[x] for x in sorted(scoped_evidence_ids)
+                       if x in all_evidence]
+    scoped_source_ids = {x.get("source_id") for x in scoped_evidence}
+    all_sources = literature_evidence.source_index(literature_sources_artifact)
+    scoped_sources = [
+        {k: v for k, v in all_sources[x].items() if k != "content_blocks"}
+        for x in sorted(scoped_source_ids) if x in all_sources]
+    system = (
+        "你是独立的 Literature Support Reviewer，以低推断强度核对 Literature Claim、逐字"
+        "Literature Evidence、Global Claim 与实际章节。不要改写正文，不检查一般文风。只输出"
+        "JSON：{\"issues\":[{\"type\":\"unsupported_by_evidence|support_too_weak|"
+        "claim_too_broad|claim_stronger_than_source|quotation_context_mismatch|"
+        "paraphrase_distorts_source|theory_case_mismatch|citation_present_but_not_supportive\","
+        "\"section_id\":\"3\",\"global_claim_id\":\"C1\","
+        "\"literature_claim_id\":\"LC-001\",\"literature_evidence_ids\":[\"LE-...\"],"
+        "\"source_id\":\"source-id\",\"severity\":\"low|medium|high\","
+        "\"reason\":\"...\",\"repair_action\":\"narrow|replace_evidence|remove|rewrite|"
+        "downgrade|mark_author_interpretation\"}]}。每条意见必须能定位到章节和文献主张。"
+    )
+    payload = {
+        "literature_sources": scoped_sources,
+        "literature_evidence": scoped_evidence,
+        "literature_claims": scoped_claims,
+        "argument_plan": argument_plan,
+        "outline": outline,
+        "report": report_md,
+    }
+    raw = _call_json(call_llm, provider, api_key, model, system,
+                     json.dumps(payload, ensure_ascii=False))
+    issues = []
+    if raw is None:
+        issues.append({
+            "issue_id": "LR-001", "type": "unsupported_by_evidence",
+            "section_id": None, "global_claim_id": None,
+            "literature_claim_id": None, "literature_evidence_ids": [],
+            "source_id": None, "severity": "medium",
+            "reason": "文献支持审校未返回可解析的结构化结果。",
+            "repair_action": "downgrade",
+        })
+    else:
+        for item in raw.get("issues") or []:
+            if not isinstance(item, dict):
+                continue
+            section_id = str(item.get("section_id") or "")
+            global_claim_id = str(item.get("global_claim_id") or "")
+            literature_claim_id = str(item.get("literature_claim_id") or "")
+            source_id = str(item.get("source_id") or "")
+            if section_id not in section_ids or literature_claim_id not in literature_claim_ids:
+                continue
+            if global_claim_id not in global_claim_ids:
+                global_claim_id = None
+            if source_id not in source_ids:
+                source_id = None
+            item_evidence = [str(x) for x in item.get("literature_evidence_ids") or []
+                             if str(x) in evidence_ids]
+            issue_type = str(item.get("type") or "unsupported_by_evidence")
+            if issue_type not in issue_types:
+                issue_type = "unsupported_by_evidence"
+            severity = str(item.get("severity") or "medium").lower()
+            if severity not in {"low", "medium", "high"}:
+                severity = "medium"
+            action = str(item.get("repair_action") or "downgrade")
+            if action not in {"narrow", "replace_evidence", "remove", "rewrite",
+                              "downgrade", "mark_author_interpretation"}:
+                action = "downgrade"
+            reason = str(item.get("reason") or "").strip()
+            if not reason:
+                continue
+            issues.append({
+                "issue_id": f"LR-{len(issues) + 1:03d}", "type": issue_type,
+                "section_id": section_id, "global_claim_id": global_claim_id,
+                "literature_claim_id": literature_claim_id,
+                "literature_evidence_ids": item_evidence,
+                "source_id": source_id, "severity": severity,
+                "reason": reason, "repair_action": action,
+            })
+    status = "review_required" if any(x["severity"] in {"medium", "high"}
+                                      for x in issues) else (
+        "pass_with_warnings" if issues else "pass")
+    artifact = {
+        "schema_version": VERSIONS["literature_reviewer_version"],
+        "status": status, "issues": issues,
+        "reviewed_literature_claims": len(used_claim_ids),
+    }
+    artifact["content_hash"] = academic_evidence.stable_hash(
+        {k: v for k, v in artifact.items() if k != "content_hash"})
+    return artifact
+
+
 def _locate_validation_issues(
     validation: Dict[str, Any], sections: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
@@ -800,15 +1150,54 @@ def _locate_validation_issues(
 
 def _quality_status(
     validation: Dict[str, Any], review: Dict[str, Any], evidence: Dict[str, Any],
-) -> str:
+    literature_sources_artifact: Dict[str, Any],
+    literature_evidence_artifact: Dict[str, Any],
+    literature_claims_artifact: Dict[str, Any],
+    literature_support_review: Dict[str, Any], argument_plan: Dict[str, Any],
+) -> Tuple[str, Dict[str, str]]:
+    sources = literature_sources_artifact.get("sources") or []
+    lit_items = [x for x in literature_evidence_artifact.get("items") or []
+                 if x.get("eligible_for_claim")]
+    lit_claims = literature_claims_artifact.get("items") or []
+    if not sources:
+        metadata_status = grounding_status = "not_applicable"
+    else:
+        metadata_status = "pass" if all(
+            x.get("verification_status") == "metadata_verified"
+            and (x.get("allowed_citation_status") != "allowed"
+                 or x.get("citation_allowed"))
+            for x in sources) else "pass_with_warnings"
+        if not lit_items or not lit_claims:
+            grounding_status = "pass_with_warnings"
+        elif any(x.get("evidence_grounded_status") == "needs_review" for x in lit_claims):
+            grounding_status = "review_required"
+        else:
+            grounding_status = "pass"
+    dimensions = {
+        "project_evidence": "pass" if evidence.get(
+            "project_evidence", {}).get("segments") else "fail",
+        "literature_metadata": metadata_status,
+        "literature_grounding": grounding_status,
+        "argument_support": "fail" if any(
+            x.get("support_category") in {"literature_supported", "mixed_evidence"}
+            and not (x.get("literature_claims") and x.get("literature_evidence"))
+            for x in argument_plan.get("claims", [])) else "pass",
+        "citation_validation": validation.get("status", "fail"),
+        "general_review": review.get("status", "review_required"),
+        "literature_support_review": literature_support_review.get(
+            "status", "not_applicable"),
+    }
     if validation.get("status") == "fail":
-        return "fail"
-    if review.get("status") == "review_required":
-        return "review_required"
+        return "fail", dimensions
+    if review.get("status") == "review_required" or grounding_status == "review_required" \
+            or literature_support_review.get("status") == "review_required":
+        return "review_required", dimensions
     if validation.get("status") == "pass_with_warnings" or review.get("issues") \
-            or evidence.get("limitations"):
-        return "pass_with_warnings"
-    return "pass"
+            or evidence.get("limitations") or metadata_status == "pass_with_warnings" \
+            or grounding_status == "pass_with_warnings" \
+            or literature_support_review.get("issues"):
+        return "pass_with_warnings", dimensions
+    return "pass", dimensions
 
 
 def _legacy_backup(state: Dict[str, Any], artifact_dir: Path) -> None:
@@ -853,9 +1242,9 @@ def run_academic_pipeline(
         save_state(state)
 
     try:
-        stage("evidence", "【学术写作 1/8】构建全语料学术证据库...")
+        stage("evidence", "【学术写作 1/10】构建全语料项目证据库...")
         evidence_new = academic_evidence.build_academic_evidence(
-            state, job_id, literature)
+            state, job_id)
         evidence_dep = academic_evidence.stable_hash({
             "translation": evidence_new["content_hash"],
             "version": VERSIONS["evidence_version"],
@@ -866,7 +1255,35 @@ def run_academic_pipeline(
             evidence = _save_artifact(state, artifact_dir, "evidence", evidence_new,
                                       evidence_dep, VERSIONS["evidence_version"])
 
-        stage("research_model", "【学术写作 2/8】建立研究问题与理论框架...")
+        stage("literature_evidence", "【学术写作 2/10】固化文献来源与逐字证据...")
+        literature_sources_new = literature_evidence.build_literature_sources(literature)
+        literature_sources_dep = academic_evidence.stable_hash({
+            "source_snapshot": literature_sources_new["content_hash"],
+            "version": VERSIONS["literature_sources_version"],
+        })
+        literature_sources_artifact = _load_valid_artifact(
+            state, artifact_dir, "literature_sources", literature_sources_dep,
+            VERSIONS["literature_sources_version"])
+        if literature_sources_artifact is None:
+            literature_sources_artifact = _save_artifact(
+                state, artifact_dir, "literature_sources", literature_sources_new,
+                literature_sources_dep, VERSIONS["literature_sources_version"])
+
+        literature_evidence_new = literature_evidence.build_literature_evidence(
+            literature_sources_artifact)
+        literature_evidence_dep = academic_evidence.stable_hash({
+            "source_content": literature_sources_artifact["sources_content_hash"],
+            "version": VERSIONS["literature_evidence_version"],
+        })
+        literature_evidence_artifact = _load_valid_artifact(
+            state, artifact_dir, "literature_evidence", literature_evidence_dep,
+            VERSIONS["literature_evidence_version"])
+        if literature_evidence_artifact is None:
+            literature_evidence_artifact = _save_artifact(
+                state, artifact_dir, "literature_evidence", literature_evidence_new,
+                literature_evidence_dep, VERSIONS["literature_evidence_version"])
+
+        stage("research_model", "【学术写作 3/10】建立研究问题与理论框架...")
         model_new = build_research_model(evidence, theory, settings)
         research_dep = academic_evidence.stable_hash({
             "settings": model_new["content_hash"], "evidence_profile":
@@ -881,10 +1298,29 @@ def run_academic_pipeline(
                 state, artifact_dir, "research_model", model_new, research_dep,
                 VERSIONS["research_model_version"])
 
-        stage("argument_plan", "【学术写作 3/8】规划研究论点与证据关系...")
+        stage("literature_claims", "【学术写作 4/10】从文献证据抽取受限主张...")
+        literature_claims_dep = academic_evidence.stable_hash({
+            "evidence": literature_evidence_artifact["content_hash"],
+            "version": VERSIONS["literature_claims_version"],
+        })
+        literature_claims_artifact = _load_valid_artifact(
+            state, artifact_dir, "literature_claims", literature_claims_dep,
+            VERSIONS["literature_claims_version"])
+        if literature_claims_artifact is None:
+            literature_claims_new = literature_evidence.build_literature_claims(
+                literature_sources_artifact, literature_evidence_artifact,
+                call_llm, provider, api_key, model)
+            literature_claims_artifact = _save_artifact(
+                state, artifact_dir, "literature_claims", literature_claims_new,
+                literature_claims_dep, VERSIONS["literature_claims_version"])
+
+        stage("argument_plan", "【学术写作 5/10】规划研究论点与证据关系...")
         argument_dep = academic_evidence.stable_hash({
             "evidence": evidence["content_hash"], "research": research_model["content_hash"],
-            "literature": academic_evidence.stable_hash(evidence.get("literature_evidence", [])),
+            "literature_source_policy": literature_sources_artifact[
+                "sources_metadata_hash"],
+            "literature_evidence": literature_evidence_artifact["content_hash"],
+            "literature_claims": literature_claims_artifact["content_hash"],
             "version": VERSIONS["argument_plan_version"],
         })
         argument_plan = _load_valid_artifact(
@@ -892,7 +1328,9 @@ def run_academic_pipeline(
             VERSIONS["argument_plan_version"])
         if argument_plan is None:
             argument_plan = build_argument_plan(
-                research_model, evidence, call_llm, provider, api_key, model)
+                research_model, evidence, call_llm, provider, api_key, model,
+                literature_sources_artifact, literature_evidence_artifact,
+                literature_claims_artifact)
             argument_plan = _save_artifact(
                 state, artifact_dir, "argument_plan", argument_plan, argument_dep,
                 VERSIONS["argument_plan_version"])
@@ -910,12 +1348,13 @@ def run_academic_pipeline(
                 state, artifact_dir, "selected_cases", selected_cases, case_dep,
                 VERSIONS["case_selection_version"])
 
-        stage("outline", "【学术写作 4/8】生成证据约束型学术提纲...")
+        stage("outline", "【学术写作 6/10】生成证据约束型学术提纲...")
         outline_dep = academic_evidence.stable_hash({
             "research": research_model["content_hash"],
             "argument": argument_plan["content_hash"],
             "cases": selected_cases["content_hash"],
-            "literature": academic_evidence.stable_hash(evidence.get("literature_evidence", [])),
+            "literature_claims": literature_claims_artifact["content_hash"],
+            "literature_evidence": literature_evidence_artifact["content_hash"],
             "version": VERSIONS["outline_version"],
         })
         outline = _load_valid_artifact(
@@ -923,13 +1362,18 @@ def run_academic_pipeline(
         if outline is None:
             outline = build_academic_outline(
                 research_model, argument_plan, selected_cases, evidence,
-                call_llm, provider, api_key, model)
+                call_llm, provider, api_key, model,
+                literature_sources_artifact, literature_evidence_artifact,
+                literature_claims_artifact)
             outline = _save_artifact(state, artifact_dir, "outline", outline, outline_dep,
                                      VERSIONS["outline_version"])
 
-        stage("writing", "【学术写作 5/8】按论点与分节证据撰写正文...")
+        stage("writing", "【学术写作 7/10】按论点与分节证据撰写正文...")
         sections_dep = academic_evidence.stable_hash({
             "outline": outline["content_hash"], "evidence": evidence["content_hash"],
+            "literature_sources": literature_sources_artifact["sources_metadata_hash"],
+            "literature_evidence": literature_evidence_artifact["content_hash"],
+            "literature_claims": literature_claims_artifact["content_hash"],
             "writer": VERSIONS["writer_version"],
         })
         section_artifact = _load_valid_artifact(
@@ -943,18 +1387,25 @@ def run_academic_pipeline(
             section_key = academic_evidence.stable_hash({
                 "plan": plan, "claims": argument_plan["content_hash"],
                 "cases": selected_cases["content_hash"], "writer": VERSIONS["writer_version"],
+                "literature_sources": literature_sources_artifact["sources_metadata_hash"],
+                "literature_evidence": literature_evidence_artifact["content_hash"],
+                "literature_claims": literature_claims_artifact["content_hash"],
             })
             old = existing.get(sid)
             if old and old.get("dependency_hash") == section_key and sid not in forced:
                 item = old
             else:
                 packet = _section_packet(plan, research_model, argument_plan,
-                                         selected_cases, evidence, outline, prior_summaries)
+                                         selected_cases, evidence, outline, prior_summaries,
+                                         literature_sources_artifact,
+                                         literature_evidence_artifact,
+                                         literature_claims_artifact)
                 content = _write_section(packet, call_llm, provider, api_key, model)
                 item = {
                     "section_id": sid, "title": plan["title"], "content": content,
                     "summary": re.sub(r"<!--.*?-->", "", content)[:240],
                     "dependency_hash": section_key,
+                    "provenance": _packet_provenance(packet),
                 }
             written.append(item)
             prior_summaries.append({"section_id": sid, "summary": item["summary"]})
@@ -967,33 +1418,45 @@ def run_academic_pipeline(
         academic["forced_sections"] = []
         report_md = _compose_report(written)
 
-        stage("validation", "【学术写作 6/8】执行确定性证据与结构验证...")
+        stage("validation", "【学术写作 8/10】执行确定性证据与结构验证...")
         validation = academic_validator.validate_academic_report(
-            report_md, evidence, research_model, argument_plan, selected_cases, outline)
+            report_md, evidence, research_model, argument_plan, selected_cases, outline,
+            literature_sources_artifact, literature_evidence_artifact,
+            literature_claims_artifact)
         validation = _locate_validation_issues(validation, written)
         academic["validation_history"].append(validation)
 
-        stage("review", "【学术写作 7/8】执行独立语义学术审稿...")
+        stage("review", "【学术写作 9/10】执行独立语义与文献支持审稿...")
         review = _semantic_review(
             report_md, research_model, argument_plan, outline, selected_cases,
             call_llm, provider, api_key, model)
         academic["review_history"].append(review)
+        literature_support_review = _literature_support_review(
+            report_md, argument_plan, outline, literature_sources_artifact,
+            literature_evidence_artifact, literature_claims_artifact,
+            call_llm, provider, api_key, model)
+        academic["literature_review_history"].append(literature_support_review)
 
         repair_history = {"schema_version": "academic-repair-v1", "rounds": []}
         if auto_repair_rounds > 0:
             repair_issues = [x for x in validation.get("issues", []) if x["severity"] == "error"]
             repair_issues += [x for x in review.get("issues", [])
                               if x["severity"] in ("medium", "high")]
+            repair_issues += [x for x in literature_support_review.get("issues", [])
+                              if x["severity"] in ("medium", "high")]
             affected = sorted({str(x.get("section_id")) for x in repair_issues
                                if x.get("section_id")})
             if affected:
-                stage("repair", "【学术写作 8/8】定点修订受影响章节并重新验证...")
+                stage("repair", "【学术写作 10/10】定点修订受影响章节并重新验证...")
                 by_id = {x["section_id"]: x for x in written}
                 plan_by_id = {x["section_id"]: x for x in outline.get("sections", [])}
                 for sid in affected:
                     packet = _section_packet(plan_by_id[sid], research_model, argument_plan,
                                              selected_cases, evidence, outline,
-                                             prior_summaries)
+                                             prior_summaries,
+                                             literature_sources_artifact,
+                                             literature_evidence_artifact,
+                                             literature_claims_artifact)
                     issues = [x for x in repair_issues if str(x.get("section_id")) == sid]
                     old_content = by_id[sid]["content"]
                     new_content = _write_section(
@@ -1001,9 +1464,19 @@ def run_academic_pipeline(
                         repair_issues=issues, existing=old_content)
                     by_id[sid]["content"] = new_content
                     by_id[sid]["summary"] = re.sub(r"<!--.*?-->", "", new_content)[:240]
+                    by_id[sid]["provenance"] = _packet_provenance(packet)
                     repair_history["rounds"].append({
                         "round": 1, "section_id": sid,
                         "issue_ids": [x.get("issue_id") for x in issues],
+                        "global_claim_ids": sorted({str(x.get("global_claim_id")
+                                                        or x.get("claim_id")) for x in issues
+                                                    if x.get("global_claim_id")
+                                                    or x.get("claim_id")}),
+                        "literature_claim_ids": sorted({str(x.get(
+                            "literature_claim_id")) for x in issues
+                            if x.get("literature_claim_id")}),
+                        "repair_actions": sorted({str(x.get("repair_action")) for x in issues
+                                                  if x.get("repair_action")}),
                         "before_hash": academic_evidence.stable_hash(old_content),
                         "after_hash": academic_evidence.stable_hash(new_content),
                         "repaired_at": _now(),
@@ -1017,13 +1490,20 @@ def run_academic_pipeline(
                                sections_dep, VERSIONS["writer_version"])
                 report_md = _compose_report(written)
                 validation = academic_validator.validate_academic_report(
-                    report_md, evidence, research_model, argument_plan, selected_cases, outline)
+                    report_md, evidence, research_model, argument_plan, selected_cases, outline,
+                    literature_sources_artifact, literature_evidence_artifact,
+                    literature_claims_artifact)
                 validation = _locate_validation_issues(validation, written)
                 academic["validation_history"].append(validation)
                 review = _semantic_review(
                     report_md, research_model, argument_plan, outline, selected_cases,
                     call_llm, provider, api_key, model)
                 academic["review_history"].append(review)
+                literature_support_review = _literature_support_review(
+                    report_md, argument_plan, outline, literature_sources_artifact,
+                    literature_evidence_artifact, literature_claims_artifact,
+                    call_llm, provider, api_key, model)
+                academic["literature_review_history"].append(literature_support_review)
 
         validation_artifact = {**validation,
                                "runs": academic["validation_history"][-2:]}
@@ -1032,6 +1512,9 @@ def run_academic_pipeline(
         validation_dep = academic_evidence.stable_hash({
             "report": academic_evidence.stable_hash(report_md),
             "evidence": evidence["content_hash"], "validator": VERSIONS["validator_version"],
+            "literature_sources": literature_sources_artifact["content_hash"],
+            "literature_evidence": literature_evidence_artifact["content_hash"],
+            "literature_claims": literature_claims_artifact["content_hash"],
         })
         _save_artifact(state, artifact_dir, "validation", validation_artifact,
                        validation_dep, VERSIONS["validator_version"])
@@ -1041,13 +1524,28 @@ def run_academic_pipeline(
         })
         _save_artifact(state, artifact_dir, "review", review, review_dep,
                        VERSIONS["reviewer_version"])
+        literature_review_dep = academic_evidence.stable_hash({
+            "report": academic_evidence.stable_hash(report_md),
+            "argument": argument_plan["content_hash"],
+            "literature_sources": literature_sources_artifact["content_hash"],
+            "literature_evidence": literature_evidence_artifact["content_hash"],
+            "literature_claims": literature_claims_artifact["content_hash"],
+            "reviewer": VERSIONS["literature_reviewer_version"],
+        })
+        _save_artifact(state, artifact_dir, "literature_support_review",
+                       literature_support_review, literature_review_dep,
+                       VERSIONS["literature_reviewer_version"])
         repair_history["content_hash"] = academic_evidence.stable_hash(
             {k: v for k, v in repair_history.items() if k != "content_hash"})
         _save_artifact(state, artifact_dir, "repair_history", repair_history,
                        academic_evidence.stable_hash(repair_history["rounds"]), "academic-repair-v1")
 
-        quality = _quality_status(validation, review, evidence)
-        warning_md = academic_validator.render_warnings_markdown(validation, review, evidence)
+        quality, quality_dimensions = _quality_status(
+            validation, review, evidence, literature_sources_artifact,
+            literature_evidence_artifact, literature_claims_artifact,
+            literature_support_review, argument_plan)
+        warning_md = academic_validator.render_warnings_markdown(
+            validation, review, literature_support_review, evidence, quality_dimensions)
         (artifact_dir / "academic-evidence-warnings.md").write_text(
             warning_md, encoding="utf-8")
         state["p3_md"] = report_md
@@ -1056,6 +1554,7 @@ def run_academic_pipeline(
         state["theory"] = theory
         academic.update(
             status=quality, quality_status=quality, current_stage="completed",
+            quality_dimensions=quality_dimensions,
             last_error="", updated_at=_now(),
             warnings_file="academic-evidence-warnings.md",
         )

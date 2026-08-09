@@ -1765,15 +1765,15 @@ def invalidate_academic_report(job_id, scope="all", section_id=None):
 
 def load_academic_artifact(job_id, name):
     """Read a canonical academic JSON artifact for UI/CLI inspection."""
-    from mti_tool.academic_writer import ARTIFACT_FILES
+    from mti_tool import academic_writer
+    ARTIFACT_FILES = academic_writer.ARTIFACT_FILES
     if name not in ARTIFACT_FILES:
         raise ValueError(f"未知学术 artifact：{name}")
     path = job_dir(job_id) / ARTIFACT_FILES[name]
     if not path.is_file():
         return None
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-        return value if isinstance(value, dict) else None
+        return academic_writer._read_artifact(path)
     except Exception:
         return None
 
