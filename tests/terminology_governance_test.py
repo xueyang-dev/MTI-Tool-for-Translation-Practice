@@ -990,9 +990,29 @@ def test_report_prompt_evidence_contract():
         report_prompts = []
 
         def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
-            if "MTI（翻译硕士）导师" in system_prompt:
+            if "学术论证规划器" in system_prompt or "学术提纲规划器" in system_prompt:
                 report_prompts.append((system_prompt, user_prompt))
-                return "## 章节内容\n\n案例 [seg-x-0000] 展示……"
+                return "非 JSON，触发保守规划"
+            if "独立的 MTI 学术审稿人" in system_prompt:
+                report_prompts.append((system_prompt, user_prompt))
+                return '{"issues": []}'
+            if "证据约束型学术写作者" in system_prompt:
+                report_prompts.append((system_prompt, user_prompt))
+                packet = json.loads(user_prompt)["packet"]
+                section = packet["current_section"]
+                content = "".join(
+                    f"<!--rq:{x}-->" for x in section["research_questions"])
+                content += "".join(f"<!--claim:{x}-->" for x in section["claims"])
+                content += "本节严格依据项目证据展开，不把作者分析冒充译者真实意图。"
+                for key in section["required_statistics"]:
+                    content += f"本项目指标为 {{{{STAT:{key}}}}}，仅描述当前任务。"
+                for case in packet["cases"]:
+                    ev = case["evidence"]
+                    content += (f"\n[{ev['segment_id']}]\n"
+                                f"> [SOURCE {ev['segment_id']}]: {ev['source']}\n"
+                                f"> [TARGET {ev['segment_id']}]: {ev['final_target']}\n"
+                                "从结果看，该译文可解释为证据范围内的翻译处理。")
+                return content + "该结论不超出当前项目。" * 30
             if "翻译审校专家" in system_prompt:
                 return '[]'
             if "学术翻译专家" in system_prompt:
@@ -1007,17 +1027,19 @@ def test_report_prompt_evidence_contract():
             translation_theory="目的论 (Skopos Theory)", user_glossary=[],
             mode="quick")
         assert report_prompts, "报告应被调用"
-        sys_prompt = report_prompts[0][0]
-        assert "segment_id" in sys_prompt and "从结果看" in sys_prompt
-        assert "不得改写后冒充" in sys_prompt and "证据不足" in sys_prompt
-        assert "初稿" in sys_prompt
+        writer_prompts = [x for x in report_prompts if "证据约束型学术写作者" in x[0]]
+        assert writer_prompts and "从结果看可解释为" in writer_prompts[0][0]
+        assert "不得新增主要论点" in writer_prompts[0][0]
         all_user = "\n".join(up for _, up in report_prompts)
-        assert "[seg-rp000000000000001-0000]" in all_user, \
-            "语料证据必须带真实 segment_id"
+        assert "seg-rp000000000000001-0000" in all_user, \
+            "分节 packet 必须带真实 segment_id"
         assert "The Skopos theory 是核心概念。" in all_user, \
             "原文必须逐字来自任务状态"
         assert state["p3_done"] and state["p3_md"].count("## ") >= 4
-        print("  ✓ 报告 prompt 证据规约（segment_id/逐字原文/防冒充/初稿声明）")
+        validation = json.loads((tmp / "rp000000000000001" /
+                                 "academic-validation.json").read_text(encoding="utf-8"))
+        assert not any(x["type"] == "invented_segment_id" for x in validation["issues"])
+        print("  ✓ 学术写作 packet + runtime 验证（真实 segment_id/逐字证据/防冒充）")
     finally:
         core.OUTPUT_DIR = old_dir
         shutil.rmtree(tmp, ignore_errors=True)

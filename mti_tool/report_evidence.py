@@ -5,7 +5,7 @@
 - glossary decisions（注入的术语条目）
 - deterministic findings / review findings / repair history / human actions
 
-报告生成 prompt 规约：
+兼容导出规约（新学术流水线使用 academic_evidence.py 的全语料 artifact）：
 1. 案例必须引用真实 segment_id；
 2. 原文/译文必须逐字来自任务状态，不允许模型改写后冒充；
 3. 不得宣称翻译技巧是译者真实意图，只能表述为“从结果看可解释为”；
@@ -81,7 +81,7 @@ def export_segment_evidence_jsonl(state: Dict[str, Any],
 
 def evidence_text_block(state: Dict[str, Any], job_id: str,
                         max_chars: int = 9000) -> str:
-    """供报告 prompt 使用的证据文本（真实 segment_id + 逐字原文/译文）。"""
+    """Legacy bounded text export; not used by the academic writer pipeline."""
     parts, total = [], 0
     for i in range(len(state.get("pairs") or [])):
         ev = build_segment_evidence(state, job_id, i)

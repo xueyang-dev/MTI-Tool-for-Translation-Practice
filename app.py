@@ -205,6 +205,45 @@ with st.sidebar:
         "功能对等理论 (Nida)",
         "文本类型理论 (Reiss)",
     ])
+    with st.expander("🎓 学术写作设置", expanded=False):
+        research_topic = st.text_input("研究主题（留空则自动推断）")
+        research_questions_text = st.text_area(
+            "研究问题（每行一个；留空使用保守默认）", height=100)
+        analysis_dimensions_text = st.text_input(
+            "分析维度（用分号分隔）", value="文本特征；术语管理；翻译策略；译后编辑与质量控制")
+        report_requirements = st.text_area(
+            "学校/导师写作要求（可选）", height=80)
+        report_target_words = st.number_input(
+            "报告目标字数", min_value=1500, max_value=30000, value=4200, step=500)
+        literature_registry_file = st.file_uploader(
+            "文献证据注册表 (.json，可选)", type=["json"], key="literature_registry",
+            help="只允许引用注册表中 verified 或 user_provided 且 citation_allowed 的来源。")
+        literature_sources = None
+        if literature_registry_file:
+            try:
+                loaded_literature = json.load(literature_registry_file)
+                if isinstance(loaded_literature, dict):
+                    loaded_literature = loaded_literature.get("sources") or \
+                        loaded_literature.get("literature_evidence") or []
+                if not isinstance(loaded_literature, list):
+                    raise ValueError("JSON 顶层应为数组，或包含 sources 数组")
+                literature_sources = loaded_literature
+                st.caption(f"已载入 {len(literature_sources)} 条文献证据。")
+            except Exception as e:
+                st.warning(f"文献注册表读取失败：{e}")
+                literature_sources = None
+    research_settings = {
+        "target_words": int(report_target_words),
+        "analysis_dimensions": [x.strip() for x in re.split(r"[;；]", analysis_dimensions_text)
+                                if x.strip()],
+    }
+    if research_topic.strip():
+        research_settings["research_topic"] = research_topic.strip()
+    if research_questions_text.strip():
+        research_settings["research_questions"] = [
+            x.strip() for x in research_questions_text.splitlines() if x.strip()]
+    if report_requirements.strip():
+        research_settings["report_requirements"] = report_requirements.strip()
     style_rules = st.text_area(
         "风格与保留规则（可选）",
         value="保持学术书面语；专有名词、作者姓名、机构名、引用标注、URL 等保留原文；"
@@ -286,7 +325,11 @@ if tasks:
             or core.new_job_state(filename)
         st.session_state.doc_states[job_id] = state
 
-        if state["p1_done"] and state["p2_done"] and (not enable_report or state["p3_done"]):
+        # Report dependencies (research settings, literature, writer version) are
+        # checked inside the backend before its early return.  Only skip here
+        # when academic writing is explicitly disabled.
+        if state["p1_done"] and state["p2_done"] and not enable_report \
+                and (not enable_annotate or state.get("annotations_done")):
             overall_bar.progress((task_idx + 1) / len(tasks))
             continue
 
@@ -300,6 +343,8 @@ if tasks:
                     user_glossary=user_glossary,
                     style_rules=style_rules, enable_review=enable_review,
                     enable_annotate=enable_annotate, mode=mode,
+                    research_settings=research_settings,
+                    literature_sources=literature_sources,
                     on_status=lambda label: status.update(label=label, state="running"),
                     on_caption=lambda text: st.caption(text),
                 )
@@ -309,7 +354,21 @@ if tasks:
                     st.warning(warn)
                 if state["p1_done"] and state["p2_done"] \
                         and (not enable_report or state["p3_done"]):
-                    if state.get("has_blocking"):
+                    academic_quality = (state.get("academic_state") or {}).get(
+                        "quality_status") if enable_report else None
+                    if academic_quality in ("fail", "failed"):
+                        status.update(
+                            label=f"❌ {filename} 翻译完成，但学术报告验证失败（可单独重验/重生成）",
+                            state="error")
+                    elif academic_quality == "review_required":
+                        status.update(
+                            label=f"⚠️ {filename} 翻译完成，学术报告需要人工复核",
+                            state="complete")
+                    elif academic_quality == "pass_with_warnings":
+                        status.update(
+                            label=f"⚠️ {filename} 报告已生成并通过验证，但存在证据警告",
+                            state="complete")
+                    elif state.get("has_blocking"):
                         status.update(
                             label=f"⚠️ {filename} 流程完成，但有 blocking 问题待确认（见资产面板审查报告）",
                             state="complete")
@@ -324,8 +383,12 @@ if tasks:
                               f"可在下方继续操作",
                         state="complete")
         except Exception as e:
-            st.error(f"⚠️ {filename} 处理中断: {e}。进度已保存到本地 outputs/ 目录，"
-                     f"刷新页面后可在左侧「本地任务」继续！")
+            if "学术写作阶段失败" in str(e):
+                st.error(f"⚠️ {filename} 翻译已保存，但学术写作失败：{e}。"
+                         "可在下方学术写作工作区重新生成，不需要重跑翻译。")
+            else:
+                st.error(f"⚠️ {filename} 翻译流程中断: {e}。进度已保存到本地 outputs/ 目录，"
+                         f"刷新页面后可在左侧「本地任务」继续！")
             st.session_state.doc_states[job_id] = \
                 core.load_job_state(job_id) or st.session_state.doc_states[job_id]
 
@@ -483,7 +546,7 @@ if saved_jobs_after:
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         key=f"d2_{job['job_id']}", use_container_width=True)
             with col_d4:
-                if state.get("p3_done") and state.get("p3_md"):
+                if state.get("p3_md"):
                     st.download_button(
                         "📝 3. 翻译实践报告",
                         core.markdown_to_word(state["p3_md"], state.get("theory") or translation_theory),
@@ -497,6 +560,86 @@ if saved_jobs_after:
                     f"📋 画像：领域 {prof.get('domain') or '?'} · "
                     f"类型 {prof.get('genre') or '?'} · 语域 {prof.get('register') or '?'} · "
                     f"置信度 {prof.get('confidence') or 0}")
+
+            if state.get("p2_done"):
+                academic = state.get("academic_state") or {}
+                quality = academic.get("quality_status") or academic.get("status") or "not_started"
+                st.subheader("🎓 学术写作工作区")
+                if quality == "pass":
+                    st.success("学术状态：验证通过（仍需人工学术判断后提交）")
+                elif quality == "pass_with_warnings":
+                    st.warning("学术状态：通过，但存在证据缺口或低等级警告")
+                elif quality in ("review_required", "fail", "failed"):
+                    st.error(f"学术状态：{core.academic_status_label(state)}")
+                else:
+                    st.caption(f"学术状态：{core.academic_status_label(state)} · "
+                               f"当前阶段 {academic.get('current_stage') or 'not_started'}")
+
+                aevidence = core.load_academic_artifact(job["job_id"], "evidence")
+                selected_cases = core.load_academic_artifact(job["job_id"], "selected_cases")
+                outline_artifact = core.load_academic_artifact(job["job_id"], "outline")
+                validation_artifact = core.load_academic_artifact(job["job_id"], "validation")
+                review_artifact = core.load_academic_artifact(job["job_id"], "review")
+                if aevidence:
+                    astats = aevidence.get("project_evidence", {}).get("statistics", {})
+                    coverage = aevidence.get("coverage_policy", {})
+                    st.caption(
+                        f"证据：扫描 {coverage.get('segments_scanned', 0)} 段（全语料） · "
+                        f"候选案例 {len(aevidence.get('candidate_cases') or [])} · "
+                        f"修复证据段 {astats.get('repaired_segments', 0)} · "
+                        f"TM 复用 {astats.get('tm_reuse_count', 0)}")
+                if selected_cases or outline_artifact:
+                    st.caption(
+                        f"已选案例 {len((selected_cases or {}).get('cases') or [])} · "
+                        f"提纲章节 {len((outline_artifact or {}).get('sections') or [])}")
+                if validation_artifact:
+                    summary = validation_artifact.get("summary") or {}
+                    st.caption(
+                        f"确定性验证：{validation_artifact.get('status')} · "
+                        f"错误 {summary.get('errors', 0)} · 警告 {summary.get('warnings', 0)}")
+                if review_artifact:
+                    st.caption(
+                        f"语义审稿：{review_artifact.get('status')} · "
+                        f"问题 {len(review_artifact.get('issues') or [])}")
+
+                def _queue_academic(scope, section_id=None):
+                    if not api_key:
+                        st.warning("请先在侧栏填写 API Key。")
+                        return
+                    core.invalidate_academic_report(job["job_id"], scope, section_id)
+                    st.session_state["pending_continue_job"] = job["job_id"]
+                    st.rerun()
+
+                ac1, ac2, ac3, ac4 = st.columns(4)
+                if ac1.button("♻️ 重生成整篇", key=f"academic_all_{job['job_id']}",
+                              use_container_width=True):
+                    _queue_academic("all")
+                if ac2.button("🧭 重做规划", key=f"academic_plan_{job['job_id']}",
+                              use_container_width=True):
+                    _queue_academic("planning")
+                if ac3.button("✅ 重新验证", key=f"academic_val_{job['job_id']}",
+                              use_container_width=True):
+                    _queue_academic("validation")
+                if ac4.button("🔍 重新审稿", key=f"academic_review_{job['job_id']}",
+                              use_container_width=True):
+                    _queue_academic("review")
+                if outline_artifact and outline_artifact.get("sections"):
+                    section_options = {
+                        f"{x['section_id']} {x['title']}": x["section_id"]
+                        for x in outline_artifact["sections"]}
+                    chosen_section = st.selectbox(
+                        "定点重生成章节", list(section_options),
+                        key=f"academic_section_{job['job_id']}")
+                    if st.button("重生成选中章节", key=f"academic_section_go_{job['job_id']}"):
+                        _queue_academic("section", section_options[chosen_section])
+                warning_path = core.job_dir(job["job_id"]) / "academic-evidence-warnings.md"
+                if warning_path.is_file():
+                    st.download_button(
+                        "📋 下载学术证据警告",
+                        warning_path.read_bytes(),
+                        file_name=f"academic-evidence-warnings_{filename}.md",
+                        mime="text/markdown", key=f"academic_warn_{job['job_id']}",
+                        use_container_width=True)
 
             if state.get("p2_done"):
                 stats = state.get("review_stats") or {}

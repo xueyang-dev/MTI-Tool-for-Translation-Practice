@@ -16,7 +16,8 @@ from typing import Any, Dict
 
 STAGES = (
     "INGESTED", "PROFILED", "TERMS_PREPARED", "GLOSSARY_FROZEN", "TRANSLATED",
-    "ANNOTATED", "REPORT_GENERATED", "REVIEW_REQUIRED", "FINAL",
+    "ANNOTATED", "ACADEMIC_WRITING", "ACADEMIC_REVIEW_REQUIRED",
+    "ACADEMIC_FAILED", "REPORT_GENERATED", "REVIEW_REQUIRED", "FINAL",
 )
 
 DELIVERY_STATUSES = ("draft", "review_required", "approved", "final")
@@ -24,6 +25,7 @@ DELIVERY_STATUSES = ("draft", "review_required", "approved", "final")
 
 def _default_new_fields() -> Dict[str, Any]:
     """新增字段的默认值（旧任务加载时补齐，避免 KeyError）。"""
+    from .academic_writer import default_academic_state
     return {
         "stage": "INGESTED",
         "delivery_status": "draft",
@@ -42,6 +44,9 @@ def _default_new_fields() -> Dict[str, Any]:
         "quality_mode": False,
         "quality_bypass": False,
         "delivery_notes": "",
+        "research_settings": {},
+        "literature_sources": [],
+        "academic_state": default_academic_state(),
     }
 
 
@@ -60,6 +65,13 @@ def derive_stage(state: Dict[str, Any]) -> str:
         return "PROFILED"
     if state.get("has_blocking"):
         return "REVIEW_REQUIRED"
+    academic = state.get("academic_state") or {}
+    if academic.get("status") == "failed" or academic.get("quality_status") == "fail":
+        return "ACADEMIC_FAILED"
+    if academic.get("quality_status") == "review_required":
+        return "ACADEMIC_REVIEW_REQUIRED"
+    if academic.get("status") == "in_progress":
+        return "ACADEMIC_WRITING"
     if state.get("p3_done") or not state.get("report_enabled", True):
         return "REPORT_GENERATED"
     if state.get("annotations_done"):

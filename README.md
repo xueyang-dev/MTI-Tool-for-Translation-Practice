@@ -14,11 +14,11 @@
 - 🎯 **相关术语注入 (Related-Term Injection)**：翻译时只把当前批次**实际出现**的 locked translate / preserve 条目注入 prompt（provisional 仅作受限建议），支持 global / document / section:<id> / segment:<id> 范围与词边界匹配，每批实际注入的术语 entry ID 都写入审计日志。
 - 🚦 **交付门禁 (Delivery Gates)**：交付状态 draft → review_required → approved/final；翻译完成但有 blocking 时为 review_required，draft 资产文件名带 `draft_` 前缀，绝不显示为最终交付；支持“标记已人工修复 / 接受风险并说明 / 重新翻译指定段落”，所有人工处理记录（finding ID、动作、说明、时间戳）落盘，只有 blocking 被解决或明确接受后才能进入 final。
 - 📦 **标准资产导出 (Standard Assets)**：TBX 术语库、TMX 翻译记忆（仅审校通过且无 blocking/actionable 的段落）、JSONL 双语段落（含 segment_id / glossary_entry_ids / findings / delivery_status）、`delivery_manifest.json` 交付清单，全部带结构校验。
-- 🧾 **证据化实践报告 (Evidence-Backed Report)**：报告 prompt 强制引用真实 segment_id、逐字使用任务状态中的原文/译文、只允许“从结果看可解释为”的表述、证据不足时明说；每个段落可导出证据包（初译/终译/术语决策/确定性发现/审校发现/修复历史/人工记录）。
+- 🧾 **证据约束型学术写作 (Evidence-Grounded Academic Writing)**：全文证据扫描与确定性案例挖掘 → 研究模型 → 论点—证据图 → 案例选择 → 学术提纲 → 分节写作 → 确定性验证 → 独立学术审稿 → 定点修订。项目统计由运行时计算；段落、引文、术语决策和文献引用均有可验证身份，缺失的历史证据会明确标为未记录。
 - 🔍 **批次翻译 + 独立审校 (Batched Translation & Review)**：按语义批次携带前后文翻译；确定性检查（译文完整性/漏译、占位符/URL/引用标注等保留项、源语残留、锁定术语合规）并自动修复；再由独立审校 pass 检查语义与术语，actionable 建议经复验（含完整性门槛）后自动修正，blocking 问题留待人工确认。
 - 🎨 **三色自动标注 (Auto-Marking)**：翻译完成后自动标注学习重点并在双语对照表中同时高亮原文与译文——生僻词/难词标红，专业名词（特殊译法，含术语表确定性覆盖）标黄，翻译难点句（语序调整、拆合句、文化负载词处理等特别译法）标青绿。标注经过确定性过滤：14k 常用词表 + 词形还原、全书词频、单 token 限制、称谓/全常用词短语拦截，避免常用词被滥标为"生僻词"。
 - 🧠 **翻译记忆 (Translation Memory)**：审校通过的段落自动入库，后续任务精确命中直接复用，保证跨任务术语与表达一致。
-- 📝 **翻译实践报告生成 (Agentic Report Generation)**：基于 Map-Reduce 架构，分四轮自动撰写包含“长难句学理分析”的数千字 Markdown/Word 翻译实践报告初稿。
+- 📝 **可恢复、可重生成的论文工作区**：研究问题、理论框架、论点、案例、提纲、章节、验证与审稿结果均作为版本化 JSON artifact 落盘；支持整篇、规划、单节、验证和审稿的独立重生成，无需重跑翻译。
 - 🛡️ **断点续传和稳定性 (Robustness)**：任务进度实时落盘到本地 `outputs/` 目录，浏览器刷新、电脑重启后都能从断点继续；内置 API 防崩限流策略与重试机制。支持 DeepSeek、OpenAI、Gemini，模型可切换。
 - 🖋️ **产出排版 (Typography)**：生成的 Word 文档默认西文 Times New Roman、中文宋体，可直接用于 MTI 练习排版。
 
@@ -55,7 +55,7 @@ Windows 用户直接双击 `start.bat`；其他系统执行 `streamlit run app.p
 5. 高质量模式下，在“术语准备与审核”面板完成术语审核（可编辑译名/锁定/拒绝/保存草稿）后点击“冻结术语表并继续翻译”。
 6. 所有进度与中间产物保存在本地 `outputs/` 目录（含 `translation_memory.json` 翻译记忆）：刷新页面或重启后，在左侧“本地任务”中选择任务即可继续，无需重新上传。
 7. 翻译完成后，资产面板显示交付状态；blocking 问题需在面板中“标记已人工修复 / 接受风险 / 重新翻译”处理，之后点击“确认交付 (final)”。
-8. 在“资产面板”随时下载清洗后的原文、双语对照表、审查报告、TBX/TMX/JSONL/manifest 标准资产、案例证据包与实践报告（报告为 AI 初稿，需人工核查）；blocking/actionable 问题会显示在审查报告与交付清单中。不需要的任务可一键删除（同时清除本地进度）。
+8. 在“学术写作设置”中可维护研究问题、分析维度、字数与文献证据注册表；资产面板会显示全语料证据、候选/选中案例、验证和学术审稿状态，并支持整篇或单节重生成。实践报告仍是 AI 初稿，验证通过只代表来源与结构一致性通过，最终理论判断必须人工核查。
 
 ### 命令行
 `scripts/translate_pdf.py` 支持 `--quality` 开启高质量模式（术语冻结后才开始翻译），默认快速模式：

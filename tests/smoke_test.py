@@ -796,7 +796,7 @@ def test_resume_report_sections():
                     return '[]'
                 if "翻译审校专家" in system_prompt:
                     return '[]'
-                if "MTI（翻译硕士）导师" in system_prompt:
+                if "证据约束型学术写作者" in system_prompt:
                     self.report_calls += 1
                     if self.report_calls == 4:
                         raise RuntimeError("模拟报告中断")
@@ -812,10 +812,12 @@ def test_resume_report_sections():
                 translation_theory="目的论 (Skopos Theory)", user_glossary=[])
             raise AssertionError("应在第四章节处抛出异常")
         except RuntimeError as e:
-            assert "报告章节" in str(e)
+            assert "学术写作阶段失败" in str(e)
 
         mid = core.load_job_state(jid)
-        assert len(mid["p3_sections"]) == 3, "前三章应已落盘"
+        partial = json.loads((tmp / jid / "academic-sections.json").read_text(
+            encoding="utf-8"))
+        assert len(partial["sections"]) == 3, "前三章应作为学术 artifact 落盘"
         assert not mid["p3_done"]
 
         fake_llm, _ = _fake_llm_factory()
@@ -826,7 +828,9 @@ def test_resume_report_sections():
             target_lang="简体中文", auto_term=True, enable_report=True,
             translation_theory="目的论 (Skopos Theory)", user_glossary=[])
         assert state["p3_done"]
-        assert len(state["p3_sections"]) == 4
+        artifact = json.loads((tmp / jid / "academic-sections.json").read_text(
+            encoding="utf-8"))
+        assert len(artifact["sections"]) == 4
         assert state["p3_md"].count("## ") == 4
         assert flaky.report_calls == 4, "续跑时只应生成缺失的第四章"
         print("  ✓ 报告章节级断点续写")
