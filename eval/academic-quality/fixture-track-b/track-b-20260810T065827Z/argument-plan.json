@@ -1,0 +1,93 @@
+{
+  "schema_version": "argument-planner-v2",
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim": "在回忆录翻译项目中，受众反应可通过译后审校环节中发现的翻译问题及其修复结果进行间接观察和解释，而非依赖对译者心理意图的还原。",
+      "research_question": "RQ1",
+      "project_evidence": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011",
+        "metric:issue_category_distribution",
+        "metric:repair_category_distribution"
+      ],
+      "literature_claims": [
+        "LC-001",
+        "LC-003"
+      ],
+      "literature_evidence": [
+        "LE-96c7e6e40d86d1ba",
+        "LE-40d411b6c8a07b44"
+      ],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "1",
+        "3",
+        "4"
+      ],
+      "reasoning": "项目统计显示12个片段全部经过修复（repair_category_distribution中initial_final_changed=12），且问题类别分布包含check和review两类。seg-track-b-fixture-0006存在blocking finding（译文疑似截断），seg-track-b-fixture-0000存在actionable finding（初译遗漏让步关系），seg-track-b-fixture-0011存在informational finding（语气处理可接受）。这些审校发现及其修复结果构成了受众（此处为审校者）对译文反应的直接证据链。Nida（1964）的功能对等理论强调受体反应（LE-96c7e6e40d86d1ba），且用户注释明确该理论用于解释受众反应（LE-40d411b6c8a07b44）。因此，审校环节中识别的问题类型和修复决策可作为受众反应的实证指标，将抽象的理论概念操作化为可追溯的项目证据。",
+      "counterargument": "审校者的反应不能完全等同于目标语读者的反应，审校者具有专业翻译能力，其判断标准可能高于普通读者；且本项目中审校者与译者可能为同一人或同一团队，存在视角局限性。"
+    },
+    {
+      "claim_id": "C2",
+      "claim": "让步关系的准确传达是影响受众理解回忆录叙事逻辑的关键因素，审校环节对此类问题的识别与修复体现了功能对等理论中'最贴近的自然对等'原则的实践应用。",
+      "research_question": "RQ1",
+      "project_evidence": [
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0011",
+        "metric:issue_category_distribution"
+      ],
+      "literature_claims": [
+        "LC-002"
+      ],
+      "literature_evidence": [
+        "LE-8993dee56de5ae8c"
+      ],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "2",
+        "3",
+        "4"
+      ],
+      "reasoning": "seg-track-b-fixture-0000的actionable finding明确指出'初译遗漏让步关系'，其suggested_target和final_target均以'尽管'开头，恢复了源文本的让步逻辑。seg-track-b-fixture-0006的blocking finding（译文疑似截断）修复后同样以'尽管'开头，表明让步标记的完整性是审校关注的核心。seg-track-b-fixture-0011的informational finding确认结尾段语气处理可接受，说明让步结构在全文中的一致性处理得到认可。Nida（1964）提出翻译是再现'最贴近的自然对等'（LE-8993dee56de5ae8c），让步关系的修复正是从'第X段初译'这一不自然、不完整的表达，向'尽管……仍……'这一自然中文让步结构的对等转换。",
+      "counterargument": "让步关系修复可能仅反映审校者的个人语言偏好，而非基于系统的受众反馈；且源文本为构造性示例（fixture），其代表性可能不足以支撑普遍性结论。"
+    },
+    {
+      "claim_id": "C3",
+      "claim": "审校环节中不同严重级别的问题（blocking/actionable/informational）分布反映了受众对译文质量的差异化反应层次，其中阻断性问题对受众理解构成根本性障碍。",
+      "research_question": "RQ1",
+      "project_evidence": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011",
+        "metric:blocking_findings",
+        "metric:actionable_findings",
+        "metric:informational_findings"
+      ],
+      "literature_claims": [
+        "LC-001"
+      ],
+      "literature_evidence": [
+        "LE-96c7e6e40d86d1ba"
+      ],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "low",
+      "planned_sections": [
+        "3",
+        "4"
+      ],
+      "reasoning": "项目统计显示blocking_findings=1、actionable_findings=1、informational_findings=1，三类问题各占一例。seg-track-b-fixture-0006的blocking finding（译文疑似截断）意味着译文在结构上不完整，受众无法获得完整信息；seg-track-b-fixture-0000的actionable finding（遗漏让步关系）意味着译文虽可读但逻辑关系受损；seg-track-b-fixture-0011的informational finding（语气可接受）则表明译文达到可接受水平。这一从阻断到可接受的梯度分布，与Nida（1964）功能对等理论中受体反应的层次性相呼应（LE-96c7e6e40d86d1ba）：不同严重程度的问题对应受众理解的不同障碍层级。",
+      "counterargument": "样本量过小（每类仅1例），无法进行有统计意义的比较；且问题严重级别的划分标准可能因审校者主观判断而异，缺乏跨审校者的一致性验证。"
+    }
+  ],
+  "planner_fallback": false,
+  "rejected_source_only_support": 0,
+  "content_hash": "f028e8002f55242a86e73a34fbfa6638a6e8cb3b58f47f7f5f8b2e9fd9a4b9a0"
+}

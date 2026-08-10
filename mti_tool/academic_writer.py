@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from . import academic_evidence
+from . import academic_quality
 from . import academic_validator
 from . import literature_evidence
 
@@ -30,6 +31,7 @@ VERSIONS = {
     "validator_version": academic_validator.VALIDATOR_VERSION,
     "reviewer_version": "academic-reviewer-v1",
     "literature_reviewer_version": "literature-support-reviewer-v1",
+    "academic_quality_version": academic_quality.QUALITY_VERSION,
 }
 
 ARTIFACT_FILES = {
@@ -45,6 +47,8 @@ ARTIFACT_FILES = {
     "validation": "academic-validation.json",
     "review": "academic-review.json",
     "literature_support_review": "literature-support-review.json",
+    "academic_quality": "academic-quality-evaluation.json",
+    "quality_repair_history": "academic-quality-repair-history.json",
     "repair_history": "academic-repair-history.json",
 }
 
@@ -65,6 +69,7 @@ def default_academic_state() -> Dict[str, Any]:
         "validation_history": [],
         "review_history": [],
         "literature_review_history": [],
+        "academic_quality_history": [],
         "repair_history": [],
         "forced_sections": [],
         "stale_reasons": [],
@@ -241,6 +246,10 @@ def sync_versions(state: Dict[str, Any], versions: Optional[Dict[str, str]] = No
                 versions["literature_reviewer_version"]:
             _invalidate_names(state, ["literature_support_review"],
                               "literature reviewer version changed")
+        elif old.get("academic_quality_version") != \
+                versions["academic_quality_version"]:
+            _invalidate_names(state, ["academic_quality", "quality_repair_history"],
+                              "academic quality version changed")
     academic["versions"] = versions
 
 
@@ -263,6 +272,8 @@ def invalidate_academic_state(
         names = ["review"]
     elif scope == "literature_review":
         names = ["literature_support_review"]
+    elif scope == "quality":
+        names = ["academic_quality", "quality_repair_history"]
     elif scope == "section":
         names = ["validation", "review"]
         if section_id and section_id not in _state(state)["forced_sections"]:
@@ -764,6 +775,25 @@ def build_academic_outline(
     for rq_id in valid_rqs:
         if not any(rq_id in x["research_questions"] for x in sections):
             analysis["research_questions"].append(rq_id)
+    # Bound per-section case load and guarantee every selected case has a
+    # section.  A section that plans 8 cases cannot realistically develop all
+    # of them, which otherwise produces impossible validation errors.
+    case_claims: Dict[str, set] = {}
+    for claim in argument_plan.get("claims", []):
+        for case_id in claim.get("project_evidence") or []:
+            case_claims.setdefault(str(case_id), set()).add(claim["claim_id"])
+    selected_ids = {str(x.get("case_id")) for x in selected_cases.get("cases", [])}
+    for section in sections:
+        section["cases"] = section["cases"][:4]
+    assigned = {case_id for section in sections for case_id in section["cases"]}
+    for case_id in sorted(selected_ids - assigned):
+        if case_id not in case_claims:
+            # Zone-coverage candidates without a claim binding do not need a
+            # section; forcing them in would create impossible validation.
+            continue
+        best = max(sections, key=lambda x: len(
+            set(x["claims"]) & (case_claims.get(case_id) or set())))
+        best["cases"].append(case_id)
     claims_by_id = {x["claim_id"]: x for x in argument_plan.get("claims", [])}
     for section in sections:
         for claim_id in section["claims"]:
@@ -875,13 +905,37 @@ def _write_section(
     user = {"packet": packet}
     if repair:
         user.update({"existing_section": existing, "issues": repair_issues})
-    raw = call_llm(provider, api_key, model, system,
-                   json.dumps(user, ensure_ascii=False), temperature=0.2)
+    raw = None
+    for attempt in range(2):
+        try:
+            raw = call_llm(provider, api_key, model, system,
+                           json.dumps(user, ensure_ascii=False), temperature=0.2)
+            break
+        except Exception as exc:
+            if attempt == 1:
+                raise
+            if not _is_transient_llm_error(exc):
+                raise
+            # Transient network/provider failure: one bounded retry.
+            if repair:
+                user["retry_notice"] = (
+                    "上次调用失败，本次请只输出章节正文，不要输出任何解释。")
+            else:
+                user["retry_notice"] = "上次调用失败，本次请直接输出章节正文。"
     text = re.sub(r"^```(?:markdown)?\s*|\s*```$", "", (raw or "").strip(),
                   flags=re.DOTALL)
     if not text:
         raise RuntimeError("学术写作模型返回空章节")
     return academic_validator.expand_evidence_tokens(text, packet_to_evidence(packet))
+
+
+def _is_transient_llm_error(exc: Exception) -> bool:
+    module = type(exc).__module__ or ""
+    if module.startswith("openai"):
+        return True
+    message = str(exc).lower()
+    return any(keyword in message for keyword in (
+        "timeout", "connection", "rate limit", "network"))
 
 
 def _packet_provenance(packet: Dict[str, Any]) -> Dict[str, Any]:
@@ -918,6 +972,43 @@ def _compose_report(sections: List[Dict[str, Any]]) -> str:
     return "\n\n".join(
         f"## {item['section_id']} {item['title']}\n\n{item['content'].strip()}"
         for item in sections) + "\n"
+
+
+_QUOTE_LINE = re.compile(
+    r"^>\s*\[(SOURCE|TARGET)\s+([A-Za-z0-9_-]+)\]:\s*(.*)$", re.MULTILINE)
+
+
+def normalize_report_quotes(report_md: str, evidence: Dict[str, Any]) -> str:
+    """Deterministically replace segment quotes with the exact saved text.
+
+    The writer is instructed to copy quotes verbatim, but a bounded repair loop
+    cannot guarantee byte-exact output from every provider.  This pass makes
+    the final report quote-consistent by construction while the saved sections
+    artifact keeps the model's original prose for auditability.
+    """
+    segs = academic_evidence.segment_index(evidence)
+
+    def repl(match: re.Match) -> str:
+        kind, seg_id, _ = match.groups()
+        segment = segs.get(seg_id)
+        if not segment:
+            return match.group(0)
+        exact = segment["source" if kind == "SOURCE" else "final_target"]
+        return f"> [{kind} {seg_id}]: {exact}"
+
+    return _QUOTE_LINE.sub(repl, report_md)
+
+
+def finalize_report_tokens(report_md: str, evidence: Dict[str, Any]) -> str:
+    """Apply quote normalisation plus full-evidence token expansion.
+
+    The scoped packet only carries a section's planned statistics, but writers
+    sometimes emit other globally valid {{STAT:key}} tokens; expanding against
+    the full evidence store keeps the final report self-consistent while the
+    scoped packet remains the writer's authority during drafting.
+    """
+    return academic_validator.expand_evidence_tokens(
+        normalize_report_quotes(report_md, evidence), evidence)
 
 
 def _semantic_review(
@@ -1148,6 +1239,153 @@ def _locate_validation_issues(
     return validation
 
 
+def _apply_case_replacements(
+    replacements: List[Dict[str, Any]], selected_cases: Dict[str, Any],
+    argument_plan: Dict[str, Any], outline: Dict[str, Any],
+    evidence: Dict[str, Any],
+) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], List[Dict[str, Any]]]:
+    """Replace weak/misaligned cases and propagate to plan/outline/sections."""
+    cases = list(selected_cases.get("cases", []))
+    case_by_id = {str(x.get("case_id")): x for x in cases}
+    claims_by_id = {x["claim_id"]: x for x in argument_plan.get("claims", [])}
+    affected_sections: set = set()
+    performed: List[Dict[str, Any]] = []
+    for replacement in replacements:
+        old_id = str(replacement.get("case_id") or "")
+        old = case_by_id.get(old_id)
+        if not old:
+            continue
+        claim_ids = [str(x) for x in old.get("supports_claims") or []]
+        new_candidate = academic_quality.select_replacement_case(
+            old_id, claim_ids, selected_cases, argument_plan, evidence)
+        if not new_candidate:
+            continue
+        new_id = str(new_candidate["case_id"])
+        if new_id in case_by_id:
+            continue
+        new_case = {
+            **new_candidate,
+            "supports_claims": sorted(set(claim_ids)),
+            "research_questions": sorted(set(old.get("research_questions") or [])),
+            "selection_rationale": (
+                f"replacement of {old_id}: {replacement.get('reason', '')[:160]}"),
+        }
+        cases = [new_case if str(x.get("case_id")) == old_id else x for x in cases]
+        case_by_id = {str(x.get("case_id")): x for x in cases}
+        for claim_id in claim_ids:
+            claim = claims_by_id.get(claim_id)
+            if not claim:
+                continue
+            project = claim.get("project_evidence") or []
+            claim["project_evidence"] = [
+                new_id if str(x) == old_id else x for x in project]
+        for section in outline.get("sections", []):
+            section_cases = section.get("cases") or []
+            if old_id in section_cases:
+                section["cases"] = [new_id if x == old_id else x for x in section_cases]
+                affected_sections.add(str(section["section_id"]))
+        performed.append({
+            "old_case_id": old_id, "new_case_id": new_id,
+            "claim_ids": claim_ids, "reason": replacement.get("reason", ""),
+            "issue_id": replacement.get("issue_id", ""),
+        })
+    selected_cases["cases"] = cases
+    return selected_cases, argument_plan, outline, performed
+
+
+def _run_quality_repair_round(
+    written: List[Dict[str, Any]], report_md: str, evidence: Dict[str, Any],
+    research_model: Dict[str, Any], argument_plan: Dict[str, Any],
+    selected_cases: Dict[str, Any], outline: Dict[str, Any],
+    literature_sources_artifact: Dict[str, Any],
+    literature_evidence_artifact: Dict[str, Any],
+    literature_claims_artifact: Dict[str, Any],
+    quality: Dict[str, Any], validation: Dict[str, Any],
+    prior_summaries: List[Dict[str, str]],
+    call_llm: Callable, provider: str, api_key: str, model: str,
+) -> Tuple[List[Dict[str, Any]], str, Dict[str, Any], Dict[str, Any],
+           Dict[str, Any], Dict[str, Any], List[Dict[str, Any]],
+           List[Dict[str, Any]]]:
+    """One bounded quality-repair round: replace weak cases, rewrite affected
+    sections, re-validate and re-review. Returns updated artifacts and the
+    round ledger (before/after hashes)."""
+    plan = academic_quality.quality_repair_plan(quality, outline)
+    affected_sections: set = set()
+    performed_replacements: List[Dict[str, Any]] = []
+    if plan["case_replacements"]:
+        selected_cases, argument_plan, outline, performed = _apply_case_replacements(
+            plan["case_replacements"], selected_cases, argument_plan, outline, evidence)
+        performed_replacements = performed
+        new_ids = {x["new_case_id"] for x in performed}
+        affected_sections.update(
+            str(x["section_id"]) for x in outline.get("sections", [])
+            if new_ids & set(x.get("cases") or []))
+    text_by_section: Dict[str, List[Dict[str, Any]]] = {}
+    for item in plan["text_repairs"]:
+        if item["repair_action"] == "remove":
+            continue
+        text_by_section.setdefault(item["section_id"], []).append(item)
+    affected_sections.update(text_by_section)
+    affected_sections = {x for x in affected_sections if x}
+
+    by_id = {x["section_id"]: x for x in written}
+    plan_by_id = {x["section_id"]: x for x in outline.get("sections", [])}
+    round_ledger: List[Dict[str, Any]] = []
+    for sid in sorted(affected_sections):
+        if sid not in plan_by_id:
+            continue
+        packet = _section_packet(
+            plan_by_id[sid], research_model, argument_plan, selected_cases, evidence,
+            outline, prior_summaries, literature_sources_artifact,
+            literature_evidence_artifact, literature_claims_artifact)
+        issues = [x for x in plan["text_repairs"] if x.get("section_id") == sid]
+        # Merge current deterministic validation errors so a quality rewrite
+        # cannot silently drop markers, quotes or statistic placeholders.
+        validation_errors = [x for x in (validation.get("issues") or [])
+                             if x.get("severity") == "error"
+                             and str(x.get("section_id")) == sid]
+        seen = {x.get("issue_id") for x in issues}
+        for issue in validation_errors:
+            if issue.get("issue_id") not in seen:
+                issues.append(issue)
+                seen.add(issue.get("issue_id"))
+        old_content = by_id[sid]["content"]
+        new_content = _write_section(
+            packet, call_llm, provider, api_key, model,
+            repair_issues=issues, existing=old_content)
+        by_id[sid]["content"] = new_content
+        by_id[sid]["summary"] = re.sub(r"<!--.*?-->", "", new_content)[:240]
+        by_id[sid]["provenance"] = _packet_provenance(packet)
+        round_ledger.append({
+            "section_id": sid,
+            "issue_ids": [x.get("issue_id") for x in issues],
+            "before_hash": academic_evidence.stable_hash(old_content),
+            "after_hash": academic_evidence.stable_hash(new_content),
+            "repaired_at": _now(),
+        })
+    written = [by_id[x["section_id"]] for x in outline.get("sections", [])]
+    report_md = _compose_report(written)
+    report_md = finalize_report_tokens(report_md, evidence)
+    validation = academic_validator.validate_academic_report(
+        report_md, evidence, research_model, argument_plan, selected_cases, outline,
+        literature_sources_artifact, literature_evidence_artifact,
+        literature_claims_artifact)
+    validation = _locate_validation_issues(validation, written)
+    review = _semantic_review(
+        report_md, research_model, argument_plan, outline, selected_cases,
+        call_llm, provider, api_key, model)
+    literature_review = _literature_support_review(
+        report_md, argument_plan, outline, literature_sources_artifact,
+        literature_evidence_artifact, literature_claims_artifact,
+        call_llm, provider, api_key, model)
+    quality = academic_quality.evaluate_quality(
+        research_model, argument_plan, selected_cases, outline, written, evidence,
+        literature_sources_artifact, literature_evidence_artifact,
+        literature_claims_artifact, validation, call_llm, provider, api_key, model)
+    return (written, report_md, validation, review, literature_review, quality,
+            performed_replacements, round_ledger)
+
+
 def _quality_status(
     validation: Dict[str, Any], review: Dict[str, Any], evidence: Dict[str, Any],
     literature_sources_artifact: Dict[str, Any],
@@ -1224,6 +1462,7 @@ def run_academic_pipeline(
     literature_sources: Optional[Iterable[Dict[str, Any]]] = None,
     on_status: Optional[Callable[[str], None]] = None,
     auto_repair_rounds: int = 1,
+    auto_quality_repair_rounds: int = 1,
 ) -> str:
     """Run or resume the complete academic evidence-to-repair pipeline."""
     artifact_dir = Path(artifact_dir)
@@ -1417,6 +1656,7 @@ def run_academic_pipeline(
             save_state(state)
         academic["forced_sections"] = []
         report_md = _compose_report(written)
+        report_md = finalize_report_tokens(report_md, evidence)
 
         stage("validation", "【学术写作 8/10】执行确定性证据与结构验证...")
         validation = academic_validator.validate_academic_report(
@@ -1489,6 +1729,7 @@ def run_academic_pipeline(
                 _save_artifact(state, artifact_dir, "sections", section_artifact,
                                sections_dep, VERSIONS["writer_version"])
                 report_md = _compose_report(written)
+                report_md = finalize_report_tokens(report_md, evidence)
                 validation = academic_validator.validate_academic_report(
                     report_md, evidence, research_model, argument_plan, selected_cases, outline,
                     literature_sources_artifact, literature_evidence_artifact,
@@ -1540,10 +1781,86 @@ def run_academic_pipeline(
         _save_artifact(state, artifact_dir, "repair_history", repair_history,
                        academic_evidence.stable_hash(repair_history["rounds"]), "academic-repair-v1")
 
+        # ---- Academic quality evaluation + bounded structural repair ----
+        stage("academic_quality", "【学术写作 11/11】评估学术质量并执行结构性修复...")
+        quality_evaluation = academic_quality.evaluate_quality(
+            research_model, argument_plan, selected_cases, outline, written, evidence,
+            literature_sources_artifact, literature_evidence_artifact,
+            literature_claims_artifact, validation, call_llm, provider, api_key, model)
+        academic["academic_quality_history"].append(quality_evaluation)
+        quality_repair_history = {"schema_version": "academic-quality-repair-v1",
+                                  "rounds": []}
+        quality_round = 0
+        while auto_quality_repair_rounds > 0 \
+                and quality_round < auto_quality_repair_rounds:
+            plan = academic_quality.quality_repair_plan(quality_evaluation, outline)
+            if not plan["case_replacements"] and not plan["text_repairs"]:
+                break
+            quality_round += 1
+            (written, report_md, validation, review, literature_support_review,
+             quality_evaluation, performed_replacements, round_ledger) = _run_quality_repair_round(
+                written, report_md, evidence, research_model, argument_plan,
+                selected_cases, outline, literature_sources_artifact,
+                literature_evidence_artifact, literature_claims_artifact,
+                quality_evaluation,
+                validation, prior_summaries, call_llm, provider, api_key, model)
+            _save_artifact(state, artifact_dir, "selected_cases", selected_cases,
+                           case_dep, VERSIONS["case_selection_version"])
+            _save_artifact(state, artifact_dir, "argument_plan", argument_plan,
+                           argument_dep, VERSIONS["argument_plan_version"])
+            _save_artifact(state, artifact_dir, "outline", outline, outline_dep,
+                           VERSIONS["outline_version"])
+            section_artifact = {"schema_version": VERSIONS["writer_version"],
+                                "sections": written}
+            section_artifact["content_hash"] = academic_evidence.stable_hash(
+                {k: v for k, v in section_artifact.items() if k != "content_hash"})
+            _save_artifact(state, artifact_dir, "sections", section_artifact,
+                           sections_dep, VERSIONS["writer_version"])
+            academic["validation_history"].append(validation)
+            academic["review_history"].append(review)
+            academic["literature_review_history"].append(literature_support_review)
+            academic["academic_quality_history"].append(quality_evaluation)
+            quality_repair_history["rounds"].append({
+                "round": quality_round,
+                "case_replacements": performed_replacements,
+                "section_rewrites": round_ledger,
+                "issue_ids": [x.get("issue_id") for x in plan["case_replacements"]]
+                             + [x.get("issue_id") for x in plan["text_repairs"]],
+                "completed_at": _now(),
+            })
+        quality_dep = academic_evidence.stable_hash({
+            "report": academic_evidence.stable_hash(report_md),
+            "argument": argument_plan["content_hash"],
+            "quality_version": VERSIONS["academic_quality_version"],
+        })
+        _save_artifact(state, artifact_dir, "academic_quality", quality_evaluation,
+                       quality_dep,
+                       VERSIONS["academic_quality_version"])
+        (artifact_dir / "academic-quality-report.md").write_text(
+            academic_quality.render_quality_report(quality_evaluation), encoding="utf-8")
+        (artifact_dir / "academic-quality-findings.jsonl").write_text(
+            "\n".join(json.dumps(x, ensure_ascii=False, sort_keys=True)
+                      for x in quality_evaluation.get("findings", [])) + "\n",
+            encoding="utf-8")
+        quality_repair_history["content_hash"] = academic_evidence.stable_hash(
+            {k: v for k, v in quality_repair_history.items() if k != "content_hash"})
+        _save_artifact(state, artifact_dir, "quality_repair_history",
+                       quality_repair_history,
+                       academic_evidence.stable_hash(quality_repair_history["rounds"]),
+                       "academic-quality-repair-v1")
+
         quality, quality_dimensions = _quality_status(
             validation, review, evidence, literature_sources_artifact,
             literature_evidence_artifact, literature_claims_artifact,
             literature_support_review, argument_plan)
+        aq_status = "pass"
+        dimension_values = list((quality_evaluation.get("dimensions") or {}).values())
+        if any(x == "fail" for x in dimension_values):
+            aq_status = "fail"
+        elif any(x == "review_required" for x in dimension_values):
+            aq_status = "review_required"
+        elif any(x == "pass_with_warnings" for x in dimension_values):
+            aq_status = "pass_with_warnings"
         warning_md = academic_validator.render_warnings_markdown(
             validation, review, literature_support_review, evidence, quality_dimensions)
         (artifact_dir / "academic-evidence-warnings.md").write_text(
@@ -1555,8 +1872,10 @@ def run_academic_pipeline(
         academic.update(
             status=quality, quality_status=quality, current_stage="completed",
             quality_dimensions=quality_dimensions,
+            academic_quality_status=aq_status,
             last_error="", updated_at=_now(),
             warnings_file="academic-evidence-warnings.md",
+            quality_report_file="academic-quality-report.md",
         )
         save_state(state)
         return report_md

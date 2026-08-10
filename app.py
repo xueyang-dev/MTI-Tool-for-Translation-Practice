@@ -594,6 +594,10 @@ if saved_jobs_after:
                 review_artifact = core.load_academic_artifact(job["job_id"], "review")
                 literature_review_artifact = core.load_academic_artifact(
                     job["job_id"], "literature_support_review")
+                quality_artifact = core.load_academic_artifact(
+                    job["job_id"], "academic_quality")
+                quality_repair_artifact = core.load_academic_artifact(
+                    job["job_id"], "quality_repair_history")
                 if aevidence:
                     astats = aevidence.get("project_evidence", {}).get("statistics", {})
                     coverage = aevidence.get("coverage_policy", {})
@@ -665,6 +669,27 @@ if saved_jobs_after:
                     if literature_review_artifact.get("issues"):
                         st.dataframe(literature_review_artifact["issues"],
                                      use_container_width=True)
+                if quality_artifact:
+                    q_dims = quality_artifact.get("dimensions") or {}
+                    q_findings = quality_artifact.get("findings") or []
+                    q_metrics = quality_artifact.get("metrics") or {}
+                    aq_status = q_dims.get("literature_support") or "pass"
+                    q_status_label = {
+                        "pass": "通过", "pass_with_warnings": "通过（有警告）",
+                        "review_required": "需复核", "fail": "失败",
+                        "not_applicable": "不适用"}.get(aq_status, aq_status)
+                    st.caption(
+                        f"学术质量：发现 {len(q_findings)} 项 · 强案例 "
+                        f"{q_metrics.get('strong_cases', 0)} · 弱案例 "
+                        f"{q_metrics.get('weak_cases', 0)} · 泛化段率 "
+                        f"{q_metrics.get('generic_paragraph_rate', 0)}")
+                    if q_findings:
+                        st.dataframe(q_findings, use_container_width=True)
+                    if quality_repair_artifact and quality_repair_artifact.get("rounds"):
+                        st.caption(
+                            f"质量修复 {len(quality_repair_artifact['rounds'])} 轮 · "
+                            f"案例替换 "
+                            f"{sum(len(r.get('case_replacements') or []) for r in quality_repair_artifact['rounds'])}")
 
                 def _queue_academic(scope, section_id=None):
                     if not api_key:
@@ -674,7 +699,7 @@ if saved_jobs_after:
                     st.session_state["pending_continue_job"] = job["job_id"]
                     st.rerun()
 
-                ac1, ac2, ac3, ac4, ac5 = st.columns(5)
+                ac1, ac2, ac3, ac4, ac5, ac6 = st.columns(6)
                 if ac1.button("♻️ 重生成整篇", key=f"academic_all_{job['job_id']}",
                               use_container_width=True):
                     _queue_academic("all")
@@ -690,6 +715,9 @@ if saved_jobs_after:
                 if ac5.button("📚 文献审校", key=f"literature_review_{job['job_id']}",
                               use_container_width=True):
                     _queue_academic("literature_review")
+                if ac6.button("📊 质量重评", key=f"quality_review_{job['job_id']}",
+                              use_container_width=True):
+                    _queue_academic("quality")
                 if outline_artifact and outline_artifact.get("sections"):
                     section_options = {
                         f"{x['section_id']} {x['title']}": x["section_id"]

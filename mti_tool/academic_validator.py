@@ -324,6 +324,16 @@ def validate_academic_report(
             issues.append(_issue(
                 "invented_segment_id", f"不存在的段落引用：{seg_id}",
                 evidence_id=seg_id, suggested_action="删除引用或改用证据库中的 segment_id。"))
+    planned_case_ids = {str(x.get("case_id")) for x in selected_cases.get("cases", [])}
+    for section in outline.get("sections", []):
+        planned_case_ids.update(str(x) for x in section.get("cases") or [])
+    for seg_id in sorted(set(_SEGMENT_REF.findall(report_md))):
+        if seg_id not in planned_case_ids:
+            issues.append(_issue(
+                "unplanned_segment_reference",
+                f"正文引用了未纳入分节案例计划的段落：{seg_id}。",
+                evidence_id=seg_id,
+                suggested_action="删除该引用，或先在案例选择与提纲中纳入该案例。"))
 
     for kind, seg_id, quote in _QUOTE.findall(report_md):
         if seg_id not in segs:
@@ -478,9 +488,12 @@ def validate_academic_report(
                     "outline_unknown_case", f"章节 {section_id} 引用未知案例 {case_id}。",
                     section_id=section_id, evidence_id=case_id))
             elif f"[{case_id}]" not in body:
+                planned = [str(x) for x in plan_section.get("cases") or []]
+                severity = "warning" if len(planned) > 4 else "error"
                 issues.append(_issue(
                     "missing_selected_case", f"章节 {section_id} 未使用已选案例 {case_id}。",
                     section_id=section_id, evidence_id=case_id,
+                    severity=severity,
                     suggested_action="使用该案例，或重新规划案例选择。"))
         for rq_id in plan_section.get("research_questions") or []:
             if rq_id not in rqs:

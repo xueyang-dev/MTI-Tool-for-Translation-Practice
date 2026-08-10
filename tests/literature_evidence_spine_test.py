@@ -308,7 +308,15 @@ class LiteraturePipelineMock:
                 body += f"文献主张由逐字证据限定 [@{evidence['source_id']}]。"
                 body += (f"\n> [LITERATURE {evidence['evidence_id']}]: "
                          f"{evidence['evidence_text']}\n")
+            for case in packet["cases"]:
+                ev = case.get("evidence") or {}
+                body += (f"\n[{ev.get('segment_id', case['case_id'])}]\n"
+                         f"> [SOURCE {ev.get('segment_id', case['case_id'])}]: "
+                         f"{ev.get('source', 'source')}\n"
+                         f"> [TARGET {ev.get('segment_id', case['case_id'])}]: "
+                         f"{ev.get('final_target', 'target')}\n")
             body += "本节只在已登记证据范围内展开作者分析，不还原不可观察的心理意图。" * 6
+            body += f"本章节编号 {section['section_id']}，用于区分章节内容。"
             if section["section_id"] == "2" and "existing_section" not in payload \
                     and self.inject_unregistered:
                 body += " 虚构来源 [@evil2026]。"

@@ -245,7 +245,8 @@ def extract_pdf_paragraphs(file_bytes):
 def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
     """底层大模型统一路由（超时 150 秒，模型可配置）。"""
     if provider == "DeepSeek":
-        client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com", timeout=150.0)
+        client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com",
+                        timeout=(15.0, 180.0), max_retries=1)
         res = client.chat.completions.create(
             model=model,
             messages=[{"role": "system", "content": system_prompt},
@@ -254,7 +255,7 @@ def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0
         )
         return (res.choices[0].message.content or "").strip()
     if provider == "OpenAI":
-        client = OpenAI(api_key=api_key, timeout=150.0)
+        client = OpenAI(api_key=api_key, timeout=(15.0, 180.0), max_retries=1)
         res = client.chat.completions.create(
             model=model,
             messages=[{"role": "system", "content": system_prompt},

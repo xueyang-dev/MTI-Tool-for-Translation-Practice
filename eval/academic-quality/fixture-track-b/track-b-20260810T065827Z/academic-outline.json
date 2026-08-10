@@ -1,0 +1,187 @@
+{
+  "schema_version": "academic-outline-v2",
+  "sections": [
+    {
+      "section_id": "1",
+      "title": "引言",
+      "purpose": "介绍研究背景、研究问题、研究意义及论文结构，明确以功能对等理论为框架，通过项目证据解释受众反应。",
+      "research_questions": [
+        "RQ1"
+      ],
+      "claims": [
+        "C1"
+      ],
+      "cases": [],
+      "literature_claims": [
+        "LC-001",
+        "LC-003"
+      ],
+      "literature_evidence": [
+        "LE-96c7e6e40d86d1ba",
+        "LE-40d411b6c8a07b44"
+      ],
+      "literature_sources": [
+        "nida1964"
+      ],
+      "required_statistics": [
+        "total_segments"
+      ],
+      "target_words": 500,
+      "minimum_chars": 300,
+      "allowed_conclusions": [
+        "提出研究问题，说明研究路径，概述论文结构。"
+      ]
+    },
+    {
+      "section_id": "2",
+      "title": "文献综述与理论框架",
+      "purpose": "综述功能对等理论的核心概念，特别是'受体反应'和'最贴近的自然对等'，为后续分析提供理论依据。",
+      "research_questions": [
+        "RQ1"
+      ],
+      "claims": [
+        "C2"
+      ],
+      "cases": [],
+      "literature_claims": [
+        "LC-001",
+        "LC-002"
+      ],
+      "literature_evidence": [
+        "LE-96c7e6e40d86d1ba",
+        "LE-8993dee56de5ae8c"
+      ],
+      "literature_sources": [
+        "nida1964"
+      ],
+      "required_statistics": [],
+      "target_words": 800,
+      "minimum_chars": 400,
+      "allowed_conclusions": [
+        "确立功能对等理论作为分析框架，明确受众反应的操作化定义。"
+      ]
+    },
+    {
+      "section_id": "3",
+      "title": "项目描述与研究方法",
+      "purpose": "介绍翻译项目背景、文本特征、翻译流程及数据收集方法，说明如何通过审校环节的发现问题与修复结果来间接观察受众反应。",
+      "research_questions": [
+        "RQ1"
+      ],
+      "claims": [
+        "C1",
+        "C3"
+      ],
+      "cases": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011"
+      ],
+      "literature_claims": [
+        "LC-001",
+        "LC-003"
+      ],
+      "literature_evidence": [
+        "LE-96c7e6e40d86d1ba",
+        "LE-40d411b6c8a07b44"
+      ],
+      "literature_sources": [
+        "nida1964"
+      ],
+      "required_statistics": [
+        "total_segments",
+        "translated_segments",
+        "reviewed_segments",
+        "blocking_findings",
+        "actionable_findings",
+        "informational_findings",
+        "repaired_segments",
+        "issue_category_distribution",
+        "repair_category_distribution"
+      ],
+      "target_words": 1200,
+      "minimum_chars": 600,
+      "allowed_conclusions": [
+        "描述项目流程和数据特征，说明以审校发现作为受众反应证据的合理性。"
+      ]
+    },
+    {
+      "section_id": "4",
+      "title": "案例分析：受众反应的证据化解释",
+      "purpose": "通过三个典型案例（seg-track-b-fixture-0006、0000、0011）详细分析审校发现的问题类型、修复过程及其对受众理解的影响，验证核心论点。",
+      "research_questions": [
+        "RQ1"
+      ],
+      "claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "cases": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011"
+      ],
+      "literature_claims": [
+        "LC-001",
+        "LC-002",
+        "LC-003"
+      ],
+      "literature_evidence": [
+        "LE-96c7e6e40d86d1ba",
+        "LE-8993dee56de5ae8c",
+        "LE-40d411b6c8a07b44"
+      ],
+      "literature_sources": [
+        "nida1964"
+      ],
+      "required_statistics": [
+        "blocking_findings",
+        "actionable_findings",
+        "informational_findings",
+        "issue_category_distribution",
+        "repair_category_distribution"
+      ],
+      "target_words": 1500,
+      "minimum_chars": 800,
+      "allowed_conclusions": [
+        "通过案例证据说明审校发现与修复如何反映受众反应，并验证让步关系等关键因素对理解的影响。"
+      ]
+    },
+    {
+      "section_id": "5",
+      "title": "结论",
+      "purpose": "总结研究发现，回应研究问题，讨论研究局限，并提出未来研究方向。",
+      "research_questions": [
+        "RQ1"
+      ],
+      "claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "cases": [],
+      "literature_claims": [
+        "LC-001",
+        "LC-003",
+        "LC-002"
+      ],
+      "literature_evidence": [
+        "LE-96c7e6e40d86d1ba",
+        "LE-40d411b6c8a07b44",
+        "LE-8993dee56de5ae8c"
+      ],
+      "literature_sources": [
+        "nida1964"
+      ],
+      "required_statistics": [],
+      "target_words": 500,
+      "minimum_chars": 300,
+      "allowed_conclusions": [
+        "总结受众反应可通过审校证据间接解释，指出样本量小等局限，建议未来扩大样本。"
+      ]
+    }
+  ],
+  "planner_fallback": false,
+  "content_hash": "a92ba30a501e41f4579de62c2680d8ebda2a25951121971d876be8ea285974fe"
+}

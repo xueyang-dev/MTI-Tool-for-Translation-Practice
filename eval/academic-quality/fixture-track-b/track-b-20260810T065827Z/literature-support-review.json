@@ -1,0 +1,78 @@
+{
+  "schema_version": "literature-support-reviewer-v1",
+  "status": "review_required",
+  "issues": [
+    {
+      "issue_id": "LR-001",
+      "type": "support_too_weak",
+      "section_id": "1",
+      "global_claim_id": "C1",
+      "literature_claim_id": "LC-003",
+      "literature_evidence_ids": [
+        "LE-40d411b6c8a07b44"
+      ],
+      "source_id": "nida1964",
+      "severity": "medium",
+      "reason": "LC-003 的支撑证据 LE-40d411b6c8a07b44 仅为用户笔记（'用于解释受众反应'），并非 Nida 原文内容，且该笔记未提供具体页码或上下文。报告第 1 章将 LC-003 作为理论依据，但证据强度不足以支撑该主张，需明确标注为作者解释或降低依赖。",
+      "repair_action": "downgrade"
+    },
+    {
+      "issue_id": "LR-002",
+      "type": "claim_stronger_than_source",
+      "section_id": "2",
+      "global_claim_id": "C2",
+      "literature_claim_id": "LC-002",
+      "literature_evidence_ids": [
+        "LE-8993dee56de5ae8c"
+      ],
+      "source_id": "nida1964",
+      "severity": "medium",
+      "reason": "LC-002 的原文证据仅陈述翻译是再现'最贴近的自然对等'，但报告第 2 章将其扩展为'翻译操作的目标设定'，并详细阐释了'对等''自然''最贴近'三个限定词，这些阐释超出了原文的直接表述，属于作者解读，需明确标注或弱化。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "LR-003",
+      "type": "theory_case_mismatch",
+      "section_id": "3",
+      "global_claim_id": "C1",
+      "literature_claim_id": "LC-001",
+      "literature_evidence_ids": [
+        "LE-96c7e6e40d86d1ba"
+      ],
+      "source_id": "nida1964",
+      "severity": "high",
+      "reason": "LC-001 主张功能对等关注受体反应，但报告第 3 章将审校者视为'受众代表'，将审校发现等同于受众反应。审校者是专业受众，与理论中的'受体'（目标语读者）存在本质差异，且证据未支持这种等同，导致理论与案例不匹配。",
+      "repair_action": "narrow"
+    },
+    {
+      "issue_id": "LR-004",
+      "type": "support_too_weak",
+      "section_id": "4",
+      "global_claim_id": "C3",
+      "literature_claim_id": "LC-001",
+      "literature_evidence_ids": [
+        "LE-96c7e6e40d86d1ba"
+      ],
+      "source_id": "nida1964",
+      "severity": "medium",
+      "reason": "C3 主张问题严重级别分布反映受众反应的层次性，但 LC-001 仅陈述功能对等关注受体反应，未提及反应层次或问题级别。报告第 4 章将审校发现的问题级别与受众认知加工阶段对应，这一层次性解释是作者推断，文献证据不足以支撑。",
+      "repair_action": "mark_author_interpretation"
+    },
+    {
+      "issue_id": "LR-005",
+      "type": "paraphrase_distorts_source",
+      "section_id": "5",
+      "global_claim_id": "C1",
+      "literature_claim_id": "LC-001",
+      "literature_evidence_ids": [
+        "LE-96c7e6e40d86d1ba"
+      ],
+      "source_id": "nida1964",
+      "severity": "medium",
+      "reason": "报告第 5 章将 LC-001 表述为'功能对等理论关注的是受体反应'，但原文证据为'Functional equivalence focuses on receptor response'，翻译基本准确，但报告进一步声称'受众反应可通过审校证据间接解释'，这一推论超出原文，且将'受体反应'等同于'受众反应'，概念外延不一致。",
+      "repair_action": "narrow"
+    }
+  ],
+  "reviewed_literature_claims": 3,
+  "content_hash": "aea6a81c37c21e835616399aeb0f83a30d8c86d7ec1ca8067e4c9f8ed1381b5c"
+}

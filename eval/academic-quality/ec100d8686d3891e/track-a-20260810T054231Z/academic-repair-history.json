@@ -1,0 +1,87 @@
+{
+  "schema_version": "academic-repair-v1",
+  "rounds": [
+    {
+      "round": 1,
+      "section_id": "1",
+      "issue_ids": [
+        "AV-015",
+        "AR-001"
+      ],
+      "global_claim_ids": [
+        "C1"
+      ],
+      "literature_claim_ids": [],
+      "repair_actions": [],
+      "before_hash": "ffd33aa7043796d923b4fb09e69e62f3e3ba68bfdd4fa9d0adc82ccfa9110617",
+      "after_hash": "713a66440cf8a2d66f38add3c0e3c61addadcedf1583d58edee83d4f1ffe6e25",
+      "repaired_at": "2026-08-10T06:48:32+00:00"
+    },
+    {
+      "round": 1,
+      "section_id": "2",
+      "issue_ids": [
+        "AR-002",
+        "AR-008"
+      ],
+      "global_claim_ids": [
+        "C1",
+        "C2"
+      ],
+      "literature_claim_ids": [],
+      "repair_actions": [],
+      "before_hash": "efe84c446dfe9545472756443cb8464b376ff8a8fa1bc3862ec1d4c53ff6c986",
+      "after_hash": "9d6b120bad392561917bc71a675f471d4a735b698329f91840cf6700c4ce8a05",
+      "repaired_at": "2026-08-10T06:49:06+00:00"
+    },
+    {
+      "round": 1,
+      "section_id": "3",
+      "issue_ids": [
+        "AR-003",
+        "AR-004"
+      ],
+      "global_claim_ids": [
+        "C3"
+      ],
+      "literature_claim_ids": [],
+      "repair_actions": [],
+      "before_hash": "b34f20021fb3e3ca006a02339daa098c30b319b983b29ac70c639819e14cb605",
+      "after_hash": "6250d803ebda7b10bf824da6c270f391dff32739c7d622e1a7e1761adb4bfecf",
+      "repaired_at": "2026-08-10T06:49:31+00:00"
+    },
+    {
+      "round": 1,
+      "section_id": "4",
+      "issue_ids": [
+        "AR-005",
+        "AR-007"
+      ],
+      "global_claim_ids": [
+        "C4",
+        "C6"
+      ],
+      "literature_claim_ids": [],
+      "repair_actions": [],
+      "before_hash": "fe05417129f1b5a10964fd47a9eb8707062282070c0a567cb7eb19271afc0c53",
+      "after_hash": "218066acb5c98ccb5b10f06cce35cc58d90a4b0e51392a91ee54d97b2af9b49a",
+      "repaired_at": "2026-08-10T06:49:52+00:00"
+    },
+    {
+      "round": 1,
+      "section_id": "5",
+      "issue_ids": [
+        "AR-010"
+      ],
+      "global_claim_ids": [
+        "C5"
+      ],
+      "literature_claim_ids": [],
+      "repair_actions": [],
+      "before_hash": "4035895584e27790612300d95dce4848477609c0f1aac5a6015514fcabb21f3e",
+      "after_hash": "3a195059d6c30fedcfbfaaa0b82991c84e57321ca25f47d72d9249ab7dc11edc",
+      "repaired_at": "2026-08-10T06:50:06+00:00"
+    }
+  ],
+  "content_hash": "78198ba315bbbb611fa932c4b0bbce57c0599ceaade6847439dbc90c6f17b53a"
+}

@@ -1,0 +1,67 @@
+{
+  "schema_version": "academic-quality-repair-v1",
+  "rounds": [
+    {
+      "round": 1,
+      "case_replacements": [],
+      "section_rewrites": [
+        {
+          "section_id": "3",
+          "issue_ids": [
+            "AQ-012",
+            "AV-010",
+            "AV-011",
+            "AV-012",
+            "AV-013",
+            "AV-014"
+          ],
+          "before_hash": "f810bcecbd9c0b2ce095827e2358518fe65b39c48d8c15ad720922b81b470508",
+          "after_hash": "17e76f35c3b4356f3c73a3f2ee538b7f4309a5c374147613fa2df90c01126cb2",
+          "repaired_at": "2026-08-10T07:02:26+00:00"
+        },
+        {
+          "section_id": "4",
+          "issue_ids": [
+            "AQ-013",
+            "AQ-014",
+            "AQ-015",
+            "AQ-016",
+            "AQ-017",
+            "AQ-018",
+            "AV-015",
+            "AV-016",
+            "AV-017",
+            "AV-018",
+            "AV-019"
+          ],
+          "before_hash": "4c26f246a54f450655f78ad06755aa54cb61959d688752ce260a737d0f50b9aa",
+          "after_hash": "8ca427579e5b4907db17881f90463ac60a9be657aac2e2a955f29b52ae4c40d4",
+          "repaired_at": "2026-08-10T07:02:43+00:00"
+        },
+        {
+          "section_id": "5",
+          "issue_ids": [
+            "AQ-019",
+            "AQ-020"
+          ],
+          "before_hash": "7567deb5242dec2f03a685a1796314a44b61942ae59f11c5945de2b00b333019",
+          "after_hash": "9d0642195150cfa54293258e3da1396c479be1a9809f4f8cea361aa2a454c25c",
+          "repaired_at": "2026-08-10T07:02:50+00:00"
+        }
+      ],
+      "issue_ids": [
+        "AQ-012",
+        "AQ-013",
+        "AQ-014",
+        "AQ-015",
+        "AQ-016",
+        "AQ-017",
+        "AQ-018",
+        "AQ-019",
+        "AQ-020"
+      ],
+      "completed_at": "2026-08-10T07:03:32+00:00"
+    }
+  ],
+  "content_hash": "c2fbb87f933657947fa4884dcddfea5508a8ea20f051953d611d296d25e5d3c2"
+}
