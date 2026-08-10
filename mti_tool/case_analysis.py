@@ -258,6 +258,7 @@ def build_case_analysis_plans(
     evidence: Dict[str, Any], selected_cases: Dict[str, Any],
     argument_plan: Dict[str, Any], literature_claims: Dict[str, Any],
     call_llm: Callable, provider: str, api_key: str, model: str,
+    human_evidence: Optional[Iterable[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Plan each selected case's analysis under evidence constraints."""
     segs = segment_index(evidence)
@@ -265,6 +266,13 @@ def build_case_analysis_plans(
         str(x.get("case_id")): evidence_adequacy(segs.get(str(x.get("case_id"))) or {})
         for x in selected_cases.get("cases", [])}
     has_literature = bool(literature_claims.get("items"))
+    usable_human = [
+        x for x in (human_evidence or [])
+        if x.get("status") == "user_confirmed"
+        and x.get("conflict_status") != "contradicted"]
+    human_by_case: Dict[str, List[Dict[str, Any]]] = {}
+    for item in usable_human:
+        human_by_case.setdefault(str(item.get("case_id") or ""), []).append(item)
     system = (
         "你是保守的 MTI 案例分析规划器。为每个案例制定分析计划；只使用输入中的"
         "项目证据与文献主张，不编造译者意图、草稿、过程历史或理论。区分："
@@ -286,10 +294,18 @@ def build_case_analysis_plans(
         "\"decision_rationale\":\"...\",\"translation_effect\":{\"dimension\":\"...\","
         "\"demonstrated_by\":\"...\"}|null,\"theory_mapping\":{\"concept\":\"...\","
         "\"source_feature\":\"...\",\"target_requirement\":\"...\",\"relation\":\"...\"}|null,"
-        "\"bounded_conclusion\":\"...\",\"recommended_human_evidence\":[\"...\"]}]}。"
+        "\"bounded_conclusion\":\"...\",\"recommended_human_evidence\":[\"...\"],"
+        "\"human_evidence_ids\":[\"HE-...\"]}]}。"
+        " 可选输入 human_evidence 是作者事后提供的解释。若某案例有可用 human_evidence，"
+        "decision_rationale 可以引用它并在 human_evidence_ids 列出对应 id；不得把作者"
+        "事后解释写成项目同期过程；human_evidence_ids 只能引用该案例自己的证据。"
     )
     payload = _scoped_planner_input(
         evidence, selected_cases, argument_plan, literature_claims)
+    payload["human_evidence"] = [
+        {k: x.get(k) for k in ("human_evidence_id", "case_id", "question_type",
+                               "answer")}
+        for x in usable_human]
     raw = None
     for attempt in range(2):
         suffix = "" if attempt == 0 else "\n上次输出无效；仅输出合法 JSON 对象。"
@@ -314,6 +330,10 @@ def build_case_analysis_plans(
         adequacy = adequacy_by_case.get(case_id, {})
         cannot = set(adequacy.get("cannot_support") or [])
         problem = item.get("problem") if isinstance(item.get("problem"), dict) else {}
+        human_ids = [str(x) for x in item.get("human_evidence_ids") or []]
+        valid_human = [x for x in human_ids
+                       if x in {h.get("human_evidence_id")
+                                for h in human_by_case.get(case_id, [])}]
         problem_type = str(problem.get("type") or "other")
         if problem_type not in PROBLEM_TYPES:
             problem_type = "other"
@@ -373,6 +393,12 @@ def build_case_analysis_plans(
                 "mapped" if theory_mapping else
                 "not_applicable" if not has_literature else "missing"),
             "bounded_conclusion": str(item.get("bounded_conclusion") or "")[:300],
+            "human_evidence_ids": valid_human,
+            "human_evidence": [
+                {k: h.get(k) for k in ("human_evidence_id", "question_type",
+                                       "answer", "question")}
+                for h in human_by_case.get(case_id, [])
+                if h.get("human_evidence_id") in valid_human],
             "recommended_human_evidence": [
                 str(x)[:200] for x in (item.get("recommended_human_evidence") or [])][:6],
             "analysis_contract": {
@@ -396,6 +422,8 @@ def build_case_analysis_plans(
             "theory_connection_status": "not_applicable" if not has_literature
             else "missing",
             "bounded_conclusion": "",
+            "human_evidence_ids": [],
+            "human_evidence": [],
             "recommended_human_evidence": [
                 "规划失败：请提供该案例的具体翻译问题与过程证据。"],
             "analysis_contract": {

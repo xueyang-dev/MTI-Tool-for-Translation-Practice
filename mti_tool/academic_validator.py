@@ -26,6 +26,7 @@ _LIT_CLAIM = re.compile(r"<!--lit-claim:([A-Za-z0-9_.:-]+)-->")
 _LIT_EVIDENCE = re.compile(r"<!--lit-evidence:([A-Za-z0-9_.:-]+)-->")
 _LIT_QUOTE = re.compile(
     r"^\s*>\s*\[LITERATURE\s+(LE-[A-Za-z0-9_-]+)\]:\s*(.*)$", re.MULTILINE)
+_HUMAN_EV = re.compile(r"<!--human-ev:([A-Za-z0-9_.:-]+)-->")
 _FORMAL_AUTHOR_YEAR = re.compile(
     r"(?:\b[A-Z][A-Za-z'’-]+(?:\s+(?:&|and)\s+[A-Z][A-Za-z'’-]+)?\s*"
     r"\((?:19|20)\d{2}[a-z]?\)|\([A-Z][A-Za-z'’-]+(?:\s+et\s+al\.)?,\s*"
@@ -135,6 +136,7 @@ def validate_academic_report(
     literature_sources_artifact: Optional[Dict[str, Any]] = None,
     literature_evidence_artifact: Optional[Dict[str, Any]] = None,
     literature_claims_artifact: Optional[Dict[str, Any]] = None,
+    human_evidence: Optional[Iterable[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Validate identity, provenance, statistics, citations and structure."""
     issues: List[Dict[str, Any]] = []
@@ -146,6 +148,8 @@ def validate_academic_report(
     lit_evidence = literature_evidence.evidence_index(
         literature_evidence_artifact or {})
     lit_claims = literature_evidence.claim_index(literature_claims_artifact or {})
+    human_entries = human_evidence or []
+    human_index = {x.get("human_evidence_id"): x for x in human_entries}
     claims = {str(c.get("claim_id")): c for c in argument_plan.get("claims", [])}
     rqs = {str(r.get("rq_id")): r for r in research_model.get("research_questions", [])}
     glossary = {str(x.get("id")): x for x in
@@ -448,6 +452,37 @@ def validate_academic_report(
                 f"正式作者—年份引用没有 registry key：{match.group(0)}",
                 evidence_id=match.group(0),
                 suggested_action="使用 [@source_id] 绑定文献注册表，或删除未核验引用。"))
+
+    for human_id in sorted(set(_HUMAN_EV.findall(report_md))):
+        entry = human_index.get(human_id)
+        if not entry:
+            issues.append(_issue(
+                "unknown_human_evidence", f"正文引用未知人类证据：{human_id}。",
+                evidence_id=human_id,
+                suggested_action="删除引用，或先登记对应人类证据。"))
+        elif entry.get("status") not in ("user_confirmed",):
+            issues.append(_issue(
+                "unusable_human_evidence",
+                f"人类证据 {human_id} 状态为 {entry.get('status')}，不可用于写作。",
+                evidence_id=human_id,
+                suggested_action="修正/撤回该证据，或从正文删除其引用。"))
+        elif entry.get("conflict_status") == "contradicted":
+            issues.append(_issue(
+                "conflicted_human_evidence",
+                f"人类证据 {human_id} 与项目记录矛盾，需人工复核后才能引用。",
+                evidence_id=human_id))
+    for claim in claims.values():
+        for human_id in claim.get("human_evidence_ids") or []:
+            if human_id not in human_index:
+                issues.append(_issue(
+                    "argument_unknown_human_evidence",
+                    f"论点 {claim['claim_id']} 引用未知人类证据 {human_id}。",
+                    claim_id=claim["claim_id"], evidence_id=human_id))
+            elif human_index[human_id].get("status") not in ("user_confirmed",):
+                issues.append(_issue(
+                    "argument_unusable_human_evidence",
+                    f"论点 {claim['claim_id']} 引用不可用的人类证据 {human_id}。",
+                    claim_id=claim["claim_id"], evidence_id=human_id))
 
     for entry_id in sorted(set(_TERM.findall(report_md))):
         if entry_id not in glossary:

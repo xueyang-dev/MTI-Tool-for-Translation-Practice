@@ -16,6 +16,7 @@ from . import academic_evidence
 from . import academic_quality
 from . import academic_validator
 from . import case_analysis
+from . import human_evidence
 from . import literature_evidence
 
 PIPELINE_VERSION = "academic-pipeline-v2"
@@ -34,6 +35,7 @@ VERSIONS = {
     "literature_reviewer_version": "literature-support-reviewer-v1",
     "academic_quality_version": academic_quality.QUALITY_VERSION,
     "case_analysis_version": case_analysis.ANALYSIS_VERSION,
+    "human_evidence_version": human_evidence.HUMAN_EVIDENCE_VERSION,
 }
 
 ARTIFACT_FILES = {
@@ -51,6 +53,9 @@ ARTIFACT_FILES = {
     "literature_support_review": "literature-support-review.json",
     "academic_quality": "academic-quality-evaluation.json",
     "case_analysis_plans": "case-analysis-plans.json",
+    "human_evidence": "human-academic-evidence.jsonl",
+    "human_evidence_needs": "human-evidence-needs.json",
+    "human_evidence_questions": "human-evidence-questions.json",
     "quality_repair_history": "academic-quality-repair-history.json",
     "repair_history": "academic-repair-history.json",
 }
@@ -519,6 +524,7 @@ def build_argument_plan(
     literature_sources_artifact: Optional[Dict[str, Any]] = None,
     literature_evidence_artifact: Optional[Dict[str, Any]] = None,
     literature_claims_artifact: Optional[Dict[str, Any]] = None,
+    human_evidence_entries: Optional[Iterable[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     system = (
         "你是学术论证规划器。只规划可由输入证据支持的主要论点，不写正文，不补造文献。"
@@ -528,6 +534,7 @@ def build_argument_plan(
         "\"literature_claims\":[\"LC-001\"],\"literature_evidence\":[\"LE-...\"],"
         "\"support_category\":\"project_evidence_only|literature_supported|mixed_evidence|"
         "author_analysis\",\"analysis_type\":\"AUTHOR_ANALYSIS\","
+        "\"human_author_evidence\":[\"HE-...\"],"
         "\"confidence\":\"low|medium|high\",\"planned_sections\":[\"1\"],"
         "\"reasoning\":\"...\",\"counterargument\":\"...\"}]}。"
     )
@@ -540,12 +547,23 @@ def build_argument_plan(
             for x in (literature_sources_artifact or {}).get("sources", [])],
         "literature_claims": (literature_claims_artifact or {}).get("items", []),
         "literature_evidence": (literature_evidence_artifact or {}).get("items", []),
+        "human_author_evidence": [
+            {k: x.get(k) for k in ("human_evidence_id", "case_id",
+                                   "question_type", "answer")}
+            for x in (human_evidence_entries or [])
+            if x.get("status") == "user_confirmed"],
     }
     raw = _call_json(call_llm, provider, api_key, model, system,
                      json.dumps(payload, ensure_ascii=False)) or _fallback_argument_plan(
                          research_model, evidence)
     valid_rqs = {x["rq_id"] for x in research_model.get("research_questions", [])}
     valid_segments = set(academic_evidence.segment_index(evidence))
+    valid_human = {
+        x.get("human_evidence_id") for x in (human_evidence_entries or [])
+        if x.get("status") == "user_confirmed"}
+    human_case = {
+        x.get("human_evidence_id"): x.get("case_id")
+        for x in (human_evidence_entries or [])}
     valid_metrics = {f"metric:{x}" for x in
                      evidence.get("project_evidence", {}).get("statistics", {})}
     source_index = literature_evidence.source_index(literature_sources_artifact or {})
@@ -576,6 +594,10 @@ def build_argument_plan(
         raw_lit_evidence = [str(x) for x in item.get("literature_evidence") or []]
         literature = [x for x in raw_lit_evidence
                       if x in valid_lit_evidence and x in allowed_lit_evidence]
+        human_ids = [
+            str(x) for x in item.get("human_author_evidence") or []
+            if str(x) in valid_human
+            and human_case.get(str(x)) in project]
         rejected_source_only += sum(
             x not in valid_lit_evidence for x in raw_lit_evidence)
         requested_category = str(item.get("support_category") or "")
@@ -602,6 +624,7 @@ def build_argument_plan(
             "project_evidence": project,
             "literature_claims": lit_claim_ids if literature else [],
             "literature_evidence": literature,
+            "human_author_evidence": human_ids,
             "support_category": support_category,
             "analysis_type": analysis_type,
             "confidence": str(item.get("confidence") or "low"),
@@ -935,6 +958,10 @@ def _write_section(
             "过程历史；提及 packet 之外任何 seg 段号；把反事实备选写成历史事实。证据不足"
             "时明确写‘本项目证据不足以支持…’，并列出 recommended_human_evidence 所需"
             "的人工证据。"
+            " 若案例带 human_evidence（作者事后解释），可在 decision_rationale 中引用，"
+            "表述为‘作者后来解释/译者后来说明’，并保留 <!--human-ev:HE-...--> marker；"
+            "不得把作者事后解释写成项目同期过程；human_evidence 仅限该案例使用，"
+            "不得推广为全局翻译原则。"
         )
     if repair:
         system += ("这是定点修订：仅修复给定 issues，保持当前章节的有效论点、证据和 marker，"
@@ -1346,6 +1373,7 @@ def _run_quality_repair_round(
     literature_evidence_artifact: Dict[str, Any],
     literature_claims_artifact: Dict[str, Any],
     case_analysis_plans: Dict[str, Any],
+    human_evidence_entries: Iterable[Dict[str, Any]],
     quality: Dict[str, Any], validation: Dict[str, Any],
     prior_summaries: List[Dict[str, str]],
     call_llm: Callable, provider: str, api_key: str, model: str,
@@ -1416,7 +1444,7 @@ def _run_quality_repair_round(
     validation = academic_validator.validate_academic_report(
         report_md, evidence, research_model, argument_plan, selected_cases, outline,
         literature_sources_artifact, literature_evidence_artifact,
-        literature_claims_artifact)
+        literature_claims_artifact, human_evidence_entries)
     validation = _locate_validation_issues(validation, written)
     review = _semantic_review(
         report_md, research_model, argument_plan, outline, selected_cases,
@@ -1511,6 +1539,7 @@ def run_academic_pipeline(
     on_status: Optional[Callable[[str], None]] = None,
     auto_repair_rounds: int = 1,
     auto_quality_repair_rounds: int = 1,
+    human_evidence_sources: Optional[Iterable[Dict[str, Any]]] = None,
 ) -> str:
     """Run or resume the complete academic evidence-to-repair pipeline."""
     artifact_dir = Path(artifact_dir)
@@ -1520,6 +1549,10 @@ def run_academic_pipeline(
     academic.update(status="in_progress", last_error="", updated_at=_now())
     settings, literature = prepare_academic_inputs(
         state, theory, research_settings, literature_sources)
+    human_entries = list(
+        human_evidence_sources if human_evidence_sources is not None
+        else state.get("human_evidence") or [])
+    state["human_evidence"] = human_entries
 
     def stage(name: str, label: str) -> None:
         academic["current_stage"] = name
@@ -1608,6 +1641,7 @@ def run_academic_pipeline(
                 "sources_metadata_hash"],
             "literature_evidence": literature_evidence_artifact["content_hash"],
             "literature_claims": literature_claims_artifact["content_hash"],
+            "human_evidence": human_evidence.evidence_hash(human_entries),
             "version": VERSIONS["argument_plan_version"],
         })
         argument_plan = _load_valid_artifact(
@@ -1617,7 +1651,7 @@ def run_academic_pipeline(
             argument_plan = build_argument_plan(
                 research_model, evidence, call_llm, provider, api_key, model,
                 literature_sources_artifact, literature_evidence_artifact,
-                literature_claims_artifact)
+                literature_claims_artifact, human_entries)
             argument_plan = _save_artifact(
                 state, artifact_dir, "argument_plan", argument_plan, argument_dep,
                 VERSIONS["argument_plan_version"])
@@ -1636,11 +1670,23 @@ def run_academic_pipeline(
                 VERSIONS["case_selection_version"])
 
         stage("case_analysis", "【学术写作 6/11】规划案例分析证据契约...")
+        human_evidence_artifact = {
+            "schema_version": VERSIONS["human_evidence_version"],
+            "items": human_entries,
+        }
+        human_evidence_artifact["content_hash"] = academic_evidence.stable_hash(
+            human_entries)
+        _save_artifact(state, artifact_dir, "human_evidence",
+                       human_evidence_artifact,
+                       academic_evidence.stable_hash(human_entries),
+                       VERSIONS["human_evidence_version"])
+        human_evidence_hash = human_evidence.evidence_hash(human_entries)
         case_analysis_dep = academic_evidence.stable_hash({
             "evidence": evidence["content_hash"],
             "argument": argument_plan["content_hash"],
             "cases": selected_cases["content_hash"],
             "literature_claims": literature_claims_artifact["content_hash"],
+            "human_evidence": human_evidence_hash,
             "version": VERSIONS["case_analysis_version"],
         })
         case_plans = _load_valid_artifact(
@@ -1649,7 +1695,7 @@ def run_academic_pipeline(
         if case_plans is None:
             case_plans = case_analysis.build_case_analysis_plans(
                 evidence, selected_cases, argument_plan, literature_claims_artifact,
-                call_llm, provider, api_key, model)
+                call_llm, provider, api_key, model, human_entries)
             case_plans = _save_artifact(
                 state, artifact_dir, "case_analysis_plans", case_plans,
                 case_analysis_dep, VERSIONS["case_analysis_version"])
@@ -1680,7 +1726,6 @@ def run_academic_pipeline(
             "literature_sources": literature_sources_artifact["sources_metadata_hash"],
             "literature_evidence": literature_evidence_artifact["content_hash"],
             "literature_claims": literature_claims_artifact["content_hash"],
-            "case_analysis": case_plans["content_hash"],
             "writer": VERSIONS["writer_version"],
         })
         section_artifact = _load_valid_artifact(
@@ -1697,7 +1742,18 @@ def run_academic_pipeline(
                 "literature_sources": literature_sources_artifact["sources_metadata_hash"],
                 "literature_evidence": literature_evidence_artifact["content_hash"],
                 "literature_claims": literature_claims_artifact["content_hash"],
-                "case_analysis": case_plans["content_hash"],
+                "case_analysis": academic_evidence.stable_hash([
+                    {k: p.get(k) for k in (
+                        "case_id", "problem", "initial_failure", "alternatives",
+                        "decision_rationale", "translation_effect", "theory_mapping",
+                        "bounded_conclusion", "human_evidence_ids", "human_evidence")}
+                    for p in case_plans.get("plans", [])
+                    if p.get("case_id") in set(plan.get("cases") or [])]),
+                "human_evidence": academic_evidence.stable_hash([
+                    {k: x.get(k) for k in ("human_evidence_id", "status",
+                                           "answer", "question_type")}
+                    for x in human_entries
+                    if str(x.get("case_id")) in set(plan.get("cases") or [])]),
             })
             old = existing.get(sid)
             if old and old.get("dependency_hash") == section_key and sid not in forced:
@@ -1731,7 +1787,7 @@ def run_academic_pipeline(
         validation = academic_validator.validate_academic_report(
             report_md, evidence, research_model, argument_plan, selected_cases, outline,
             literature_sources_artifact, literature_evidence_artifact,
-            literature_claims_artifact)
+            literature_claims_artifact, human_entries)
         validation = _locate_validation_issues(validation, written)
         academic["validation_history"].append(validation)
 
@@ -1802,7 +1858,7 @@ def run_academic_pipeline(
                 validation = academic_validator.validate_academic_report(
                     report_md, evidence, research_model, argument_plan, selected_cases, outline,
                     literature_sources_artifact, literature_evidence_artifact,
-                    literature_claims_artifact)
+                    literature_claims_artifact, human_entries)
                 validation = _locate_validation_issues(validation, written)
                 academic["validation_history"].append(validation)
                 review = _semantic_review(
@@ -1872,7 +1928,7 @@ def run_academic_pipeline(
                 written, report_md, evidence, research_model, argument_plan,
                 selected_cases, outline, literature_sources_artifact,
                 literature_evidence_artifact, literature_claims_artifact,
-                case_plans, quality_evaluation,
+                case_plans, human_entries, quality_evaluation,
                 validation, prior_summaries, call_llm, provider, api_key, model)
             _save_artifact(state, artifact_dir, "selected_cases", selected_cases,
                            case_dep, VERSIONS["case_selection_version"])
@@ -1919,6 +1975,45 @@ def run_academic_pipeline(
                        academic_evidence.stable_hash(quality_repair_history["rounds"]),
                        "academic-quality-repair-v1")
 
+        # ---- Human evidence needs and questions (no LLM: deterministic) ----
+        needs_artifact = human_evidence.build_evidence_needs(
+            evidence, case_plans, quality_evaluation)
+        _save_artifact(state, artifact_dir, "human_evidence_needs", needs_artifact,
+                       academic_evidence.stable_hash({
+                           "case_plans": case_plans["content_hash"],
+                           "quality": quality_evaluation["content_hash"],
+                           "version": VERSIONS["human_evidence_version"],
+                       }), VERSIONS["human_evidence_version"])
+        questions_artifact = human_evidence.generate_questions(
+            needs_artifact, evidence, case_plans)
+        _save_artifact(state, artifact_dir, "human_evidence_questions",
+                       questions_artifact,
+                       academic_evidence.stable_hash({
+                           "needs": needs_artifact["content_hash"],
+                           "version": VERSIONS["human_evidence_version"],
+                       }), VERSIONS["human_evidence_version"])
+        open_questions = [q for q in questions_artifact.get("questions", [])
+                          if q.get("status") == "open"]
+        critical_open = [q for q in open_questions
+                         if q.get("priority") == "critical"]
+        human_evidence_status = {
+            "cases_needing_human_evidence": len({
+                q.get("case_id") for q in open_questions}),
+            "questions_generated": len(open_questions),
+            "critical_questions": len(critical_open),
+            "unanswered": len(open_questions),
+            "answered": sum(1 for q in questions_artifact.get("questions", [])
+                            if q.get("status") == "answered"),
+            "unavailable_after_check": sum(
+                1 for x in human_entries
+                if x.get("status") == "unavailable_after_human_check"),
+            "conflicted": sum(1 for x in human_entries
+                              if x.get("status") == "conflicted"),
+            "cases_improved_after_evidence": sum(
+                1 for x in human_entries if x.get("status") == "user_confirmed"),
+        }
+        academic["human_evidence_status"] = human_evidence_status
+
         quality, quality_dimensions = _quality_status(
             validation, review, evidence, literature_sources_artifact,
             literature_evidence_artifact, literature_claims_artifact,
@@ -1931,6 +2026,8 @@ def run_academic_pipeline(
             aq_status = "review_required"
         elif any(x == "pass_with_warnings" for x in dimension_values):
             aq_status = "pass_with_warnings"
+        if critical_open:
+            aq_status = "review_required"
         warning_md = academic_validator.render_warnings_markdown(
             validation, review, literature_support_review, evidence, quality_dimensions)
         (artifact_dir / "academic-evidence-warnings.md").write_text(

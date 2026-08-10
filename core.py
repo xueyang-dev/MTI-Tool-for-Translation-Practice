@@ -1779,6 +1779,42 @@ def load_academic_artifact(job_id, name):
         return None
 
 
+def record_human_evidence(job_id, question_id, answer, interface="academic_workspace"):
+    """Record a human author answer for an open evidence question.
+
+    The answer is stored verbatim with provenance; the question is marked
+    answered; the case-analysis/section staleness is propagated through the
+    existing dependency-hash architecture (only affected sections rewrite).
+    """
+    from mti_tool import academic_writer, human_evidence
+    state = load_job_state(job_id)
+    if state is None:
+        raise ValueError(f"找不到任务 {job_id}")
+    questions = academic_writer._read_artifact(
+        job_dir(job_id) / academic_writer.ARTIFACT_FILES["human_evidence_questions"])
+    if not questions:
+        raise ValueError("当前没有待回答的人类证据问题；请先生成学术报告。")
+    evidence = academic_writer._read_artifact(
+        job_dir(job_id) / academic_writer.ARTIFACT_FILES["evidence"])
+    entry, updated_questions = human_evidence.record_human_answer(
+        questions, question_id, answer, evidence or {}, interface,
+        existing=state.get("human_evidence") or [])
+    entries = list(state.get("human_evidence") or [])
+    entries = [x for x in entries if x.get("question_id") != question_id]
+    entries.append(entry)
+    state["human_evidence"] = entries
+    academic_writer._write_artifact(
+        job_dir(job_id) / academic_writer.ARTIFACT_FILES["human_evidence_questions"],
+        updated_questions)
+    record = state.get("academic_state", {}).get("artifacts", {}).get(
+        "human_evidence_questions")
+    if record:
+        record["content_hash"] = updated_questions["content_hash"]
+        record["updated_at"] = academic_writer._now()
+    save_job_state(job_id, state)
+    return entry
+
+
 # ================= 阶段三：证据约束型学术写作 =================
 def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_key,
                         model, state, job_id, on_status=None,

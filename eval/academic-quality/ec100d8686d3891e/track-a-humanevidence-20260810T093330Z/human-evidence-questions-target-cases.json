@@ -1,0 +1,119 @@
+{
+  "note": "0138/0152/0140 were not selected in this run; questions generated from the previous real run's plans/quality for the target-case report.",
+  "questions": [
+    {
+      "question_id": "HQ-001",
+      "need_ids": [
+        "HN-001"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0138",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0138"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（“我们走进了阿扎里亚和露丝的房间。没有人拥抱任何人，但空气中弥漫着巨大的喜悦。母亲问阿扎里亚关于叙利亚人的事，六年前，在我出生之前，他们曾在赫尔蒙山扣留过他，那时”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "We entered Azariah and Ruth’s room. No one hugged anyone, but there was a great sense of joy in the air. Mom asked Azariah about the Syrians, who had detained him on Mount Hermon six years earlier, be",
+        "initial_target": "我们走进了阿扎里亚和露丝的房间。没有人拥抱任何人，但空气中弥漫着巨大的喜悦。母亲问阿扎里亚关于叙利亚人的事，六年前，在我出生之前，他们曾在赫尔蒙山扣留过他，那时父亲还在意大利与英国人并肩作战，尚未遇见母亲。阿扎里亚·阿隆笑着回答说，叙利亚人没有长角。然后他问父亲在罗马与教皇会面的经历。“无稽之谈，”父亲轻笑着，带着他那熟悉的手势，从肘部到手指向下挥动。他的手指微微发黑，沾着油脂或机油。",
+        "final_target": "我们走进了阿扎里亚和露丝的房间。没有人拥抱任何人，但空气中弥漫着巨大的喜悦。母亲问阿扎里亚关于叙利亚人的事，六年前，在我出生之前，他们曾在赫尔蒙山扣留过他，那时父亲还在意大利与英国人并肩作战，尚未遇见母亲。阿扎里亚·阿隆笑着回答说，叙利亚人没有长角。然后他问父亲在罗马与教皇会面的经历。“无稽之谈，”父亲轻笑着，带着他那熟悉的手势，从肘部到手指向下挥动。他的手指微微发黑，沾着油脂或机油。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-002",
+      "need_ids": [
+        "HN-002"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0138",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0138"
+      ],
+      "question_type": "reader_response",
+      "question": "你预期中文读者从这一句（“我们走进了阿扎里亚和露丝的房间。没有人拥抱任何人，但空气中弥漫着巨大的喜悦。母亲问阿扎里亚关于叙利亚人的事，六年前，在我出生之前，他们曾在赫尔蒙山扣留过他，那时”）获得什么感受或理解？",
+      "context": {
+        "source": "We entered Azariah and Ruth’s room. No one hugged anyone, but there was a great sense of joy in the air. Mom asked Azariah about the Syrians, who had detained him on Mount Hermon six years earlier, be",
+        "initial_target": "我们走进了阿扎里亚和露丝的房间。没有人拥抱任何人，但空气中弥漫着巨大的喜悦。母亲问阿扎里亚关于叙利亚人的事，六年前，在我出生之前，他们曾在赫尔蒙山扣留过他，那时父亲还在意大利与英国人并肩作战，尚未遇见母亲。阿扎里亚·阿隆笑着回答说，叙利亚人没有长角。然后他问父亲在罗马与教皇会面的经历。“无稽之谈，”父亲轻笑着，带着他那熟悉的手势，从肘部到手指向下挥动。他的手指微微发黑，沾着油脂或机油。",
+        "final_target": "我们走进了阿扎里亚和露丝的房间。没有人拥抱任何人，但空气中弥漫着巨大的喜悦。母亲问阿扎里亚关于叙利亚人的事，六年前，在我出生之前，他们曾在赫尔蒙山扣留过他，那时父亲还在意大利与英国人并肩作战，尚未遇见母亲。阿扎里亚·阿隆笑着回答说，叙利亚人没有长角。然后他问父亲在罗马与教皇会面的经历。“无稽之谈，”父亲轻笑着，带着他那熟悉的手势，从肘部到手指向下挥动。他的手指微微发黑，沾着油脂或机油。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-003",
+      "need_ids": [
+        "HN-003"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0140",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0140"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（“露丝端上咖啡，问我这个三岁半的孩子，格瓦（Geva）的情况如何。有人走进来，拍了拍阿扎里亚的肩膀，问道：“他们到底为什么解散了帕尔马赫部队？”“去问本-古里安，”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "Ruth served coffee and asked me, three and a half years old, how things were in Geva. Someone walked in, patted Azariah on the shoulder, and asked, “Why did they dismantle the Palmach unit, anyway?” “",
+        "initial_target": "露丝端上咖啡，问我这个三岁半的孩子，格瓦（Geva）的情况如何。有人走进来，拍了拍阿扎里亚的肩膀，问道：“他们到底为什么解散了帕尔马赫部队？”“去问本-古里安，或者塔本金，”阿扎里亚没有笑容地回答。片刻间，贝特哈希塔那间小屋里弥漫着一股悲伤的气息，屋里挂着一幅古特曼画的几朵白色银莲花，但没有收音机或电话，而且和其他地方一样，没有理由锁门。",
+        "final_target": "露丝端上咖啡，问我这个三岁半的孩子，格瓦（Geva）的情况如何。有人走进来，拍了拍阿扎里亚的肩膀，问道：“他们到底为什么解散了帕尔马赫部队？”“去问本-古里安，或者塔本金，”阿扎里亚没有笑容地回答。片刻间，贝特哈希塔那间小屋里弥漫着一股悲伤的气息，屋里挂着一幅古特曼画的几朵白色银莲花，但没有收音机或电话，而且和其他地方一样，没有理由锁门。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-004",
+      "need_ids": [
+        "HN-004"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0140",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0140"
+      ],
+      "question_type": "reader_response",
+      "question": "你预期中文读者从这一句（“露丝端上咖啡，问我这个三岁半的孩子，格瓦（Geva）的情况如何。有人走进来，拍了拍阿扎里亚的肩膀，问道：“他们到底为什么解散了帕尔马赫部队？”“去问本-古里安，”）获得什么感受或理解？",
+      "context": {
+        "source": "Ruth served coffee and asked me, three and a half years old, how things were in Geva. Someone walked in, patted Azariah on the shoulder, and asked, “Why did they dismantle the Palmach unit, anyway?” “",
+        "initial_target": "露丝端上咖啡，问我这个三岁半的孩子，格瓦（Geva）的情况如何。有人走进来，拍了拍阿扎里亚的肩膀，问道：“他们到底为什么解散了帕尔马赫部队？”“去问本-古里安，或者塔本金，”阿扎里亚没有笑容地回答。片刻间，贝特哈希塔那间小屋里弥漫着一股悲伤的气息，屋里挂着一幅古特曼画的几朵白色银莲花，但没有收音机或电话，而且和其他地方一样，没有理由锁门。",
+        "final_target": "露丝端上咖啡，问我这个三岁半的孩子，格瓦（Geva）的情况如何。有人走进来，拍了拍阿扎里亚的肩膀，问道：“他们到底为什么解散了帕尔马赫部队？”“去问本-古里安，或者塔本金，”阿扎里亚没有笑容地回答。片刻间，贝特哈希塔那间小屋里弥漫着一股悲伤的气息，屋里挂着一幅古特曼画的几朵白色银莲花，但没有收音机或电话，而且和其他地方一样，没有理由锁门。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-001",
+      "need_ids": [
+        "HN-001"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0152",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0152"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（“晚饭后，我再次向西穿过Wadi Seder去与Irit见面。自从小学快毕业时我们一同学习起，我就一直爱着她。”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "After dinner, I crossed Wadi Seder westward again to meet Irit. I had been in love with her since we studied together at the end of elementary school.",
+        "initial_target": "晚饭后，我再次向西穿过Wadi Seder去与Irit见面。自从小学快毕业时我们一同学习起，我就一直爱着她。",
+        "final_target": "晚饭后，我再次向西穿过Wadi Seder去与Irit见面。自从小学快毕业时我们一同学习起，我就一直爱着她。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-002",
+      "need_ids": [
+        "HN-002"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0152",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0152"
+      ],
+      "question_type": "reader_response",
+      "question": "你预期中文读者从这一句（“晚饭后，我再次向西穿过Wadi Seder去与Irit见面。自从小学快毕业时我们一同学习起，我就一直爱着她。”）获得什么感受或理解？",
+      "context": {
+        "source": "After dinner, I crossed Wadi Seder westward again to meet Irit. I had been in love with her since we studied together at the end of elementary school.",
+        "initial_target": "晚饭后，我再次向西穿过Wadi Seder去与Irit见面。自从小学快毕业时我们一同学习起，我就一直爱着她。",
+        "final_target": "晚饭后，我再次向西穿过Wadi Seder去与Irit见面。自从小学快毕业时我们一同学习起，我就一直爱着她。"
+      },
+      "priority": "high",
+      "status": "open"
+    }
+  ]
+}

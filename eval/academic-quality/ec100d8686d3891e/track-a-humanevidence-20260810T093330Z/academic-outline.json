@@ -1,0 +1,183 @@
+{
+  "schema_version": "academic-outline-v2",
+  "sections": [
+    {
+      "section_id": "1",
+      "title": "引言",
+      "purpose": "介绍研究背景、研究问题、研究方法与报告结构，说明本报告基于项目过程证据进行案例研究，并限定功能对等理论的解释边界。",
+      "research_questions": [
+        "RQ1",
+        "RQ2",
+        "RQ3"
+      ],
+      "claims": [],
+      "cases": [],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "total_segments",
+        "translated_segments",
+        "reviewed_segments"
+      ],
+      "target_words": 500,
+      "minimum_chars": 200,
+      "allowed_conclusions": [
+        "本报告以可追溯的项目证据为基础，对翻译决策进行有限解释，不还原译者心理意图。"
+      ]
+    },
+    {
+      "section_id": "2",
+      "title": "项目概览与研究方法",
+      "purpose": "描述翻译项目的基本情况（源文本、流程、工具），说明数据收集与分析方法，包括案例选择标准和统计指标。",
+      "research_questions": [
+        "RQ1",
+        "RQ3"
+      ],
+      "claims": [],
+      "cases": [],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "total_segments",
+        "translated_segments",
+        "reviewed_segments",
+        "blocking_findings",
+        "actionable_findings",
+        "informational_findings",
+        "repaired_segments",
+        "term_conflicts",
+        "tm_reuse_count",
+        "issue_category_distribution",
+        "repair_category_distribution",
+        "coverage_distribution"
+      ],
+      "target_words": 600,
+      "minimum_chars": 250,
+      "allowed_conclusions": [
+        "项目流程包含机器翻译初稿、术语库管理、人工审校与译后编辑，统计指标为后续分析提供基础。"
+      ]
+    },
+    {
+      "section_id": "3",
+      "title": "源文本语言特征与翻译难点分析",
+      "purpose": "基于多个案例的源文本特征和审校记录，论证源文本的口语化叙事、短句并列结构、专有名词密集等特征构成可证实的翻译难点，并分析专名处理不一致的具体表现。",
+      "research_questions": [
+        "RQ1"
+      ],
+      "claims": [
+        "C1",
+        "C2"
+      ],
+      "cases": [
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0215",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0235",
+        "seg-ec100d8686d3891e-0139",
+        "seg-ec100d8686d3891e-0059",
+        "seg-ec100d8686d3891e-0007"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "issue_category_distribution"
+      ],
+      "target_words": 900,
+      "minimum_chars": 350,
+      "allowed_conclusions": [
+        "源文本的语言特征（口语化、短句、专名密集）与审校发现共同证实了翻译难点的存在；专名处理不一致是主要质量问题之一。"
+      ]
+    },
+    {
+      "section_id": "4",
+      "title": "功能对等视角下的翻译决策解释",
+      "purpose": "选取具有完整证据链的案例，从功能对等视角有限解释翻译决策，说明归化处理如何追求目标语读者等效反应，并明确解释的边界。",
+      "research_questions": [
+        "RQ2"
+      ],
+      "claims": [
+        "C3"
+      ],
+      "cases": [],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "repair_category_distribution"
+      ],
+      "target_words": 800,
+      "minimum_chars": 300,
+      "allowed_conclusions": [
+        "在证据链完整的案例中，功能对等理论可有限解释归化处理；但解释不扩展到未记录决策动机的案例。"
+      ]
+    },
+    {
+      "section_id": "5",
+      "title": "术语治理、机器翻译与人工审校的效果与局限",
+      "purpose": "基于项目统计和案例证据，分析术语库的作用与覆盖局限、机器翻译的错误类型、人工审校的修复效果以及翻译记忆库复用带来的质量问题。",
+      "research_questions": [
+        "RQ3"
+      ],
+      "claims": [
+        "C4",
+        "C5",
+        "C6",
+        "C7"
+      ],
+      "cases": [
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0235",
+        "seg-ec100d8686d3891e-0141"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "term_conflicts",
+        "actionable_findings",
+        "repaired_segments",
+        "tm_reuse_count",
+        "issue_category_distribution",
+        "repair_category_distribution"
+      ],
+      "target_words": 1000,
+      "minimum_chars": 400,
+      "allowed_conclusions": [
+        "术语库在已收录词条上无冲突但覆盖有限；机器翻译在复杂文本上错误频发；人工审校修复了部分问题但覆盖率未达100%；翻译记忆库复用率高但既有译文需审校关注。"
+      ]
+    },
+    {
+      "section_id": "6",
+      "title": "结论",
+      "purpose": "总结研究发现，回应三个研究问题，说明本报告的贡献与局限，并提出对未来翻译实践的建议。",
+      "research_questions": [
+        "RQ1",
+        "RQ2",
+        "RQ3"
+      ],
+      "claims": [],
+      "cases": [],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "total_segments",
+        "reviewed_segments",
+        "actionable_findings",
+        "repaired_segments",
+        "tm_reuse_count"
+      ],
+      "target_words": 400,
+      "minimum_chars": 150,
+      "allowed_conclusions": [
+        "本报告以证据化分析揭示了源文本特征、翻译决策解释和工具效果边界，为类似项目提供参考。"
+      ]
+    }
+  ],
+  "planner_fallback": false,
+  "content_hash": "756723fb32937ae39991ac5dbb252df99ac9ecf9d984b6c6b232f368b22898a8"
+}

@@ -636,6 +636,52 @@ if saved_jobs_after:
                             human = plan.get("recommended_human_evidence") or []
                             if human:
                                 st.caption("需要人工证据：" + "；".join(human[:3]))
+                questions_artifact = core.load_academic_artifact(
+                    job["job_id"], "human_evidence_questions")
+                human_status = academic.get("human_evidence_status") or {}
+                if human_status or (questions_artifact and questions_artifact.get("questions")):
+                    st.subheader("🧑‍🏫 人类证据收件箱")
+                    if human_status:
+                        st.caption(
+                            f"待回答问题 {human_status.get('unanswered', 0)} · "
+                            f"关键问题 {human_status.get('critical_questions', 0)} · "
+                            f"已确认证据 {human_status.get('answered', 0)} · "
+                            f"确认无法回忆 {human_status.get('unavailable_after_check', 0)} · "
+                            f"矛盾 {human_status.get('conflicted', 0)}")
+                    open_questions = [
+                        q for q in (questions_artifact or {}).get("questions", [])
+                        if q.get("status") == "open"]
+                    if open_questions:
+                        for q in open_questions:
+                            case_id = q.get("case_id", "")
+                            question = q.get("question", "")
+                            context = q.get("context") or {}
+                            with st.expander(
+                                    f"{case_id} · {q.get('question_type', '')} · "
+                                    f"{q.get('priority', '')}"):
+                                st.caption(f"原文：{context.get('source', '')[:120]}")
+                                st.caption(f"终译：{context.get('final_target', '')[:120]}")
+                                st.markdown(f"**{question}**")
+                                st.caption(
+                                    "若不知道或没有相关记录，直接输入“不记得/没有相关记录”。")
+                                answer = st.text_area(
+                                    "你的回答", key=f"he_answer_{job['job_id']}_{q['question_id']}",
+                                    height=70)
+                                if st.button("提交证据",
+                                             key=f"he_submit_{job['job_id']}_{q['question_id']}",
+                                             disabled=not api_key):
+                                    if not answer.strip():
+                                        st.warning("请填写回答，或输入“不记得”。")
+                                    else:
+                                        try:
+                                            entry = core.record_human_evidence(
+                                                job["job_id"], q["question_id"], answer)
+                                            st.success(
+                                                f"已记录证据 {entry.get('human_evidence_id')} "
+                                                f"（状态：{entry.get('status')}）。"
+                                                "受影响章节将在下次重新生成时更新。")
+                                        except Exception as exc:
+                                            st.error(str(exc))
                 if literature_sources_artifact:
                     lit_sources = literature_sources_artifact.get("sources") or []
                     lit_evidence_items = (literature_evidence_artifact or {}).get("items") or []

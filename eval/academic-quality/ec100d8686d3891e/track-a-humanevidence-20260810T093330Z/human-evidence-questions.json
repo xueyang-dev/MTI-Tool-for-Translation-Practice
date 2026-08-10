@@ -1,0 +1,217 @@
+{
+  "schema_version": "human-evidence-v1",
+  "questions": [
+    {
+      "question_id": "HQ-001",
+      "need_ids": [
+        "HN-001"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0059",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0059"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（“八千英尺高度，三百二十节速度，航向285，地平线平稳。这该死的“神秘”式地平线。就连“教师”式飞机的人工地平仪都比它好。”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "Eight thousand feet, three hundred and twenty knots, heading 285, the horizon steady. The cursed horizon of the Mystère. Even the Magister had a better artificial horizon.",
+        "initial_target": "八千英尺高度，三百二十节速度，航向285，地平线平稳。这该死的“神秘”式地平线。就连“教师”式飞机的人工地平仪都比它好。",
+        "final_target": "八千英尺高度，三百二十节速度，航向285，地平线平稳。这该死的“神秘”式地平线。就连“教师”式飞机的人工地平仪都比它好。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-002",
+      "need_ids": [
+        "HN-003"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0059",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0059"
+      ],
+      "question_type": "reader_response",
+      "question": "你预期中文读者从这一句（“八千英尺高度，三百二十节速度，航向285，地平线平稳。这该死的“神秘”式地平线。就连“教师”式飞机的人工地平仪都比它好。”）获得什么感受或理解？",
+      "context": {
+        "source": "Eight thousand feet, three hundred and twenty knots, heading 285, the horizon steady. The cursed horizon of the Mystère. Even the Magister had a better artificial horizon.",
+        "initial_target": "八千英尺高度，三百二十节速度，航向285，地平线平稳。这该死的“神秘”式地平线。就连“教师”式飞机的人工地平仪都比它好。",
+        "final_target": "八千英尺高度，三百二十节速度，航向285，地平线平稳。这该死的“神秘”式地平线。就连“教师”式飞机的人工地平仪都比它好。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-003",
+      "need_ids": [
+        "HN-004"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0141",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0141"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（““塔本金是谁？”我问。这个问题当晚晚些时候由祖父，也就是父亲的父亲，回答了。但他不想谈论本-古里安。在以色列建国十周年庆祝活动之后，1958年春天，他告诉我他曾”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "“Who is Tabenkin?” I asked. That question was answered later that evening by Grandpa, Dad’s father. But he didn’t want to talk about Ben-Gurion. After Israel’s tenth anniversary celebrations, in the s",
+        "initial_target": "“塔本金是谁？”我问。这个问题当晚晚些时候由祖父，也就是父亲的父亲，回答了。但他不想谈论本-古里安。在以色列建国十周年庆祝活动之后，1958年春天，他告诉我他曾对劳工犹太复国主义的创始人之一贝尔·卡茨内尔森说：“你要那个本-古里安干什么？”",
+        "final_target": "“塔本金是谁？”我问。这个问题当晚晚些时候由祖父，也就是父亲的父亲，回答了。但他不想谈论本-古里安。在以色列建国十周年庆祝活动之后，1958年春天，他告诉我他曾对劳工犹太复国主义的创始人之一贝尔·卡茨内尔森说：“你要那个本-古里安干什么？”"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-004",
+      "need_ids": [
+        "HN-006"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0141",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0141"
+      ],
+      "question_type": "reader_response",
+      "question": "你预期中文读者从这一句（““塔本金是谁？”我问。这个问题当晚晚些时候由祖父，也就是父亲的父亲，回答了。但他不想谈论本-古里安。在以色列建国十周年庆祝活动之后，1958年春天，他告诉我他曾”）获得什么感受或理解？",
+      "context": {
+        "source": "“Who is Tabenkin?” I asked. That question was answered later that evening by Grandpa, Dad’s father. But he didn’t want to talk about Ben-Gurion. After Israel’s tenth anniversary celebrations, in the s",
+        "initial_target": "“塔本金是谁？”我问。这个问题当晚晚些时候由祖父，也就是父亲的父亲，回答了。但他不想谈论本-古里安。在以色列建国十周年庆祝活动之后，1958年春天，他告诉我他曾对劳工犹太复国主义的创始人之一贝尔·卡茨内尔森说：“你要那个本-古里安干什么？”",
+        "final_target": "“塔本金是谁？”我问。这个问题当晚晚些时候由祖父，也就是父亲的父亲，回答了。但他不想谈论本-古里安。在以色列建国十周年庆祝活动之后，1958年春天，他告诉我他曾对劳工犹太复国主义的创始人之一贝尔·卡茨内尔森说：“你要那个本-古里安干什么？”"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-005",
+      "need_ids": [
+        "HN-007"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0144",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0144"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（“```json [   \"我们九岁。那是春天。罂粟花开了，菊花也开了。那时，我们并不知道这发生在卡迭石行动（1956年）前六个月。爸爸从山谷开车到内盖夫，靠近加”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "We were nine years old. It was spring. The poppies were in bloom, and so were the chrysanthemums. Back then, we didn’t know it happened six months before Operation Kadesh, which was in 1956. Dad drove",
+        "initial_target": "```json [   \"我们九岁。那是春天。罂粟花开了，菊花也开了。那时，我们并不知道这发生在卡迭石行动（1956年）前六个月。爸爸从山谷开车到内盖夫，靠近加沙，去纳哈尔奥兹的田里收割干草。这一次，他带上了我。他向我的老师拉结请求并获得了许可，她把手放在我的头上，看着我的眼睛，听了听我的呼吸。“没有哮喘。而且也是篝火节。没问题。”天还黑着，我们都还在睡梦中，爸爸叫醒了我。“刷牙，泽维克。”“其他",
+        "final_target": "```json [   \"我们九岁。那是春天。罂粟花开了，菊花也开了。那时，我们并不知道这发生在卡迭石行动（1956年）前六个月。爸爸从山谷开车到内盖夫，靠近加沙，去纳哈尔奥兹的田里收割干草。这一次，他带上了我。他向我的老师拉结请求并获得了许可，她把手放在我的头上，看着我的眼睛，听了听我的呼吸。“没有哮喘。而且也是篝火节。没问题。”天还黑着，我们都还在睡梦中，爸爸叫醒了我。“刷牙，泽维克。”“其他"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-006",
+      "need_ids": [
+        "HN-008"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0215",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0215"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（“他试着晒黑，但皮肤却变红了。他和年长的孩子们一起走到阿特利特再折返，收集了许多贝壳，还找到一个贴在耳边能回响海声的。他还发现了一个稀有的深色贝壳，直到营地结束前”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "He tried to tan, but his skin turned red. He walked with the older kids toward Atlit and back, collected a lot of seashells, and found one that echoed the sound of the sea when he held it to his ear. ",
+        "initial_target": "他试着晒黑，但皮肤却变红了。他和年长的孩子们一起走到阿特利特再折返，收集了许多贝壳，还找到一个贴在耳边能回响海声的。他还发现了一个稀有的深色贝壳，直到营地结束前只有他拥有。他拒绝交换，想起了去兔子藏身处和椅子山的旅行中发生的事。在那里，他找到了一盏真正古老的油灯，完好无损，但他们却换给他一个毫无价值的。油灯的故事——那是很久以前的事了。",
+        "final_target": "他试着晒黑，但皮肤却变红了。他和年长的孩子们一起走到阿特利特再折返，收集了许多贝壳，还找到一个贴在耳边能回响海声的。他还发现了一个稀有的深色贝壳，直到营地结束前只有他拥有。他拒绝交换，想起了去兔子藏身处和椅子山的旅行中发生的事。在那里，他找到了一盏真正古老的油灯，完好无损，但他们却换给他一个毫无价值的。油灯的故事——那是很久以前的事了。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-007",
+      "need_ids": [
+        "HN-009"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0215",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0215"
+      ],
+      "question_type": "reader_response",
+      "question": "你预期中文读者从这一句（“他试着晒黑，但皮肤却变红了。他和年长的孩子们一起走到阿特利特再折返，收集了许多贝壳，还找到一个贴在耳边能回响海声的。他还发现了一个稀有的深色贝壳，直到营地结束前”）获得什么感受或理解？",
+      "context": {
+        "source": "He tried to tan, but his skin turned red. He walked with the older kids toward Atlit and back, collected a lot of seashells, and found one that echoed the sound of the sea when he held it to his ear. ",
+        "initial_target": "他试着晒黑，但皮肤却变红了。他和年长的孩子们一起走到阿特利特再折返，收集了许多贝壳，还找到一个贴在耳边能回响海声的。他还发现了一个稀有的深色贝壳，直到营地结束前只有他拥有。他拒绝交换，想起了去兔子藏身处和椅子山的旅行中发生的事。在那里，他找到了一盏真正古老的油灯，完好无损，但他们却换给他一个毫无价值的。油灯的故事——那是很久以前的事了。",
+        "final_target": "他试着晒黑，但皮肤却变红了。他和年长的孩子们一起走到阿特利特再折返，收集了许多贝壳，还找到一个贴在耳边能回响海声的。他还发现了一个稀有的深色贝壳，直到营地结束前只有他拥有。他拒绝交换，想起了去兔子藏身处和椅子山的旅行中发生的事。在那里，他找到了一盏真正古老的油灯，完好无损，但他们却换给他一个毫无价值的。油灯的故事——那是很久以前的事了。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-008",
+      "need_ids": [
+        "HN-010"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0233",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0233"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（“路上，阿莫斯说海法有两部电影可选——《热情如火》在皇宫影院上映，《监狱摇滚》在多米诺影院放映。女孩们想去皇宫，我们想去多米诺。他们投票表决，结果平局——十一个女”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "On the way, Amos said there were two movies in Haifa that we could see – Some Like It Hot, playing at the Palace Cinema, and Riot in Cell Block 11, showing at the Domino Cinema. The girls wanted to go",
+        "initial_target": "路上，阿莫斯说海法有两部电影可选——《热情如火》在皇宫影院上映，《监狱摇滚》在多米诺影院放映。女孩们想去皇宫，我们想去多米诺。他们投票表决，结果平局——十一个女孩对十一个男孩。有人轻声嘀咕：“皇宫，皇宫。”阿莫斯说平局由他定夺，我们去多米诺。有人说：“玛丽莲·梦露。”阿莫斯回应：“要是碧姬·芭铎……”诺姆插嘴：“或者罗妮·霍夫纳。”但他坐在卡车第二排靠边位置，她没听见。",
+        "final_target": "路上，阿莫斯说海法有两部电影可选——《热情如火》在皇宫影院上映，《监狱摇滚》在多米诺影院放映。女孩们想去皇宫，我们想去多米诺。他们投票表决，结果平局——十一个女孩对十一个男孩。有人轻声嘀咕：“皇宫，皇宫。”阿莫斯说平局由他定夺，我们去多米诺。有人说：“玛丽莲·梦露。”阿莫斯回应：“要是碧姬·芭铎……”诺姆插嘴：“或者罗妮·霍夫纳。”但他坐在卡车第二排靠边位置，她没听见。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-009",
+      "need_ids": [
+        "HN-012"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0233",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0233"
+      ],
+      "question_type": "reader_response",
+      "question": "你预期中文读者从这一句（“路上，阿莫斯说海法有两部电影可选——《热情如火》在皇宫影院上映，《监狱摇滚》在多米诺影院放映。女孩们想去皇宫，我们想去多米诺。他们投票表决，结果平局——十一个女”）获得什么感受或理解？",
+      "context": {
+        "source": "On the way, Amos said there were two movies in Haifa that we could see – Some Like It Hot, playing at the Palace Cinema, and Riot in Cell Block 11, showing at the Domino Cinema. The girls wanted to go",
+        "initial_target": "路上，阿莫斯说海法有两部电影可选——《热情如火》在皇宫影院上映，《监狱摇滚》在多米诺影院放映。女孩们想去皇宫，我们想去多米诺。他们投票表决，结果平局——十一个女孩对十一个男孩。有人轻声嘀咕：“皇宫，皇宫。”阿莫斯说平局由他定夺，我们去多米诺。有人说：“玛丽莲·梦露。”阿莫斯回应：“要是碧姬·芭铎……”诺姆插嘴：“或者罗妮·霍夫纳。”但他坐在卡车第二排靠边位置，她没听见。",
+        "final_target": "路上，阿莫斯说海法有两部电影可选——《热情如火》在皇宫影院上映，《监狱摇滚》在多米诺影院放映。女孩们想去皇宫，我们想去多米诺。他们投票表决，结果平局——十一个女孩对十一个男孩。有人轻声嘀咕：“皇宫，皇宫。”阿莫斯说平局由他定夺，我们去多米诺。有人说：“玛丽莲·梦露。”阿莫斯回应：“要是碧姬·芭铎……”诺姆插嘴：“或者罗妮·霍夫纳。”但他坐在卡车第二排靠边位置，她没听见。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-010",
+      "need_ids": [
+        "HN-013"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0235",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0235"
+      ],
+      "question_type": "translator_rationale",
+      "question": "这里你为什么选择最终这个译法（“他喜欢Tzvika。Tzvika教会了他九十九之后是一百。当他呼吸困难时，Tzvika从未嘲笑过他，当然，当Noam把他背回岸边时，他也没有笑。有时，Tzvik”）？如果采用更直白的表达，会损失什么？",
+      "context": {
+        "source": "He liked Tzvika. Tzvika was the one who taught him that after ninety-nine comes a hundred. Tzvika never laughed at him when he struggled to breathe, and he certainly didn’t laugh when Noam carried him",
+        "initial_target": "他喜欢Tzvika。Tzvika教会了他九十九之后是一百。当他呼吸困难时，Tzvika从未嘲笑过他，当然，当Noam把他背回岸边时，他也没有笑。有时，Tzvika甚至和他一起打篮球，尽管他的水平远不及他——或Ami，更不用说Uzi或Amnon了。",
+        "final_target": "他喜欢Tzvika。Tzvika教会了他九十九之后是一百。当他呼吸困难时，Tzvika从未嘲笑过他，当然，当Noam把他背回岸边时，他也没有笑。有时，Tzvika甚至和他一起打篮球，尽管他的水平远不及他——或Ami，更不用说Uzi或Amnon了。"
+      },
+      "priority": "high",
+      "status": "open"
+    },
+    {
+      "question_id": "HQ-011",
+      "need_ids": [
+        "HN-015"
+      ],
+      "case_id": "seg-ec100d8686d3891e-0235",
+      "segment_ids": [
+        "seg-ec100d8686d3891e-0235"
+      ],
+      "question_type": "reader_response",
+      "question": "你预期中文读者从这一句（“他喜欢Tzvika。Tzvika教会了他九十九之后是一百。当他呼吸困难时，Tzvika从未嘲笑过他，当然，当Noam把他背回岸边时，他也没有笑。有时，Tzvik”）获得什么感受或理解？",
+      "context": {
+        "source": "He liked Tzvika. Tzvika was the one who taught him that after ninety-nine comes a hundred. Tzvika never laughed at him when he struggled to breathe, and he certainly didn’t laugh when Noam carried him",
+        "initial_target": "他喜欢Tzvika。Tzvika教会了他九十九之后是一百。当他呼吸困难时，Tzvika从未嘲笑过他，当然，当Noam把他背回岸边时，他也没有笑。有时，Tzvika甚至和他一起打篮球，尽管他的水平远不及他——或Ami，更不用说Uzi或Amnon了。",
+        "final_target": "他喜欢Tzvika。Tzvika教会了他九十九之后是一百。当他呼吸困难时，Tzvika从未嘲笑过他，当然，当Noam把他背回岸边时，他也没有笑。有时，Tzvika甚至和他一起打篮球，尽管他的水平远不及他——或Ami，更不用说Uzi或Amnon了。"
+      },
+      "priority": "high",
+      "status": "open"
+    }
+  ],
+  "critical_count": 0,
+  "high_count": 11,
+  "content_hash": "6dc0d9a39f9b0f31169ae62dc3504c82e786aec6ead47d811cc3dbd8b8f542ab"
+}
