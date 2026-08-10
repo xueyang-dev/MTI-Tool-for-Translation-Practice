@@ -1,0 +1,474 @@
+"""Structured case analysis: evidence adequacy, translation deltas and
+analysis contracts for MTI translation case analyses.
+
+This module is deliberately deterministic where possible.  The LLM only fills
+the *analysis plan* (problem / alternatives / rationale / effect / theory
+mapping / bounded conclusion) from bounded inputs, and every plan field is
+validated against the available evidence before the writer sees it.
+"""
+from __future__ import annotations
+
+import difflib
+import json
+import re
+from typing import Any, Callable, Dict, Iterable, List, Optional
+
+from .academic_evidence import segment_index, stable_hash
+
+ANALYSIS_VERSION = "case-analysis-v1"
+
+EVIDENCE_LEVELS = ("rich_process_evidence", "partial_process_evidence",
+                   "source_final_only")
+PROBLEM_TYPES = (
+    "syntactic_ambiguity", "logical_relation", "information_structure",
+    "reference_resolution", "lexical_polysemy", "cultural_reference",
+    "register", "voice", "metaphor", "rhythm", "narrative_perspective",
+    "cohesion", "terminology", "pragmatic_implication", "other",
+)
+ALTERNATIVE_LABELS = ("historical_alternative", "analytical_comparison",
+                      "counterfactual_rendering")
+DEPTH_DIMENSIONS = (
+    "problem_definition", "evidence_use", "initial_failure_or_alternative",
+    "decision_rationale", "translation_effect", "theory_mapping",
+    "bounded_conclusion",
+)
+DEPTH_STATUSES = ("strong", "adequate", "weak", "missing", "not_applicable")
+
+ANALYSIS_CONTRACT = (
+    "translation_problem",
+    "difficulty_evidence",
+    "initial_solution_or_failure",
+    "alternative_interpretation_or_strategy",
+    "final_translation_decision",
+    "decision_rationale",
+    "translation_effect",
+    "theory_connection",
+    "evidence_boundary",
+    "case_level_conclusion",
+)
+
+_GENERIC_EFFECT = re.compile(
+    r"(?:提高|提升)(?:了)?(?:译文|翻译|文本)?的?(?:可读性|准确性|自然度|流畅性)|"
+    r"(?:使|让|令)译文(?:更加|更|更为)?(?:自然|准确|流畅|通顺|易懂)|"
+    r"(?:improve[ds]?|enhance[ds]?|increase[ds]?)(?: the)? (?:readability|accuracy|"
+    r"naturalness|fluency)")
+_STRATEGY_LABEL = re.compile(
+    r"(?:采用了|运用了|使用|采取)(?:了)?(?:直译|意译|增译|省译|转换|拆分|重组|"
+    r"语序调整|音译)(?:的)?策略")
+_PROCESS_CLAIM = re.compile(
+    r"(?:译者|笔者)(?:最初|首先|一开始|曾)(?:考虑|尝试|选择|认为)|"
+    r"(?:机器翻译|初译)(?:失败|错误|无法)(?:因为|由于)|"
+    r"the (?:translator|author) (?:initially|first) (?:considered|tried|chose)")
+_GENERAL_RULE = re.compile(
+    r"因此[,，]?(?:在|对于)?(?:文学|商务|科技|法律)?翻译中(?:应当|需要|必须|应)|"
+    r"hence,? (?:in )?(?:literary|legal|technical) translation (?:should|must|needs)")
+_THEORY_LABEL = re.compile(
+    r"(?:功能对等|目的论|关联理论|翻译转换|等值|functional equivalence|"
+    r"skopos|relevance theory)")
+
+
+def _norm(text: Any) -> str:
+    return re.sub(r"\s+", " ", str(text or "")).strip()
+
+
+def _parse_json(text: str) -> Optional[Dict[str, Any]]:
+    candidate = re.sub(r"^```(?:json)?\s*|\s*```$", "", str(text or "").strip(),
+                       flags=re.DOTALL)
+    try:
+        value = json.loads(candidate)
+        return value if isinstance(value, dict) else None
+    except Exception:
+        return None
+
+
+def translation_delta(segment: Dict[str, Any]) -> Dict[str, Any]:
+    """Deterministic structural/text delta between initial and final targets."""
+    initial = segment.get("initial_target")
+    final = segment.get("final_target")
+    if initial is None or final is None:
+        return {"available": False}
+    initial_text = str(initial)
+    final_text = str(final)
+    if initial_text == final_text:
+        return {
+            "available": True,
+            "changed": False,
+            "lexical_changes": [],
+            "structural_changes": [],
+            "omission_addition": [],
+            "finding_link": [],
+            "repair_link": bool(segment.get("process_evidence", {}).get("repair_history")),
+            "unchanged": True,
+        }
+    matcher = difflib.SequenceMatcher(None, initial_text, final_text, autojunk=False)
+    lexical: List[str] = []
+    structural: List[str] = []
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        old_piece = initial_text[i1:i2]
+        new_piece = final_text[j1:j2]
+        if tag == "replace":
+            lexical.append({"old": old_piece[:120], "new": new_piece[:120]})
+        elif tag == "insert":
+            structural.append({"addition": new_piece[:120]})
+        elif tag == "delete":
+            structural.append({"removal": old_piece[:120]})
+    findings = segment.get("process_evidence", {}).get("findings") or []
+    findings = [x for x in findings if isinstance(x, dict)]
+    findings_by_idx: Dict[Any, List[Dict[str, Any]]] = {}
+    for finding in findings:
+        index = finding.get("segment_index")
+        if index is not None:
+            findings_by_idx.setdefault(index, []).append(finding)
+    finding_link = [
+        {"severity": x.get("severity"), "reason": x.get("reason", "")[:120]}
+        for x in findings_by_idx.get(segment.get("segment_index"), [])]
+    return {
+        "available": True,
+        "changed": True,
+        "lexical_changes": lexical,
+        "structural_changes": structural,
+        "omission_addition": [x for x in structural
+                              if "addition" in x or "removal" in x],
+        "finding_link": finding_link,
+        "repair_link": bool(segment.get("process_evidence", {}).get("repair_history")),
+        "unchanged": False,
+    }
+
+
+def evidence_adequacy(segment: Dict[str, Any]) -> Dict[str, Any]:
+    """Classify what a case's process evidence can and cannot support."""
+    delta = translation_delta(segment)
+    process = segment.get("process_evidence", {})
+    findings = process.get("findings") or []
+    repair = bool(process.get("repair_history"))
+    has_actionable = any(x.get("severity") in ("actionable", "blocking")
+                         for x in findings)
+    changed = bool(delta.get("changed"))
+    terms = bool(process.get("injected_glossary_entry_ids"))
+    if repair and has_actionable and changed:
+        level = "rich_process_evidence"
+        can = ["textual_analysis", "translation_decision", "revision_reasoning",
+               "error_repair_analysis"]
+        cannot = []
+    elif (has_actionable or changed or terms) and repair:
+        level = "rich_process_evidence"
+        can = ["textual_analysis", "translation_decision", "revision_reasoning"]
+        cannot = ["error_repair_analysis"]
+    elif has_actionable or changed or terms:
+        level = "partial_process_evidence"
+        can = ["textual_analysis", "translation_decision",
+               "limited_process_inference"]
+        cannot = ["historical_revision_reasoning"]
+    else:
+        level = "source_final_only"
+        can = ["textual_analysis", "translator_interpretation",
+               "theory_based_analysis"]
+        cannot = ["historical_revision_reasoning", "process_claims",
+                  "initial_failure_reasoning"]
+    return {
+        "case_id": segment.get("segment_id"),
+        "evidence_level": level,
+        "can_support": can,
+        "cannot_support": sorted(cannot),
+        "translation_delta": delta,
+    }
+
+
+def detect_strategy_label_without_mechanism(text: str) -> List[str]:
+    hits = []
+    for match in _STRATEGY_LABEL.finditer(text):
+        window = text[max(0, match.start() - 40):match.end() + 80]
+        if _GENERIC_EFFECT.search(window):
+            hits.append(_norm(match.group(0) + " " + window)[:160])
+    return hits
+
+
+def detect_unsupported_quality_effect(text: str) -> List[str]:
+    hits = []
+    for match in _GENERIC_EFFECT.finditer(text):
+        window = text[max(0, match.start() - 60):match.end() + 60]
+        # A specific dimension name or concrete feature nearby is a weak signal
+        # of mechanism; absence of any is a strong signal of label-only effect.
+        if not re.search(r"语义|逻辑|指称|信息结构|语域|节奏|叙事|语用|文化|"
+                         r"术语|semantic|logical|reference|register|rhythm|"
+                         r"narrative|pragmatic|cultural|terminolog", window):
+            hits.append(_norm(window)[:160])
+    return hits
+
+
+def detect_unsupported_process_claim(text: str) -> List[str]:
+    hits = []
+    for match in _PROCESS_CLAIM.finditer(text):
+        window = text[max(0, match.start() - 40):match.end() + 120]
+        if "<!--" not in window or "finding" not in window:
+            hits.append(_norm(window)[:160])
+    return hits
+
+
+def detect_case_to_general_rule_overreach(text: str) -> List[str]:
+    hits = []
+    for match in _GENERAL_RULE.finditer(text):
+        hits.append(_norm(text[max(0, match.start() - 50):match.end() + 60])[:160])
+    return hits
+
+
+def _scoped_planner_input(
+    evidence: Dict[str, Any], selected_cases: Dict[str, Any],
+    argument_plan: Dict[str, Any], literature_claims: Dict[str, Any],
+) -> Dict[str, Any]:
+    segs = segment_index(evidence)
+    claims = {x["claim_id"]: x for x in argument_plan.get("claims", [])}
+    cases = []
+    for case in selected_cases.get("cases", []):
+        case_id = str(case.get("case_id") or "")
+        segment = segs.get(case_id) or {}
+        adequacy = evidence_adequacy(segment)
+        cases.append({
+            "case_id": case_id,
+            "coverage_zone": case.get("coverage_zone"),
+            "supports_claims": case.get("supports_claims", []),
+            "claim_statements": [
+                claims.get(x, {}).get("claim", "") for x in case.get("supports_claims", [])],
+            "evidence_level": adequacy["evidence_level"],
+            "can_support": adequacy["can_support"],
+            "cannot_support": adequacy["cannot_support"],
+            "translation_delta": adequacy["translation_delta"],
+            "source": (segment.get("source") or "")[:800],
+            "initial_target": (segment.get("initial_target") or "")[:800],
+            "final_target": (segment.get("final_target") or "")[:800],
+            "findings": [
+                {k: x.get(k) for k in ("severity", "type", "reason",
+                                       "suggested_target")}
+                for x in (segment.get("process_evidence", {}).get("findings") or [])[:6]],
+            "repair_history": bool(segment.get("process_evidence", {}).get("repair_history")),
+            "terminology_decisions": [
+                {k: x.get(k) for k in ("source", "target", "preferred", "status")}
+                for x in (segment.get("process_evidence", {}).get(
+                    "terminology_decisions") or [])[:6]],
+        })
+    return {
+        "cases": cases,
+        "literature_claims": literature_claims.get("items", [])[:30],
+        "problem_types": list(PROBLEM_TYPES),
+        "alternative_labels": list(ALTERNATIVE_LABELS),
+    }
+
+
+def build_case_analysis_plans(
+    evidence: Dict[str, Any], selected_cases: Dict[str, Any],
+    argument_plan: Dict[str, Any], literature_claims: Dict[str, Any],
+    call_llm: Callable, provider: str, api_key: str, model: str,
+) -> Dict[str, Any]:
+    """Plan each selected case's analysis under evidence constraints."""
+    segs = segment_index(evidence)
+    adequacy_by_case = {
+        str(x.get("case_id")): evidence_adequacy(segs.get(str(x.get("case_id"))) or {})
+        for x in selected_cases.get("cases", [])}
+    has_literature = bool(literature_claims.get("items"))
+    system = (
+        "你是保守的 MTI 案例分析规划器。为每个案例制定分析计划；只使用输入中的"
+        "项目证据与文献主张，不编造译者意图、草稿、过程历史或理论。区分："
+        "evidence_level 决定案例能支持什么。对每个案例给出 problem（必须是具体"
+        "翻译问题；证据不足时 grounded=false 并说明需要什么人工证据）、"
+        "initial_failure（仅当存在初译—终译差异或 finding 时才给出，否则省略）、"
+        "alternatives（必须标注 historical_alternative / analytical_comparison / "
+        "counterfactual_rendering；没有证据的备选一律 counterfactual_rendering）、"
+        "decision_rationale、translation_effect（dimension 必须取自 "
+        "semantic_precision/logical_relation/reference_clarity/information_structure/"
+        "register/rhythm/reader_processing/narrative_voice/pragmatic_force/"
+        "cultural_accessibility/terminological_precision，且 demonstrated_by 必须引用"
+        "具体文本特征；无法具体说明时省略）、theory_mapping（仅当存在文献主张时给出"
+        "concept/source_feature/target_requirement/relation 四元组，否则置 null）、"
+        "bounded_conclusion（只限本案例）、recommended_human_evidence（证据缺口清单）。"
+        "只输出 JSON：{\"plans\":[{\"case_id\":\"...\",\"problem\":{\"type\":\"...\","
+        "\"statement\":\"...\",\"grounded\":true},\"initial_failure\":{...}|null,"
+        "\"alternatives\":[{\"label\":\"counterfactual_rendering\",\"text\":\"...\"}],"
+        "\"decision_rationale\":\"...\",\"translation_effect\":{\"dimension\":\"...\","
+        "\"demonstrated_by\":\"...\"}|null,\"theory_mapping\":{\"concept\":\"...\","
+        "\"source_feature\":\"...\",\"target_requirement\":\"...\",\"relation\":\"...\"}|null,"
+        "\"bounded_conclusion\":\"...\",\"recommended_human_evidence\":[\"...\"]}]}。"
+    )
+    payload = _scoped_planner_input(
+        evidence, selected_cases, argument_plan, literature_claims)
+    raw = None
+    for attempt in range(2):
+        suffix = "" if attempt == 0 else "\n上次输出无效；仅输出合法 JSON 对象。"
+        try:
+            response = call_llm(provider, api_key, model, system + suffix,
+                                json.dumps(payload, ensure_ascii=False), temperature=0.1)
+        except Exception:
+            response = None
+        raw = _parse_json(response) if response else None
+        if raw is not None:
+            break
+    valid_cases = {str(x.get("case_id")) for x in selected_cases.get("cases", [])}
+    plans = []
+    seen = set()
+    for item in (raw or {}).get("plans") or []:
+        if not isinstance(item, dict):
+            continue
+        case_id = str(item.get("case_id") or "")
+        if case_id not in valid_cases or case_id in seen:
+            continue
+        seen.add(case_id)
+        adequacy = adequacy_by_case.get(case_id, {})
+        cannot = set(adequacy.get("cannot_support") or [])
+        problem = item.get("problem") if isinstance(item.get("problem"), dict) else {}
+        problem_type = str(problem.get("type") or "other")
+        if problem_type not in PROBLEM_TYPES:
+            problem_type = "other"
+        grounded = bool(problem.get("grounded"))
+        if grounded and cannot & {"historical_revision_reasoning", "process_claims"}:
+            # A source_final_only case cannot ground process/problem claims.
+            grounded = False
+        initial_failure = item.get("initial_failure")
+        if isinstance(initial_failure, dict) and cannot & {
+                "historical_revision_reasoning", "initial_failure_reasoning"}:
+            initial_failure = None
+        alternatives = []
+        for alt in item.get("alternatives") or []:
+            if not isinstance(alt, dict):
+                continue
+            label = str(alt.get("label") or "counterfactual_rendering")
+            if label not in ALTERNATIVE_LABELS:
+                label = "counterfactual_rendering"
+            if label == "historical_alternative" and cannot & {
+                    "historical_revision_reasoning"}:
+                label = "analytical_comparison"
+            alternatives.append({"label": label,
+                                 "text": str(alt.get("text") or "")[:300]})
+        effect = item.get("translation_effect")
+        if not isinstance(effect, dict) or not effect.get("dimension") \
+                or not effect.get("demonstrated_by"):
+            effect = None
+        theory_mapping = None
+        if has_literature:
+            mapping = item.get("theory_mapping")
+            if isinstance(mapping, dict) and mapping.get("concept") \
+                    and mapping.get("source_feature") and mapping.get("relation"):
+                theory_mapping = {
+                    "concept": str(mapping.get("concept"))[:120],
+                    "source_feature": str(mapping.get("source_feature"))[:300],
+                    "target_requirement": str(mapping.get("target_requirement") or "")[:300],
+                    "relation": str(mapping.get("relation"))[:300],
+                }
+        plans.append({
+            "case_id": case_id,
+            "evidence_level": adequacy.get("evidence_level", "source_final_only"),
+            "can_support": adequacy.get("can_support", []),
+            "cannot_support": sorted(cannot),
+            "translation_delta": adequacy.get("translation_delta", {}),
+            "problem": {
+                "type": problem_type,
+                "statement": str(problem.get("statement") or "")[:300],
+                "grounded": grounded,
+            },
+            "initial_failure": initial_failure if isinstance(initial_failure, dict)
+            and str(initial_failure.get("description") or "") else None,
+            "alternatives": alternatives,
+            "decision_rationale": str(item.get("decision_rationale") or "")[:400],
+            "translation_effect": effect,
+            "theory_mapping": theory_mapping,
+            "theory_connection_status": (
+                "mapped" if theory_mapping else
+                "not_applicable" if not has_literature else "missing"),
+            "bounded_conclusion": str(item.get("bounded_conclusion") or "")[:300],
+            "recommended_human_evidence": [
+                str(x)[:200] for x in (item.get("recommended_human_evidence") or [])][:6],
+            "analysis_contract": {
+                component: "planned" for component in ANALYSIS_CONTRACT},
+        })
+    missing = sorted(valid_cases - seen)
+    for case_id in missing:
+        adequacy = adequacy_by_case.get(case_id, {})
+        plans.append({
+            "case_id": case_id,
+            "evidence_level": adequacy.get("evidence_level", "source_final_only"),
+            "can_support": adequacy.get("can_support", []),
+            "cannot_support": adequacy.get("cannot_support", []),
+            "translation_delta": adequacy.get("translation_delta", {}),
+            "problem": {"type": "other", "statement": "", "grounded": False},
+            "initial_failure": None,
+            "alternatives": [],
+            "decision_rationale": "",
+            "translation_effect": None,
+            "theory_mapping": None,
+            "theory_connection_status": "not_applicable" if not has_literature
+            else "missing",
+            "bounded_conclusion": "",
+            "recommended_human_evidence": [
+                "规划失败：请提供该案例的具体翻译问题与过程证据。"],
+            "analysis_contract": {
+                component: "unplanned" for component in ANALYSIS_CONTRACT},
+        })
+    plans.sort(key=lambda x: x["case_id"])
+    artifact = {"schema_version": ANALYSIS_VERSION, "plans": plans}
+    artifact["content_hash"] = stable_hash(
+        {k: v for k, v in artifact.items() if k != "content_hash"})
+    return artifact
+
+
+def plan_index(artifact: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    return {x["case_id"]: x for x in artifact.get("plans", [])}
+
+
+def render_analysis_contract(plan: Dict[str, Any]) -> str:
+    """Human/machine-readable contract the writer must realise."""
+    lines = [
+        f"案例 {plan.get('case_id')}（{plan.get('evidence_level')}）",
+        f"- 问题：{plan.get('problem', {}).get('statement') or '（未计划，需如实说明）'}",
+    ]
+    initial = plan.get("initial_failure")
+    if initial:
+        lines.append(f"- 初始方案/失败：{initial.get('description', '')}")
+    for alt in plan.get("alternatives") or []:
+        lines.append(f"- 备选（{alt.get('label')}）：{alt.get('text')}")
+    if plan.get("decision_rationale"):
+        lines.append(f"- 决策理由：{plan['decision_rationale']}")
+    effect = plan.get("translation_effect")
+    if effect:
+        lines.append(
+            f"- 效果维度：{effect.get('dimension')}（依据：{effect.get('demonstrated_by')}）")
+    mapping = plan.get("theory_mapping")
+    if mapping:
+        lines.append(
+            f"- 理论映射：{mapping.get('concept')}：源语特征「{mapping.get('source_feature')}」"
+            f"→ 目标需求「{mapping.get('target_requirement')}」→ 关系「{mapping.get('relation')}」")
+    else:
+        lines.append(f"- 理论映射：{plan.get('theory_connection_status')}")
+    if plan.get("bounded_conclusion"):
+        lines.append(f"- 有界结论：{plan['bounded_conclusion']}")
+    for item in plan.get("recommended_human_evidence") or []:
+        lines.append(f"- 需要人工证据：{item}")
+    return "\n".join(lines)
+
+
+def contract_completion(plan: Dict[str, Any]) -> Dict[str, str]:
+    statuses = {}
+    statuses["translation_problem"] = (
+        "strong" if plan.get("problem", {}).get("grounded") and plan.get(
+            "problem", {}).get("statement") else
+        "weak" if plan.get("problem", {}).get("statement") else "missing")
+    statuses["difficulty_evidence"] = (
+        "strong" if plan.get("translation_delta", {}).get("changed") or plan.get(
+            "translation_delta", {}).get("finding_link") else
+        "not_applicable" if plan.get("evidence_level") == "source_final_only"
+        else "weak")
+    statuses["initial_solution_or_failure"] = (
+        "strong" if plan.get("initial_failure") else
+        "not_applicable" if plan.get("evidence_level") == "source_final_only"
+        else "missing")
+    statuses["alternative_interpretation_or_strategy"] = (
+        "adequate" if plan.get("alternatives") else "missing")
+    statuses["final_translation_decision"] = (
+        "strong" if plan.get("decision_rationale") else "weak")
+    statuses["decision_rationale"] = (
+        "strong" if plan.get("decision_rationale") else "missing")
+    statuses["translation_effect"] = (
+        "strong" if plan.get("translation_effect") else "missing")
+    statuses["theory_connection"] = plan.get("theory_connection_status", "not_applicable")
+    statuses["evidence_boundary"] = (
+        "adequate" if plan.get("cannot_support") else "weak")
+    statuses["case_level_conclusion"] = (
+        "strong" if plan.get("bounded_conclusion") else "missing")
+    return statuses

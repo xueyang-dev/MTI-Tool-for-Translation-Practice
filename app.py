@@ -590,6 +590,8 @@ if saved_jobs_after:
                 argument_artifact = core.load_academic_artifact(job["job_id"], "argument_plan")
                 selected_cases = core.load_academic_artifact(job["job_id"], "selected_cases")
                 outline_artifact = core.load_academic_artifact(job["job_id"], "outline")
+                case_plans_artifact = core.load_academic_artifact(
+                    job["job_id"], "case_analysis_plans")
                 validation_artifact = core.load_academic_artifact(job["job_id"], "validation")
                 review_artifact = core.load_academic_artifact(job["job_id"], "review")
                 literature_review_artifact = core.load_academic_artifact(
@@ -610,6 +612,30 @@ if saved_jobs_after:
                     st.caption(
                         f"已选案例 {len((selected_cases or {}).get('cases') or [])} · "
                         f"提纲章节 {len((outline_artifact or {}).get('sections') or [])}")
+                if case_plans_artifact and case_plans_artifact.get("plans"):
+                    plans = case_plans_artifact["plans"]
+                    depth = (quality_artifact.get("diagnostics") or {}).get(
+                        "case_analysis_depth") or {} if quality_artifact else {}
+                    with st.expander("查看案例分析计划与质量"):
+                        for plan in plans:
+                            problem = plan.get("problem") or {}
+                            effect = plan.get("translation_effect") or {}
+                            mapping = plan.get("theory_mapping") or {}
+                            depth_entry = depth.get(plan.get("case_id")) or {}
+                            depth_line = " · ".join(
+                                f"{k}={v.get('status', '?')}"
+                                for k, v in list(depth_entry.items())[:5]) or "未评估"
+                            st.markdown(
+                                f"**{plan.get('case_id')}** — {plan.get('evidence_level')} · "
+                                f"深度：{depth_line}")
+                            st.caption(
+                                f"问题：{problem.get('statement') or '未计划'}"
+                                f"{'（已落地）' if problem.get('grounded') else '（证据不足）'} · "
+                                f"效果维度：{effect.get('dimension') or '-'} · "
+                                f"理论：{mapping.get('concept') or plan.get('theory_connection_status')}")
+                            human = plan.get("recommended_human_evidence") or []
+                            if human:
+                                st.caption("需要人工证据：" + "；".join(human[:3]))
                 if literature_sources_artifact:
                     lit_sources = literature_sources_artifact.get("sources") or []
                     lit_evidence_items = (literature_evidence_artifact or {}).get("items") or []

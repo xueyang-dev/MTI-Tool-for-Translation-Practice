@@ -487,14 +487,16 @@ def validate_academic_report(
                 issues.append(_issue(
                     "outline_unknown_case", f"章节 {section_id} 引用未知案例 {case_id}。",
                     section_id=section_id, evidence_id=case_id))
-            elif f"[{case_id}]" not in body:
+            elif case_id not in body:
                 planned = [str(x) for x in plan_section.get("cases") or []]
-                severity = "warning" if len(planned) > 4 else "error"
+                used = sum(1 for x in planned if x in body)
+                severity = "error" if used == 0 else "warning"
                 issues.append(_issue(
                     "missing_selected_case", f"章节 {section_id} 未使用已选案例 {case_id}。",
                     section_id=section_id, evidence_id=case_id,
                     severity=severity,
-                    suggested_action="使用该案例，或重新规划案例选择。"))
+                    suggested_action="使用该案例，或重新规划案例选择；"
+                                     "若该节已展开部分案例，可删除未展开案例的计划。"))
         for rq_id in plan_section.get("research_questions") or []:
             if rq_id not in rqs:
                 issues.append(_issue(

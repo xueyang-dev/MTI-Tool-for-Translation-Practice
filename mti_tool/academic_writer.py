@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 from . import academic_evidence
 from . import academic_quality
 from . import academic_validator
+from . import case_analysis
 from . import literature_evidence
 
 PIPELINE_VERSION = "academic-pipeline-v2"
@@ -32,6 +33,7 @@ VERSIONS = {
     "reviewer_version": "academic-reviewer-v1",
     "literature_reviewer_version": "literature-support-reviewer-v1",
     "academic_quality_version": academic_quality.QUALITY_VERSION,
+    "case_analysis_version": case_analysis.ANALYSIS_VERSION,
 }
 
 ARTIFACT_FILES = {
@@ -48,6 +50,7 @@ ARTIFACT_FILES = {
     "review": "academic-review.json",
     "literature_support_review": "literature-support-review.json",
     "academic_quality": "academic-quality-evaluation.json",
+    "case_analysis_plans": "case-analysis-plans.json",
     "quality_repair_history": "academic-quality-repair-history.json",
     "repair_history": "academic-repair-history.json",
 }
@@ -250,6 +253,13 @@ def sync_versions(state: Dict[str, Any], versions: Optional[Dict[str, str]] = No
                 versions["academic_quality_version"]:
             _invalidate_names(state, ["academic_quality", "quality_repair_history"],
                               "academic quality version changed")
+        elif old.get("case_analysis_version") != \
+                versions["case_analysis_version"]:
+            _invalidate_names(state, [
+                "case_analysis_plans", "outline", "sections", "validation",
+                "review", "literature_support_review", "academic_quality",
+                "quality_repair_history", "repair_history",
+            ], "case analysis version changed")
     academic["versions"] = versions
 
 
@@ -274,6 +284,10 @@ def invalidate_academic_state(
         names = ["literature_support_review"]
     elif scope == "quality":
         names = ["academic_quality", "quality_repair_history"]
+    elif scope == "case_analysis":
+        names = ["case_analysis_plans", "outline", "sections", "validation",
+                 "review", "literature_support_review", "academic_quality",
+                 "quality_repair_history", "repair_history"]
     elif scope == "section":
         names = ["validation", "review"]
         if section_id and section_id not in _state(state)["forced_sections"]:
@@ -828,6 +842,7 @@ def _section_packet(
     literature_sources_artifact: Optional[Dict[str, Any]] = None,
     literature_evidence_artifact: Optional[Dict[str, Any]] = None,
     literature_claims_artifact: Optional[Dict[str, Any]] = None,
+    case_analysis_plans: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     claims = {x["claim_id"]: x for x in argument_plan.get("claims", [])}
     cases = {x["case_id"]: x for x in selected_cases.get("cases", [])}
@@ -835,6 +850,7 @@ def _section_packet(
     lit_sources = literature_evidence.source_index(literature_sources_artifact or {})
     lit_evidence = literature_evidence.evidence_index(literature_evidence_artifact or {})
     lit_claims = literature_evidence.claim_index(literature_claims_artifact or {})
+    plans = case_analysis.plan_index(case_analysis_plans or {})
     case_term_ids = set()
     for case_id in section.get("cases", []):
         case_term_ids.update((segments.get(case_id) or {}).get(
@@ -856,6 +872,11 @@ def _section_packet(
         "claims": [claims[x] for x in section.get("claims", []) if x in claims],
         "cases": [{**cases[x], "evidence": segments.get(x)} for x in section.get("cases", [])
                   if x in cases and x in segments],
+        "case_analyses": [{
+            **plans[x],
+            "analysis_contract_text": case_analysis.render_analysis_contract(plans[x]),
+            "contract_completion": case_analysis.contract_completion(plans[x]),
+        } for x in section.get("cases", []) if x in plans],
         "literature_sources": [
             {k: v for k, v in lit_sources[x].items() if k != "content_blocks"}
             for x in section.get("literature_sources", []) if x in lit_sources
@@ -879,6 +900,9 @@ def _section_packet(
             "literature_quote": "> [LITERATURE LE-...]: exact evidence text",
             "literature_claim_marker": "<!--lit-claim:LC-001-->",
             "literature_evidence_marker": "<!--lit-evidence:LE-...-->",
+            "analysis_contract": "按 case_analyses 中的 analysis_contract_text 逐项落实",
+            "evidence_level_policy": "rich/partial 可做过程分析；source_final_only "
+                                     "禁止过程/失败/意图断言",
         },
     }
 
@@ -899,9 +923,30 @@ def _write_section(
         "理论解释必须写成作者分析，例如‘从结果看可解释为’，不得冒充译者真实意图。"
         "无文献证据时，不得从模型记忆补作者、年份、书名或理论命题。只输出章节正文。"
     )
+    if packet.get("case_analyses"):
+        system += (
+            " 案例分析必须按 packet.case_analyses 的 analysis_contract_text 实现："
+            "先明确翻译问题与证据，再说明初始方案/失败（仅当有初译—终译差异或 finding "
+            "证据）、备选方案（必须标注 historical_alternative / analytical_comparison / "
+            "counterfactual_rendering；没有证据的备选一律 counterfactual_rendering）、"
+            "最终决策与理由、翻译效果（指明具体维度与文本特征，禁止‘更自然/更准确’式"
+            "空泛判断）、理论连接（仅当 theory_mapping 存在；否则禁止提及任何理论名称）、"
+            "证据边界与有界结论（只限本案例，禁止外推为一般规则）。禁止：编造译者意图或"
+            "过程历史；提及 packet 之外任何 seg 段号；把反事实备选写成历史事实。证据不足"
+            "时明确写‘本项目证据不足以支持…’，并列出 recommended_human_evidence 所需"
+            "的人工证据。"
+        )
     if repair:
         system += ("这是定点修订：仅修复给定 issues，保持当前章节的有效论点、证据和 marker，"
-                   "输出完整修订后章节，不写修订说明。")
+                   "输出完整修订后章节，不写修订说明。按 issue 的 repair_action 处理："
+                   "add_missing_problem_analysis 补具体翻译问题与证据；add_process_evidence "
+                   "只用 packet 中可用过程证据；narrow_claim / narrow 缩小论点范围；"
+                   "replace_strategy_label_with_mechanism 用机制解释替换策略标签；"
+                   "add_theory_case_mapping 仅在 packet 提供 theory_mapping 时补充映射；"
+                   "add_translation_effect_explanation 补效果维度与文本证据；"
+                   "remove_fake_process_history 删除无证据的过程/意图断言；"
+                   "downgrade_unsupported_quality_claim 删除或降级无据质量判断；"
+                   "bound_case_conclusion 将结论限定为本案例。")
     user = {"packet": packet}
     if repair:
         user.update({"existing_section": existing, "issues": repair_issues})
@@ -1300,6 +1345,7 @@ def _run_quality_repair_round(
     literature_sources_artifact: Dict[str, Any],
     literature_evidence_artifact: Dict[str, Any],
     literature_claims_artifact: Dict[str, Any],
+    case_analysis_plans: Dict[str, Any],
     quality: Dict[str, Any], validation: Dict[str, Any],
     prior_summaries: List[Dict[str, str]],
     call_llm: Callable, provider: str, api_key: str, model: str,
@@ -1337,7 +1383,8 @@ def _run_quality_repair_round(
         packet = _section_packet(
             plan_by_id[sid], research_model, argument_plan, selected_cases, evidence,
             outline, prior_summaries, literature_sources_artifact,
-            literature_evidence_artifact, literature_claims_artifact)
+            literature_evidence_artifact, literature_claims_artifact,
+            case_analysis_plans)
         issues = [x for x in plan["text_repairs"] if x.get("section_id") == sid]
         # Merge current deterministic validation errors so a quality rewrite
         # cannot silently drop markers, quotes or statistic placeholders.
@@ -1381,7 +1428,8 @@ def _run_quality_repair_round(
     quality = academic_quality.evaluate_quality(
         research_model, argument_plan, selected_cases, outline, written, evidence,
         literature_sources_artifact, literature_evidence_artifact,
-        literature_claims_artifact, validation, call_llm, provider, api_key, model)
+        literature_claims_artifact, validation, call_llm, provider, api_key, model,
+        case_analysis_plans)
     return (written, report_md, validation, review, literature_review, quality,
             performed_replacements, round_ledger)
 
@@ -1587,6 +1635,25 @@ def run_academic_pipeline(
                 state, artifact_dir, "selected_cases", selected_cases, case_dep,
                 VERSIONS["case_selection_version"])
 
+        stage("case_analysis", "【学术写作 6/11】规划案例分析证据契约...")
+        case_analysis_dep = academic_evidence.stable_hash({
+            "evidence": evidence["content_hash"],
+            "argument": argument_plan["content_hash"],
+            "cases": selected_cases["content_hash"],
+            "literature_claims": literature_claims_artifact["content_hash"],
+            "version": VERSIONS["case_analysis_version"],
+        })
+        case_plans = _load_valid_artifact(
+            state, artifact_dir, "case_analysis_plans", case_analysis_dep,
+            VERSIONS["case_analysis_version"])
+        if case_plans is None:
+            case_plans = case_analysis.build_case_analysis_plans(
+                evidence, selected_cases, argument_plan, literature_claims_artifact,
+                call_llm, provider, api_key, model)
+            case_plans = _save_artifact(
+                state, artifact_dir, "case_analysis_plans", case_plans,
+                case_analysis_dep, VERSIONS["case_analysis_version"])
+
         stage("outline", "【学术写作 6/10】生成证据约束型学术提纲...")
         outline_dep = academic_evidence.stable_hash({
             "research": research_model["content_hash"],
@@ -1613,6 +1680,7 @@ def run_academic_pipeline(
             "literature_sources": literature_sources_artifact["sources_metadata_hash"],
             "literature_evidence": literature_evidence_artifact["content_hash"],
             "literature_claims": literature_claims_artifact["content_hash"],
+            "case_analysis": case_plans["content_hash"],
             "writer": VERSIONS["writer_version"],
         })
         section_artifact = _load_valid_artifact(
@@ -1629,6 +1697,7 @@ def run_academic_pipeline(
                 "literature_sources": literature_sources_artifact["sources_metadata_hash"],
                 "literature_evidence": literature_evidence_artifact["content_hash"],
                 "literature_claims": literature_claims_artifact["content_hash"],
+                "case_analysis": case_plans["content_hash"],
             })
             old = existing.get(sid)
             if old and old.get("dependency_hash") == section_key and sid not in forced:
@@ -1638,7 +1707,7 @@ def run_academic_pipeline(
                                          selected_cases, evidence, outline, prior_summaries,
                                          literature_sources_artifact,
                                          literature_evidence_artifact,
-                                         literature_claims_artifact)
+                                         literature_claims_artifact, case_plans)
                 content = _write_section(packet, call_llm, provider, api_key, model)
                 item = {
                     "section_id": sid, "title": plan["title"], "content": content,
@@ -1696,7 +1765,7 @@ def run_academic_pipeline(
                                              prior_summaries,
                                              literature_sources_artifact,
                                              literature_evidence_artifact,
-                                             literature_claims_artifact)
+                                             literature_claims_artifact, case_plans)
                     issues = [x for x in repair_issues if str(x.get("section_id")) == sid]
                     old_content = by_id[sid]["content"]
                     new_content = _write_section(
@@ -1786,7 +1855,8 @@ def run_academic_pipeline(
         quality_evaluation = academic_quality.evaluate_quality(
             research_model, argument_plan, selected_cases, outline, written, evidence,
             literature_sources_artifact, literature_evidence_artifact,
-            literature_claims_artifact, validation, call_llm, provider, api_key, model)
+            literature_claims_artifact, validation, call_llm, provider, api_key, model,
+            case_plans)
         academic["academic_quality_history"].append(quality_evaluation)
         quality_repair_history = {"schema_version": "academic-quality-repair-v1",
                                   "rounds": []}
@@ -1802,7 +1872,7 @@ def run_academic_pipeline(
                 written, report_md, evidence, research_model, argument_plan,
                 selected_cases, outline, literature_sources_artifact,
                 literature_evidence_artifact, literature_claims_artifact,
-                quality_evaluation,
+                case_plans, quality_evaluation,
                 validation, prior_summaries, call_llm, provider, api_key, model)
             _save_artifact(state, artifact_dir, "selected_cases", selected_cases,
                            case_dep, VERSIONS["case_selection_version"])

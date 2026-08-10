@@ -15,6 +15,7 @@ from collections import Counter
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from .academic_evidence import segment_index, stable_hash
+from . import case_analysis
 
 QUALITY_VERSION = "academic-quality-v1"
 REPORT_VERSION = "academic-quality-report-v1"
@@ -87,6 +88,12 @@ _SUMMARY_SIGNALS = re.compile(
     r"本节(?:总结|小结)|综上所述|总体而言|概括而言|本节主要(?:分析|讨论)")
 _FILLER_SIGNALS = re.compile(
     r"^(?:在此|这里|本文|本报告|笔者)将(?:对|从|结合)", )
+_TRANSLATION_DESCRIPTION = re.compile(
+    r"译文(?:将|把|对|中)|(?:译为|译作|处理为|调整为)|"
+    r"the translation (?:renders|turns|handles)")
+_THEORY_TERM = re.compile(
+    r"功能对等|目的论|关联理论|翻译转换|等值|functional equivalence|skopos|"
+    r"relevance theory")
 
 
 def _norm(text: Any) -> str:
@@ -128,6 +135,10 @@ def classify_paragraph(text: str) -> str:
         return "summary"
     if _TRANSITION_SIGNALS.search(stripped):
         return "transition"
+    if _THEORY_TERM.search(stripped) and _ANALYSIS_SIGNALS.search(stripped):
+        return "theoretical_interpretation"
+    if _TRANSLATION_DESCRIPTION.search(stripped):
+        return "translation_description"
     if _ANALYSIS_SIGNALS.search(stripped):
         return "analysis"
     if len(stripped) < 40 or _FILLER_SIGNALS.search(stripped):
@@ -545,11 +556,54 @@ def evaluate_quality(
     literature_sources: Dict[str, Any], literature_evidence_artifact: Dict[str, Any],
     literature_claims: Dict[str, Any], deterministic_validation: Dict[str, Any],
     call_llm: Callable, provider: str, api_key: str, model: str,
+    case_analysis_plans: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    has_literature = bool(literature_claims.get("items"))
     diagnostics = deterministic_diagnostics(
         research_model, argument_plan, selected_cases, outline, sections, evidence)
     findings = _deterministic_findings(diagnostics)
-    has_literature = bool(literature_claims.get("items"))
+    for section in sections:
+        section_id = section.get("section_id")
+        content = section.get("content") or ""
+        for hit in case_analysis.detect_strategy_label_without_mechanism(content):
+            findings.append(_issue(
+                "strategy_label_without_mechanism", dimension="analysis_depth",
+                severity="medium", priority="P1",
+                reason=f"策略标签缺少机制解释：{hit}",
+                recommended_action="补充问题→机制→效果的具体分析，删除空泛质量判断。",
+                section_id=section_id))
+        for hit in case_analysis.detect_unsupported_quality_effect(content):
+            findings.append(_issue(
+                "unsupported_quality_effect", dimension="analysis_depth",
+                severity="medium", priority="P2",
+                reason=f"质量效果判断缺少维度与文本证据：{hit}",
+                recommended_action="指明效果维度（语义/逻辑/语用/节奏等）与具体文本特征。",
+                section_id=section_id))
+        for hit in case_analysis.detect_unsupported_process_claim(content):
+            findings.append(_issue(
+                "unsupported_process_claim", dimension="analysis_depth",
+                severity="high", priority="P1",
+                reason=f"无证据的过程/意图断言：{hit}",
+                recommended_action="删除或将表述改为分析性对比并标注 counterfactual。",
+                section_id=section_id))
+        for hit in case_analysis.detect_case_to_general_rule_overreach(content):
+            findings.append(_issue(
+                "case_to_general_rule_overreach", dimension="conclusion_discipline",
+                severity="medium", priority="P1",
+                reason=f"单案例外推为一般规则：{hit}",
+                recommended_action="将结论限定为本案例。",
+                section_id=section_id))
+    if not has_literature:
+        for section in sections:
+            for match in case_analysis._THEORY_LABEL.finditer(
+                    section.get("content") or ""):
+                findings.append(_issue(
+                    "theory_name_dropping", dimension="theory_case_fit",
+                    severity="medium", priority="P1",
+                    reason="无落地文献支持，正文仍提及理论名称："
+                           f"{match.group(0)}",
+                    recommended_action="删除理论名称，或先登记并落地该理论文献。",
+                    section_id=section.get("section_id")))
     dimensions: Dict[str, str] = {}
     for name in DIMENSIONS:
         if name == "literature_support":
@@ -574,7 +628,19 @@ def evaluate_quality(
         "\"severity\":\"low|medium|high|critical\",\"priority\":\"P0|P1|P2|P3\","
         "\"evidence\":\"具体句子的简短摘录\",\"reason\":\"...\","
         "\"recommended_action\":\"...\",\"repair_action\":\"rewrite|replace_case|"
-        "narrow|downgrade|remove\"}]}。无问题时 findings 为空数组。"
+        "narrow|downgrade|remove\"}],\"case_analysis_depth\":{\"seg-...\":{"
+        "repair_action 可选：rewrite|replace_case|narrow|downgrade|remove|"
+        "add_missing_problem_analysis|add_process_evidence|narrow_claim|"
+        "replace_strategy_label_with_mechanism|add_theory_case_mapping|"
+        "add_translation_effect_explanation|remove_fake_process_history|"
+        "downgrade_unsupported_quality_claim|bound_case_conclusion。"
+        "\"problem_definition\":{\"status\":\"strong|adequate|weak|missing|"
+        "not_applicable\",\"reason\":\"...\"},\"evidence_use\":{...},"
+        "\"initial_failure_or_alternative\":{...},\"decision_rationale\":{...},"
+        "\"translation_effect\":{...},\"theory_mapping\":{...},"
+        "\"bounded_conclusion\":{...}}}}。无问题时 findings 为空数组，"
+        "case_analysis_depth 必须为每个选中案例输出全部 7 个维度；空洞的"
+        "‘问题：句子很难/理由：它很复杂/策略：意译/效果：更自然’式内容必须判 weak。"
     )
     payload = _scoped_inputs(
         research_model, argument_plan, selected_cases, outline, sections, evidence,
@@ -610,7 +676,13 @@ def evaluate_quality(
             if priority not in PRIORITIES:
                 priority = "P2"
             repair_action = str(item.get("repair_action") or "rewrite")
-            if repair_action not in ("rewrite", "replace_case", "narrow", "downgrade", "remove"):
+            if repair_action not in (
+                    "rewrite", "replace_case", "narrow", "downgrade", "remove",
+                    "add_missing_problem_analysis", "add_process_evidence",
+                    "narrow_claim", "replace_strategy_label_with_mechanism",
+                    "add_theory_case_mapping", "add_translation_effect_explanation",
+                    "remove_fake_process_history",
+                    "downgrade_unsupported_quality_claim", "bound_case_conclusion"):
                 repair_action = "rewrite"
             if repair_action == "replace_case" and not case_id:
                 # A replacement needs a concrete selected case; without one the
@@ -628,6 +700,27 @@ def evaluate_quality(
                 case_id=case_id if case_id in valid_cases else None,
                 evidence=str(item.get("evidence") or "")[:200],
                 repair_action=repair_action))
+    depth_entries: Dict[str, Dict[str, Any]] = {}
+    raw_depth = raw.get("case_analysis_depth") if raw else None
+    if isinstance(raw_depth, dict):
+        for case_id, dimensions in raw_depth.items():
+            if case_id not in valid_cases or not isinstance(dimensions, dict):
+                continue
+            entry = {}
+            for dimension in case_analysis.DEPTH_DIMENSIONS:
+                value = dimensions.get(dimension)
+                if not isinstance(value, dict):
+                    entry[dimension] = {"status": "missing", "reason": ""}
+                    continue
+                status = str(value.get("status") or "missing")
+                if status not in case_analysis.DEPTH_STATUSES:
+                    status = "missing"
+                entry[dimension] = {
+                    "status": status,
+                    "reason": str(value.get("reason") or "")[:200],
+                }
+            depth_entries[case_id] = entry
+    diagnostics["case_analysis_depth"] = depth_entries
     findings = _prioritized(findings)
     for i, item in enumerate(findings, 1):
         item["issue_id"] = f"AQ-{i:03d}"
@@ -657,7 +750,36 @@ def evaluate_quality(
         "conclusion_support_issues": sum(
             1 for x in diagnostics["conclusion_traceability"] if x["needs_semantic_check"]),
         "finding_counts": dict(Counter(x["priority"] for x in findings)),
+        "strategy_label_only_count": sum(
+            1 for x in findings if x["type"] == "strategy_label_without_mechanism"),
+        "unsupported_quality_effect_count": sum(
+            1 for x in findings if x["type"] == "unsupported_quality_effect"),
+        "unsupported_process_claim_count": sum(
+            1 for x in findings if x["type"] == "unsupported_process_claim"),
+        "overgeneralized_case_conclusion_count": sum(
+            1 for x in findings if x["type"] == "case_to_general_rule_overreach"),
+        "theory_name_dropping_count": sum(
+            1 for x in findings if x["type"] == "theory_name_dropping"),
+        "case_analysis_depth_summary": {
+            dimension: dict(Counter(
+                entry.get(dimension, {}).get("status", "missing")
+                for entry in depth_entries.values()))
+            for dimension in case_analysis.DEPTH_DIMENSIONS
+        },
     }
+    if case_analysis_plans:
+        mappings = [p.get("theory_mapping") for p in
+                    case_analysis_plans.get("plans", [])
+                    if p.get("theory_mapping")]
+        concepts = Counter(m.get("concept") for m in mappings)
+        if mappings and len(mappings) > 1 \
+                and max(concepts.values()) == len(mappings):
+            findings.append(_issue(
+                "same_theory_reused_mechanically", dimension="theory_case_fit",
+                severity="low", priority="P2",
+                reason=f"全部 {len(mappings)} 个案例使用同一理论概念"
+                       f"「{mappings[0].get('concept')}」，疑似机械复用。",
+                recommended_action="区分各案例中概念的具体适用条件与映射差异。"))
     artifact = {
         "schema_version": QUALITY_VERSION,
         "dimensions": dimensions,
