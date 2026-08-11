@@ -22,7 +22,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from .academic_evidence import segment_index, stable_hash
 from . import case_analysis
 
-HUMAN_EVIDENCE_VERSION = "human-evidence-v1"
+HUMAN_EVIDENCE_VERSION = "human-evidence-v2"
 
 EVIDENCE_NEED_TYPES = (
     "translator_rationale", "initial_translation_missing", "alternative_considered",
@@ -136,6 +136,8 @@ def build_evidence_needs(
     for plan in (case_plans.get("plans") or []):
         case_id = str(plan.get("case_id") or "")
         segment = segs.get(case_id) or {}
+        if not case_analysis.translation_delta(segment).get("changed"):
+            continue
         completion = case_analysis.contract_completion(plan)
         depth_entry = depth.get(case_id) or {}
         weak_dimensions = sorted({
@@ -203,26 +205,26 @@ def _question_template(need: Dict[str, Any], segment: Dict[str, Any],
     if need_type == "translator_rationale":
         if final:
             return (question_type,
-                    f"这里你为什么选择最终这个译法（“{final}”）？"
+                    f"这里你为什么选择最终这个译法（「{final}」）？"
                     "如果采用更直白的表达，会损失什么？")
         return (question_type, "这一段你当时的翻译考虑是什么？")
     if need_type == "repair_reason":
         return (question_type,
-                f"这段从初译“{initial}”改为“{final}”，是出于什么考虑？"
+                f"这段从初译「{initial}」改为「{final}」，是出于什么考虑？"
                 "（你自己修改、审校建议，还是其他原因？）")
     if need_type == "alternative_considered":
         return (question_type,
-                f"这一句你考虑过哪些其他译法？为什么最终选用了“{final}”？")
+                f"这一句你考虑过哪些其他译法？为什么最终选用了「{final}」？")
     if need_type == "review_acceptance_reason":
         return (question_type,
-                f"审校建议“{suggestion}”你后来采纳了吗？"
+                f"审校建议「{suggestion}」你后来采纳了吗？"
                 "采纳或未采纳的原因是什么？")
     if need_type == "reader_response":
         return (question_type,
-                f"你预期中文读者从这一句（“{final}”）获得什么感受或理解？")
+                f"你预期中文读者从这一句（「{final}」）获得什么感受或理解？")
     if need_type == "source_interpretation":
         return (question_type,
-                f"这一句源文“{source}”在你理解中的确切含义是什么？")
+                f"这一句源文「{source}」在你理解中的确切含义是什么？")
     if need_type == "context_information":
         return (question_type,
                 f"这一段在原文中的上下文背景是什么？"
@@ -248,6 +250,8 @@ def generate_questions(
                        key=lambda x: rank.get(x["academic_value"], 3)):
         case_id = str(need.get("case_id") or "")
         segment = segs.get(case_id) or {}
+        if not case_analysis.translation_delta(segment).get("changed"):
+            continue
         plan = plans.get(case_id) or {}
         question_type, question = _question_template(need, segment, plan)
         questions.append({
@@ -383,7 +387,8 @@ def case_capabilities(
         x for x in he_entries
         if str(x.get("case_id")) == case_id
         and x.get("status") == "user_confirmed"]
-    if not usable:
+    if not usable or not (adequacy.get("capabilities") or {}).get(
+            "has_meaningful_revision"):
         return dict(adequacy)
     can = set(adequacy.get("can_support") or [])
     cannot = set(adequacy.get("cannot_support") or [])
@@ -404,6 +409,12 @@ def case_capabilities(
         "can_support": sorted(can),
         "cannot_support": sorted(cannot),
         "human_evidence_ids": [x["human_evidence_id"] for x in usable],
+        "capabilities": {
+            **(adequacy.get("capabilities") or {}),
+            "has_revision_rationale": bool(types & {
+                "translator_rationale", "repair_reason", "review_acceptance_reason",
+                "terminology_decision_reason"}),
+        },
     }
 
 

@@ -1,5 +1,51 @@
 # 学术写作子系统：现状审计与迁移设计
 
+## 修订案例硬资格规则
+
+核心案例分析只允许使用 `revision_case`：初译和终译均已记录，且经保守规范化后
+存在有意义的文本差异。空白或纯标点变化不自动构成修订。候选挖掘先执行该门禁，
+再按完整修复链、关联 finding、repair history、实际文本差异和研究问题相关性排序。
+
+`non_revision_case` 可以保留在项目证据库中，但不得进入核心修订案例池，也不能由
+Human Author Evidence 升级为修订案例。案例数量策略为“优选 3 个，最低 2 个”：
+
+- 3 个及以上：`sufficient_revision_cases`；
+- 恰有 2 个：`two_case_fallback`，允许形成双案例章节，但必须披露证据稀缺；
+- 少于 2 个：`insufficient_revision_cases`，停止核心案例写作并恢复历史版本或更换项目。
+
+三个状态均不得用未修改、污染或推断出的片段回填。Human Author Evidence 只可为已通过
+资格门禁的案例补充作者事后说明，不得改变 `case_role` 或初译—终译差异。
+
+## 真实项目修订案例恢复结论（ec100d8686d3891e）
+
+本轮重新审计了当前 `state.json`、初译/终译、findings、repair history、
+human actions、三个隔离运行的 `state-eval.json`、既有学术产物和源 PDF。237 个段落
+同时保存初译与终译，其中 234 个无有意义变化，只有 0142、0209、0272 三个文本差异。
+三份隔离状态和当前状态对这三个段落保存的文本完全相同，因此它们是副本，不是可用于
+恢复修订过程的独立历史版本。三个差异案例均无关联 finding 或 translation repair history；
+human action 只记录 0142、0209 曾重译，没有保存修改前后快照或理由。
+
+0142 的源文在 PDF 第 14—15 页跨页断句：第 14 页止于 “on the”，第 15 页从
+“back of Dad’s right hand” 续接。保存的 0142 终译纳入了 0143 的内容，而 0143 又保留
+独立终译，构成相邻段重复。0142 内部确有局部措辞变化，但不存在“污染前终译”或局部修订
+对象；拆出 0142a 会创建没有历史来源的新证据。因此结论为 `MISMATCH`，继续保持
+`review_required`，不得进入核心案例。
+
+最终只选择 0209、0272，并将第三案例结论记为 `no_defensible_third_case_found`。
+Chapter 3 采用 `two_case_fallback`，明确说明第三位置没有用弱证据补足。真实复跑产物位于
+`eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/`；其中复用了原有
+Human Evidence 问题文件（字节一致），状态仍为 `awaiting_author_input`，未运行 Phase B。
+
+可用以下命令重复执行只读审计；它不会调用模型或写回历史项目状态：
+
+```bash
+.venv/bin/python scripts/audit_revision_cases.py \
+  --job-id ec100d8686d3891e \
+  --out-dir <new-isolated-directory> \
+  --canonical-questions <existing-human-evidence-questions.json> \
+  --investigate-index 142
+```
+
 ## 迁移前流水线（历史审计）
 
 迁移前阶段三由 `core.run_job_pipeline` 调用 `core.generate_mti_report`。后者从

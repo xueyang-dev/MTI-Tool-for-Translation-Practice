@@ -21,7 +21,7 @@ def _weak_case_segment():
     return {
         "segment_id": f"seg-{JOB}-0138", "segment_index": 138,
         "source": "He never mentioned the accident again.",
-        "initial_target": None,
+        "initial_target": "他从未再提及那次事故。",
         "final_target": "他再也没有提起那次事故。",
         "reviewed": True, "from_tm": False, "glossary_entry_ids": [],
         "process_evidence": {"findings": [], "repair_history": [],
@@ -117,7 +117,7 @@ def test_answer_recording_statuses():
 def test_capability_upgrade_and_scope():
     segment = _weak_case_segment()
     adequacy = case_analysis.evidence_adequacy(segment)
-    assert adequacy["evidence_level"] == "source_final_only"
+    assert adequacy["capabilities"]["has_meaningful_revision"]
     assert "translator_rationale" not in adequacy["can_support"]
     entry = {
         "human_evidence_id": "HE-0001", "case_id": segment["segment_id"],
@@ -126,13 +126,22 @@ def test_capability_upgrade_and_scope():
     }
     upgraded = human_evidence.case_capabilities(
         segment["segment_id"], [entry], adequacy)
-    assert upgraded["evidence_level"] == "source_final_plus_author_rationale"
     assert "translator_rationale" in upgraded["can_support"]
+    assert upgraded["capabilities"]["has_revision_rationale"]
     # Scope: evidence for another case does not upgrade this one.
     other = {**entry, "case_id": f"seg-{JOB}-9999"}
     unchanged = human_evidence.case_capabilities(
         segment["segment_id"], [other], adequacy)
-    assert unchanged["evidence_level"] == "source_final_only"
+    assert not unchanged["capabilities"]["has_revision_rationale"]
+
+    # Human evidence cannot turn an unchanged segment into a revision case.
+    non_revision = {**segment, "initial_target": segment["final_target"]}
+    non_revision_adequacy = case_analysis.evidence_adequacy(non_revision)
+    blocked = human_evidence.case_capabilities(
+        segment["segment_id"], [entry], non_revision_adequacy)
+    assert blocked["case_role"] == "non_revision_case"
+    assert not blocked["capabilities"]["has_meaningful_revision"]
+    assert "translator_rationale" not in blocked["can_support"]
     print("  ✓ 能力升级与 case 范围约束")
 
 
@@ -233,7 +242,6 @@ def test_intake_to_targeted_regeneration():
     tmp = Path(tempfile.mkdtemp(prefix="human-evidence-e2e-"))
     try:
         state = _state()
-        state["pairs"][1]["initial_target"] = state["pairs"][1]["target"]
         mock = HumanEvidencePipelineMock()
         academic_writer.run_academic_pipeline(
             state, JOB, "目的论", "x", "x", "x", tmp,
@@ -314,7 +322,8 @@ def test_red_team_guards():
     adequacy = case_analysis.evidence_adequacy(segment)
     upgraded = human_evidence.case_capabilities(
         segment["segment_id"], [entry], adequacy)
-    assert upgraded["evidence_level"] == "source_final_only"
+    assert upgraded["evidence_level"] == adequacy["evidence_level"]
+    assert not upgraded["capabilities"]["has_revision_rationale"]
     # 2. Answer stays verbatim; no silent rewrite.
     entry2, _ = human_evidence.record_human_answer(
         questions, q["question_id"], "我改它是因为读起来顺。", evidence)

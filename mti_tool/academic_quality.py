@@ -14,10 +14,10 @@ import re
 from collections import Counter
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
-from .academic_evidence import segment_index, stable_hash
+from .academic_evidence import case_role, has_meaningful_revision, segment_index, stable_hash
 from . import case_analysis
 
-QUALITY_VERSION = "academic-quality-v1"
+QUALITY_VERSION = "academic-quality-v3"
 REPORT_VERSION = "academic-quality-report-v1"
 
 DIMENSIONS = (
@@ -179,7 +179,7 @@ def case_quality_signals(segment: Dict[str, Any], findings: Iterable[Dict[str, A
                         if x.get("segment_index") == index]
     initial = segment.get("initial_target")
     final = segment.get("final_target")
-    changed = bool(initial is not None and final is not None and initial != final)
+    changed = has_meaningful_revision(initial, final)
     repair = bool(process.get("repair_history"))
     term_ids = process.get("injected_glossary_entry_ids") or []
     availability = segment.get("availability", {})
@@ -193,6 +193,8 @@ def case_quality_signals(segment: Dict[str, Any], findings: Iterable[Dict[str, A
         "has_actionable_or_blocking": any(
             x.get("severity") in ("actionable", "blocking") for x in seg_findings),
         "initial_to_final_changed": changed,
+        "has_meaningful_revision": changed,
+        "case_role": case_role(segment),
         "has_repair_history": repair,
         "terminology_decision_count": len(term_ids),
         "reviewed": bool(segment.get("reviewed")),
@@ -217,6 +219,8 @@ def classify_case(
     signals = case_quality_signals(segment, findings)
     if case_id not in set(selected_ids):
         return "misaligned_case", ["案例未出现在选中案例集合"]
+    if not signals["has_meaningful_revision"]:
+        return "weak_case", ["无有意义的初译—终译差异"]
     if signals["evidence_richness"] >= 5 and signals["has_actionable_or_blocking"]:
         return "strong_case", [
             f"证据丰富度 {signals['evidence_richness']}/7",
@@ -410,6 +414,7 @@ def deterministic_diagnostics(
             "supports_claims": sorted(set(case.get("supports_claims") or [])),
             "evidence_richness": case_quality_signals(
                 segs.get(case_id) or {}, findings_all)["evidence_richness"],
+            "case_role": case_role(segs.get(case_id) or {}),
         })
     return {
         "paragraph_statistics": paragraph_statistics(sections),
@@ -418,6 +423,12 @@ def deterministic_diagnostics(
         "evidence_utilization": evidence_utilization(sections, selected_cases, evidence),
         "conclusion_traceability": conclusion_traceability(outline, sections),
         "cross_section_checks": cross_section_checks(sections),
+        "case_count_policy": {
+            "status": selected_cases.get("selection_status"),
+            "preferred": selected_cases.get("preferred_core_case_count"),
+            "minimum": selected_cases.get("minimum_core_case_count"),
+            "selected": len(selected_cases.get("cases", [])),
+        },
     }
 
 
@@ -465,7 +476,15 @@ def _deterministic_findings(diagnostics: Dict[str, Any]) -> List[Dict[str, Any]]
             recommended_action="绑定对应 RQ，或说明其作为报告必要功能章节。",
             section_id=section_id))
     for row in diagnostics["case_quality"]:
-        if row["class"] == "weak_case":
+        if row.get("case_role") == "non_revision_case":
+            issues.append(_issue(
+                "non_revision_case_used_as_revision_analysis",
+                dimension="case_quality", severity="critical", priority="P1",
+                reason=f"案例 {row['case_id']} 没有真实初译→终译差异，不能进入核心修订案例分析。",
+                recommended_action="从核心案例池移除；不得用 Human Author Evidence 补造修订历史。",
+                case_id=row["case_id"], evidence=row["reasons"][0],
+                repair_action="replace_case"))
+        elif row["class"] == "weak_case":
             issues.append(_issue(
                 "weak_case", dimension="case_quality", severity="medium", priority="P2",
                 reason=f"案例 {row['case_id']} 缺少真实翻译问题、决策差异或修复证据。",
@@ -539,6 +558,15 @@ def _scoped_inputs(
         "research_model": {k: v for k, v in research_model.items() if k != "content_hash"},
         "argument_plan": argument_plan,
         "selected_cases": case_pool,
+        "case_count_policy": {
+            "status": selected_cases.get("selection_status"),
+            "preferred": selected_cases.get("preferred_core_case_count"),
+            "minimum": selected_cases.get("minimum_core_case_count"),
+            "selected": len(case_pool),
+            "instruction": (
+                "two_case_fallback is academically valid and must not be criticized "
+                "solely for lacking a third case"),
+        },
         "outline": [{k: v for k, v in x.items() if k != "content_hash"}
                     for x in outline.get("sections", [])],
         "report": "\n\n".join(
@@ -565,6 +593,20 @@ def evaluate_quality(
     for section in sections:
         section_id = section.get("section_id")
         content = section.get("content") or ""
+        revision_claims = case_analysis.detect_revision_claims(content)
+        if revision_claims:
+            for case in selected_cases.get("cases", []):
+                case_id = str(case.get("case_id") or "")
+                segment = segment_index(evidence).get(case_id) or {}
+                if case_id in content and not has_meaningful_revision(
+                        segment.get("initial_target"), segment.get("final_target")):
+                    findings.append(_issue(
+                        "non_revision_case_used_as_revision_analysis",
+                        dimension="case_quality", severity="critical", priority="P1",
+                        reason=f"正文声称案例 {case_id} 经修改，但保存的初译与终译没有有意义差异。",
+                        recommended_action="删除虚构修订叙述并替换为真实 revision_case。",
+                        section_id=section_id, case_id=case_id,
+                        evidence=revision_claims[0]["text"], repair_action="replace_case"))
         for hit in case_analysis.detect_strategy_label_without_mechanism(content):
             findings.append(_issue(
                 "strategy_label_without_mechanism", dimension="analysis_depth",
@@ -641,6 +683,8 @@ def evaluate_quality(
         "\"bounded_conclusion\":{...}}}}。无问题时 findings 为空数组，"
         "case_analysis_depth 必须为每个选中案例输出全部 7 个维度；空洞的"
         "‘问题：句子很难/理由：它很复杂/策略：意译/效果：更自然’式内容必须判 weak。"
+        "若 case_count_policy.status 为 two_case_fallback，两个案例已满足最低结构，"
+        "不得仅因缺少第三案例给出负面判断；只检查是否披露证据稀缺。"
     )
     payload = _scoped_inputs(
         research_model, argument_plan, selected_cases, outline, sections, evidence,
@@ -731,6 +775,11 @@ def evaluate_quality(
         "global_claims": len(argument_plan.get("claims", [])),
         "orphan_claims": len(diagnostics["rq_matrix"]["orphan_claims"]),
         "selected_cases": len(selected_cases.get("cases", [])),
+        "case_selection_status": selected_cases.get("selection_status", "unspecified"),
+        "revision_cases": sum(1 for x in diagnostics["case_quality"]
+                              if x.get("case_role") == "revision_case"),
+        "non_revision_cases": sum(1 for x in diagnostics["case_quality"]
+                                  if x.get("case_role") == "non_revision_case"),
         "strong_cases": sum(1 for x in diagnostics["case_quality"] if x["class"] == "strong_case"),
         "usable_cases": sum(1 for x in diagnostics["case_quality"] if x["class"] == "usable_case"),
         "weak_cases": sum(1 for x in diagnostics["case_quality"] if x["class"] == "weak_case"),
@@ -852,9 +901,6 @@ def select_replacement_case(
         claim_id: str(claims[claim_id].get("research_question") or "")
         for claim_id in claim_ids if claim_id in claims
     }
-    old = next((x for x in selected_cases.get("cases", [])
-                if str(x.get("case_id")) == case_id), {})
-    old_zone = old.get("coverage_zone")
     segs = segment_index(evidence)
     old_richness = case_quality_signals(
         segs.get(case_id) or {}, evidence.get("findings") or [])["evidence_richness"]
@@ -863,9 +909,12 @@ def select_replacement_case(
         candidate_id = str(candidate.get("case_id") or "")
         if candidate_id in selected_ids:
             continue
-        if old_zone and candidate.get("coverage_zone") == old_zone:
+        if candidate.get("academic_candidate_status", "eligible") != "eligible":
             continue
         segment = segs.get(candidate_id) or {}
+        if not has_meaningful_revision(
+                segment.get("initial_target"), segment.get("final_target")):
+            continue
         richness = case_quality_signals(segment, evidence.get("findings") or [])[
             "evidence_richness"]
         if richness <= old_richness or richness < 3:

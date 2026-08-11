@@ -13,9 +13,9 @@ import json
 import re
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
-from .academic_evidence import segment_index, stable_hash
+from .academic_evidence import case_role, has_meaningful_revision, segment_index, stable_hash
 
-ANALYSIS_VERSION = "case-analysis-v1"
+ANALYSIS_VERSION = "case-analysis-v2"
 
 EVIDENCE_LEVELS = ("rich_process_evidence", "partial_process_evidence",
                    "source_final_only")
@@ -65,6 +65,15 @@ _GENERAL_RULE = re.compile(
 _THEORY_LABEL = re.compile(
     r"(?:功能对等|目的论|关联理论|翻译转换|等值|functional equivalence|"
     r"skopos|relevance theory)")
+_REVISION_PROSE = re.compile(
+    r"修改后|修订后|经过(?:人工)?修订|初译.{0,120}(?:终译|最终译文|最终).{0,80}"
+    r"(?:改|调整|修订|替换|变)|(?:从|将)[“\"'].*?[”\"'].{0,20}"
+    r"(?:改|调整|修订|替换)(?:成|为)[“\"'].*?[”\"']",
+    re.DOTALL)
+_REVISION_PAIR = re.compile(
+    r"(?:从|将)[“\"']([^”\"']{1,160})[”\"'].{0,20}"
+    r"(?:改|调整|修订|替换)(?:成|为)[“\"']([^”\"']{1,160})[”\"']",
+    re.DOTALL)
 
 
 def _norm(text: Any) -> str:
@@ -89,10 +98,15 @@ def translation_delta(segment: Dict[str, Any]) -> Dict[str, Any]:
         return {"available": False}
     initial_text = str(initial)
     final_text = str(final)
-    if initial_text == final_text:
+    raw_changed = _norm(initial_text) != _norm(final_text)
+    meaningful = has_meaningful_revision(initial_text, final_text)
+    if not meaningful:
         return {
             "available": True,
             "changed": False,
+            "meaningful": False,
+            "formatting_only": raw_changed,
+            "case_role": "non_revision_case",
             "lexical_changes": [],
             "structural_changes": [],
             "omission_addition": [],
@@ -125,6 +139,9 @@ def translation_delta(segment: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "available": True,
         "changed": True,
+        "meaningful": True,
+        "formatting_only": False,
+        "case_role": "revision_case",
         "lexical_changes": lexical,
         "structural_changes": structural,
         "omission_addition": [x for x in structural
@@ -145,12 +162,18 @@ def evidence_adequacy(segment: Dict[str, Any]) -> Dict[str, Any]:
                          for x in findings)
     changed = bool(delta.get("changed"))
     terms = bool(process.get("injected_glossary_entry_ids"))
-    if repair and has_actionable and changed:
+    role = case_role(segment)
+    if not changed:
+        level = "source_final_only"
+        can = ["textual_analysis"]
+        cannot = ["historical_revision_reasoning", "process_claims",
+                  "initial_failure_reasoning", "revision_case_analysis"]
+    elif repair and has_actionable:
         level = "rich_process_evidence"
         can = ["textual_analysis", "translation_decision", "revision_reasoning",
                "error_repair_analysis"]
         cannot = []
-    elif (has_actionable or changed or terms) and repair:
+    elif (has_actionable or terms) and repair:
         level = "rich_process_evidence"
         can = ["textual_analysis", "translation_decision", "revision_reasoning"]
         cannot = ["error_repair_analysis"]
@@ -167,11 +190,33 @@ def evidence_adequacy(segment: Dict[str, Any]) -> Dict[str, Any]:
                   "initial_failure_reasoning"]
     return {
         "case_id": segment.get("segment_id"),
+        "case_role": role,
         "evidence_level": level,
         "can_support": can,
         "cannot_support": sorted(cannot),
         "translation_delta": delta,
+        "capabilities": {
+            "has_meaningful_revision": changed,
+            "has_review_finding": bool(findings),
+            "has_repair_history": repair,
+            "has_revision_rationale": False,
+            "has_theory_support": False,
+        },
     }
+
+
+def detect_revision_claims(text: str) -> List[Dict[str, Any]]:
+    """Return deterministic revision-prose claims and any quoted X→Y pair."""
+    claims = []
+    for match in _REVISION_PROSE.finditer(text or ""):
+        window = (text or "")[max(0, match.start() - 80):match.end() + 120]
+        pair = _REVISION_PAIR.search(window)
+        claims.append({
+            "text": _norm(window)[:300],
+            "old": _norm(pair.group(1)) if pair else None,
+            "new": _norm(pair.group(2)) if pair else None,
+        })
+    return claims
 
 
 def detect_strategy_label_without_mechanism(text: str) -> List[str]:
@@ -230,6 +275,8 @@ def _scoped_planner_input(
             "claim_statements": [
                 claims.get(x, {}).get("claim", "") for x in case.get("supports_claims", [])],
             "evidence_level": adequacy["evidence_level"],
+            "case_role": adequacy["case_role"],
+            "capabilities": adequacy["capabilities"],
             "can_support": adequacy["can_support"],
             "cannot_support": adequacy["cannot_support"],
             "translation_delta": adequacy["translation_delta"],
@@ -276,6 +323,7 @@ def build_case_analysis_plans(
     system = (
         "你是保守的 MTI 案例分析规划器。为每个案例制定分析计划；只使用输入中的"
         "项目证据与文献主张，不编造译者意图、草稿、过程历史或理论。区分："
+        "所有输入案例都必须是有真实初译→终译差异的 revision_case。"
         "evidence_level 决定案例能支持什么。对每个案例给出 problem（必须是具体"
         "翻译问题；证据不足时 grounded=false 并说明需要什么人工证据）、"
         "initial_failure（仅当存在初译—终译差异或 finding 时才给出，否则省略）、"
@@ -338,8 +386,8 @@ def build_case_analysis_plans(
         if problem_type not in PROBLEM_TYPES:
             problem_type = "other"
         grounded = bool(problem.get("grounded"))
-        if grounded and cannot & {"historical_revision_reasoning", "process_claims"}:
-            # A source_final_only case cannot ground process/problem claims.
+        if grounded and not adequacy.get("capabilities", {}).get(
+                "has_meaningful_revision"):
             grounded = False
         initial_failure = item.get("initial_failure")
         if isinstance(initial_failure, dict) and cannot & {
@@ -374,6 +422,12 @@ def build_case_analysis_plans(
                 }
         plans.append({
             "case_id": case_id,
+            "case_role": adequacy.get("case_role", "non_revision_case"),
+            "capabilities": {
+                **adequacy.get("capabilities", {}),
+                "has_revision_rationale": bool(valid_human),
+                "has_theory_support": bool(theory_mapping),
+            },
             "evidence_level": adequacy.get("evidence_level", "source_final_only"),
             "can_support": adequacy.get("can_support", []),
             "cannot_support": sorted(cannot),
@@ -409,6 +463,8 @@ def build_case_analysis_plans(
         adequacy = adequacy_by_case.get(case_id, {})
         plans.append({
             "case_id": case_id,
+            "case_role": adequacy.get("case_role", "non_revision_case"),
+            "capabilities": adequacy.get("capabilities", {}),
             "evidence_level": adequacy.get("evidence_level", "source_final_only"),
             "can_support": adequacy.get("can_support", []),
             "cannot_support": adequacy.get("cannot_support", []),
@@ -443,7 +499,10 @@ def plan_index(artifact: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
 def render_analysis_contract(plan: Dict[str, Any]) -> str:
     """Human/machine-readable contract the writer must realise."""
     lines = [
-        f"案例 {plan.get('case_id')}（{plan.get('evidence_level')}）",
+        f"案例 {plan.get('case_id')}（{plan.get('case_role')}；"
+        f"{plan.get('evidence_level')}）",
+        "- 推理链：翻译问题 → 初译不足 → finding/文本差异 → 修订决策 → "
+        "终译 → 实际变化 → 改进理由 → 理论连接（若有）→ 有界结论",
         f"- 问题：{plan.get('problem', {}).get('statement') or '（未计划，需如实说明）'}",
     ]
     initial = plan.get("initial_failure")

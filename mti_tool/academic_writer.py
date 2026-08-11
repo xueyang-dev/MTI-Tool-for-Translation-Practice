@@ -19,7 +19,7 @@ from . import case_analysis
 from . import human_evidence
 from . import literature_evidence
 
-PIPELINE_VERSION = "academic-pipeline-v2"
+PIPELINE_VERSION = "academic-pipeline-v4"
 VERSIONS = {
     "evidence_version": academic_evidence.SCHEMA_VERSION,
     "research_model_version": "research-model-v1",
@@ -27,9 +27,9 @@ VERSIONS = {
     "literature_evidence_version": literature_evidence.EVIDENCE_VERSION,
     "literature_claims_version": literature_evidence.CLAIMS_VERSION,
     "argument_plan_version": "argument-planner-v2",
-    "case_selection_version": "case-selector-v1",
-    "outline_version": "academic-outline-v2",
-    "writer_version": "academic-writer-v2",
+    "case_selection_version": "case-selector-v3",
+    "outline_version": "academic-outline-v3",
+    "writer_version": "academic-writer-v4",
     "validator_version": academic_validator.VALIDATOR_VERSION,
     "reviewer_version": "academic-reviewer-v1",
     "literature_reviewer_version": "literature-support-reviewer-v1",
@@ -647,9 +647,12 @@ def build_argument_plan(
 
 def select_academic_cases(
     research_model: Dict[str, Any], argument_plan: Dict[str, Any],
-    evidence: Dict[str, Any], limit: int = 8,
+    evidence: Dict[str, Any], limit: int = 3,
 ) -> Dict[str, Any]:
-    candidates = academic_evidence.candidate_index(evidence)
+    revision_pool = academic_evidence.candidate_index(evidence)
+    candidates = {case_id: item for case_id, item in revision_pool.items()
+                  if item.get("academic_candidate_status", "eligible") == "eligible"}
+    eligible_pool = list(candidates.values())
     selected: Dict[str, Dict[str, Any]] = {}
     for claim in argument_plan.get("claims", []):
         for evidence_id in claim.get("project_evidence") or []:
@@ -662,12 +665,12 @@ def select_academic_cases(
             case["supports_claims"].append(claim["claim_id"])
             case["research_questions"].append(claim["research_question"])
     for zone in ("beginning", "middle", "end"):
-        item = next((x for x in evidence.get("candidate_cases", [])
+        item = next((x for x in eligible_pool
                      if x.get("coverage_zone") == zone), None)
         if item and len(selected) < limit:
             selected.setdefault(item["case_id"], {
                 **item, "supports_claims": [], "research_questions": []})
-    for item in evidence.get("candidate_cases", []):
+    for item in eligible_pool:
         if len(selected) >= limit:
             break
         selected.setdefault(item["case_id"], {
@@ -678,9 +681,48 @@ def select_academic_cases(
         case["research_questions"] = sorted(set(case["research_questions"]))
         case["selection_rationale"] = (
             "；".join(case.get("reasons") or []) or "whole-corpus coverage")
+    minimum = min(2, limit)
+    if len(cases) >= limit:
+        selection_status = "sufficient_revision_cases"
+        recommendations: List[str] = []
+        scarcity_disclosure = ""
+    elif len(cases) >= minimum:
+        selection_status = "two_case_fallback"
+        recommendations = [
+            "proceed_with_two_core_cases",
+            "disclose_revision_evidence_scarcity",
+            "do_not_backfill_with_ineligible_cases",
+            "request_human_evidence_only_for_genuine_revision_cases",
+        ]
+        scarcity_disclosure = (
+            f"现有项目证据仅支持 {len(cases)} 个通过修订资格门禁的核心案例；"
+            "未用弱证据或无真实修订的片段补足第三个案例。")
+    else:
+        selection_status = "insufficient_revision_cases"
+        recommendations = [
+            "recover_historical_translation_versions_or_revision_records",
+            "select_another_translation_job",
+            "do_not_backfill_with_ineligible_cases",
+            "request_human_evidence_only_for_genuine_revision_cases",
+        ]
+        scarcity_disclosure = (
+            f"现有项目证据仅支持 {len(cases)} 个通过修订资格门禁的核心案例，"
+            f"少于最低要求 {minimum} 个。")
     artifact = {
         "schema_version": VERSIONS["case_selection_version"],
-        "selection_policy": "argument relevance > complete process chain > representativeness > complexity",
+        "selection_policy": "revision eligibility > argument relevance > complete repair chain > meaningful delta > complexity",
+        "eligibility_rule": "revision_case_only",
+        "requested_case_count": limit,
+        "preferred_core_case_count": limit,
+        "minimum_core_case_count": minimum,
+        "case_count_policy": "prefer_three_allow_two_when_revision_evidence_is_scarce",
+        "eligible_case_count": len(candidates),
+        "revision_candidate_pool_count": len(revision_pool),
+        "selected_case_count": len(cases),
+        "selection_status": selection_status,
+        "scarcity_disclosure_required": selection_status == "two_case_fallback",
+        "scarcity_disclosure": scarcity_disclosure,
+        "scarcity_recommendations": recommendations,
         "cases": cases,
     }
     artifact["content_hash"] = academic_evidence.stable_hash(
@@ -696,6 +738,13 @@ def _fallback_outline(
     rqs = [r["rq_id"] for r in research_model.get("research_questions", [])]
     cases = [c["case_id"] for c in selected_cases.get("cases", [])]
     total = int(research_model.get("target_words") or 4200)
+    case_status = selected_cases.get("selection_status")
+    scarcity = str(selected_cases.get("scarcity_disclosure") or "")
+    analysis_conclusions = ["理论解释必须表述为作者分析而非真实心理意图"]
+    conclusion_limits = ["结论强度不得超过项目与文献证据"]
+    if case_status == "two_case_fallback" and scarcity:
+        analysis_conclusions.append(scarcity)
+        conclusion_limits.append("明确披露核心修订案例只有两个，不补造第三案例")
     return {"sections": [
         {"section_id": "1", "title": "翻译项目与研究设计", "purpose": "界定项目、研究问题、方法与证据边界。",
          "research_questions": rqs, "claims": claims[:1], "cases": [],
@@ -713,14 +762,21 @@ def _fallback_outline(
          "research_questions": rqs, "claims": claims, "cases": cases,
          "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": [], "target_words": round(total * .4), "minimum_chars": 600,
-         "allowed_conclusions": ["理论解释必须表述为作者分析而非真实心理意图"]},
+         "allowed_conclusions": analysis_conclusions},
         {"section_id": "4", "title": "结论、局限与反思", "purpose": "回答研究问题并限定结论外推。",
          "research_questions": rqs, "claims": claims, "cases": [],
          "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": ["repaired_segments", "term_conflicts"],
          "target_words": round(total * .15), "minimum_chars": 250,
-         "allowed_conclusions": ["结论强度不得超过项目与文献证据"]},
-    ], "planner_fallback": True}
+         "allowed_conclusions": conclusion_limits},
+    ], "planner_fallback": True,
+        "case_count_policy": {
+            "status": case_status,
+            "preferred": selected_cases.get("preferred_core_case_count", 3),
+            "minimum": selected_cases.get("minimum_core_case_count", 2),
+            "selected": len(cases),
+            "scarcity_disclosure": scarcity,
+        }}
 
 
 def build_academic_outline(
@@ -741,6 +797,8 @@ def build_academic_outline(
         "\"literature_evidence\":[\"LE-...\"],"
         "\"required_statistics\":[\"total_segments\"],\"target_words\":900,"
         "\"minimum_chars\":300,\"allowed_conclusions\":[\"...\"]}]}。"
+        "案例数量以 selected_cases.case_count_policy 为准；two_case_fallback 是合格的"
+        "双案例结构，不得虚构或要求第三个案例，并须在案例分析或结论中披露证据稀缺。"
     )
     payload = {
         "research_model": research_model,
@@ -851,6 +909,13 @@ def build_academic_outline(
         "schema_version": VERSIONS["outline_version"],
         "sections": sections,
         "planner_fallback": fallback,
+        "case_count_policy": {
+            "status": selected_cases.get("selection_status"),
+            "preferred": selected_cases.get("preferred_core_case_count", 3),
+            "minimum": selected_cases.get("minimum_core_case_count", 2),
+            "selected": len(selected_cases.get("cases", [])),
+            "scarcity_disclosure": selected_cases.get("scarcity_disclosure", ""),
+        },
     }
     artifact["content_hash"] = academic_evidence.stable_hash(
         {k: v for k, v in artifact.items() if k != "content_hash"})
@@ -916,6 +981,7 @@ def _section_packet(
             "claim_marker": "<!--claim:C1-->",
             "rq_marker": "<!--rq:RQ1-->",
             "source_quote": "> [SOURCE seg-...]: exact source",
+            "initial_quote": "> [INITIAL seg-...]: exact initial target",
             "target_quote": "> [TARGET seg-...]: exact final target",
             "project_statistic": "{{STAT:metric_name}}",
             "terminology_decision": "{{TERM:entry_id}}",
@@ -924,8 +990,17 @@ def _section_packet(
             "literature_claim_marker": "<!--lit-claim:LC-001-->",
             "literature_evidence_marker": "<!--lit-evidence:LE-...-->",
             "analysis_contract": "按 case_analyses 中的 analysis_contract_text 逐项落实",
-            "evidence_level_policy": "rich/partial 可做过程分析；source_final_only "
-                                     "禁止过程/失败/意图断言",
+            "evidence_level_policy": "只有 revision_case 可进入核心案例分析；"
+                                     "Human Evidence 只能解释真实修订，不能创造修订历史",
+            "case_count_policy": {
+                "status": selected_cases.get("selection_status"),
+                "preferred": selected_cases.get("preferred_core_case_count", 3),
+                "minimum": selected_cases.get("minimum_core_case_count", 2),
+                "selected": len(selected_cases.get("cases", [])),
+                "scarcity_disclosure": selected_cases.get("scarcity_disclosure", ""),
+                "required_marker": "<!--case-count-policy:two_case_fallback-->"
+                if selected_cases.get("selection_status") == "two_case_fallback" else "",
+            },
         },
     }
 
@@ -938,23 +1013,33 @@ def _write_section(
     repair = bool(repair_issues)
     system = (
         "你是 MTI 证据约束型学术写作者。根据论点计划写当前章节，不得新增主要论点、"
-        "项目事实或文献。引用案例时必须逐字复制 packet 中 source/final_target，使用指定"
-        "SOURCE/TARGET 格式；项目数字只能用 {{STAT:key}}；正式文献只能用 [@source_id]；"
+        "项目事实或文献。引用案例时必须逐字复制 packet 中 source/initial_target/final_target，"
+        "使用指定 SOURCE/INITIAL/TARGET 格式；项目数字只能用 {{STAT:key}}；正式文献只能用 [@source_id]；"
         "文献直接引语必须逐字复制 literature_evidence 并使用 LITERATURE 格式；文献释义必须"
         "同时保留 lit-claim 与 lit-evidence marker，并引用对应 source_id；"
         "项目术语决策用 {{TERM:entry_id}}。每个落实的 claim 和 RQ 分别保留 HTML marker。"
         "理论解释必须写成作者分析，例如‘从结果看可解释为’，不得冒充译者真实意图。"
         "无文献证据时，不得从模型记忆补作者、年份、书名或理论命题。只输出章节正文。"
     )
+    count_policy = (packet.get("writing_constraints") or {}).get(
+        "case_count_policy") or {}
+    if count_policy.get("status") == "two_case_fallback":
+        system += (
+            " 本项目采用 two_case_fallback：两个真实修订案例已满足最低核心案例结构。"
+            "不得要求、暗示或补写第三案例。当前章节若承担案例分析或结论功能，须明确说明"
+            "修订证据稀缺，并逐字保留 <!--case-count-policy:two_case_fallback--> marker；"
+            f"可使用的披露语句为：{count_policy.get('scarcity_disclosure')}"
+        )
     if packet.get("case_analyses"):
         system += (
             " 案例分析必须按 packet.case_analyses 的 analysis_contract_text 实现："
-            "先明确翻译问题与证据，再说明初始方案/失败（仅当有初译—终译差异或 finding "
+            "先明确翻译问题与证据，再说明初始方案/失败（必须有真实初译—终译差异；finding "
             "证据）、备选方案（必须标注 historical_alternative / analytical_comparison / "
             "counterfactual_rendering；没有证据的备选一律 counterfactual_rendering）、"
             "最终决策与理由、翻译效果（指明具体维度与文本特征，禁止‘更自然/更准确’式"
             "空泛判断）、理论连接（仅当 theory_mapping 存在；否则禁止提及任何理论名称）、"
-            "证据边界与有界结论（只限本案例，禁止外推为一般规则）。禁止：编造译者意图或"
+            "证据边界与有界结论（只限本案例，禁止外推为一般规则）。必须逐字展示 INITIAL 与"
+            "TARGET，并使正文描述的变化与两者一致。禁止：编造译者意图或"
             "过程历史；提及 packet 之外任何 seg 段号；把反事实备选写成历史事实。证据不足"
             "时明确写‘本项目证据不足以支持…’，并列出 recommended_human_evidence 所需"
             "的人工证据。"

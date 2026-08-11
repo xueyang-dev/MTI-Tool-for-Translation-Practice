@@ -1,0 +1,30 @@
+{
+  "job_id": "ec100d8686d3891e",
+  "isolated_output": "eval/academic-quality/ec100d8686d3891e/revision-evidence-pilot-20260811T013934Z",
+  "state_source": "outputs/ec100d8686d3891e/state.json",
+  "state_sha256": "9ff6cd1fac9663af394a772cc99842be789c8e20085fb1fdba184db81bae2e1f",
+  "versions": {
+    "evidence_version": "academic-evidence-v3",
+    "research_model_version": "research-model-v1",
+    "literature_sources_version": "literature-sources-v1",
+    "literature_evidence_version": "literature-evidence-v1",
+    "literature_claims_version": "literature-claims-v1",
+    "argument_plan_version": "argument-planner-v2",
+    "case_selection_version": "case-selector-v2",
+    "outline_version": "academic-outline-v2",
+    "writer_version": "academic-writer-v3",
+    "validator_version": "validator-v3",
+    "reviewer_version": "academic-reviewer-v1",
+    "literature_reviewer_version": "literature-support-reviewer-v1",
+    "academic_quality_version": "academic-quality-v2",
+    "case_analysis_version": "case-analysis-v2",
+    "human_evidence_version": "human-evidence-v2"
+  },
+  "artifact_hashes": {
+    "revision_case_audit": "22a09fbfd4f51697985cbbbe8675e5f7d70dc584c2a3456bce46f65017a78826",
+    "selected_cases": "f9215fbc5a340efd35b6146cba135e7e489863e9546e25eb2945b256d676007a",
+    "human_evidence_needs": "9d0a5a27ea05d39f1cdc4a673b0492846cffc2c83b3b9a4b562aa017bf7013d3",
+    "human_evidence_questions": "19b0f47b0cf23acb001c5a78a0634326354a9a5f462154e33cb75fa03bd8593e"
+  },
+  "phase_b_executed": false
+}

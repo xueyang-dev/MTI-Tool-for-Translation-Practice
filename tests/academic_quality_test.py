@@ -264,10 +264,9 @@ def test_end_to_end_quality_repair_with_case_replacement():
     tmp = Path(tempfile.mkdtemp(prefix="academic-quality-e2e-"))
     try:
         state = _state()
-        # Make the weak case genuinely weak (no terms, no initial/final
-        # difference) so the replacement selector must pick a richer candidate.
+        # Keep a real initial/final revision but remove other process evidence,
+        # so the case stays eligible while remaining academically weak.
         state["pairs"][1]["glossary_entry_ids"] = []
-        state["pairs"][1]["initial_target"] = state["pairs"][1]["target"]
         mock = QualityPipelineMock()
         academic_writer.run_academic_pipeline(
             state, JOB, "目的论", "DeepSeek", "key", "model", tmp,

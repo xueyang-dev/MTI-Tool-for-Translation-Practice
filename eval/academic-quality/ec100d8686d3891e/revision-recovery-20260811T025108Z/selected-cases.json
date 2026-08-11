@@ -1,0 +1,92 @@
+{
+  "schema_version": "case-selector-v3",
+  "selection_policy": "revision eligibility > argument relevance > complete repair chain > meaningful delta > complexity",
+  "eligibility_rule": "revision_case_only",
+  "requested_case_count": 3,
+  "preferred_core_case_count": 3,
+  "minimum_core_case_count": 2,
+  "case_count_policy": "prefer_three_allow_two_when_revision_evidence_is_scarce",
+  "eligible_case_count": 2,
+  "revision_candidate_pool_count": 3,
+  "selected_case_count": 2,
+  "selection_status": "two_case_fallback",
+  "scarcity_disclosure_required": true,
+  "scarcity_disclosure": "现有项目证据仅支持 2 个通过修订资格门禁的核心案例；未用弱证据或无真实修订的片段补足第三个案例。",
+  "scarcity_recommendations": [
+    "proceed_with_two_core_cases",
+    "disclose_revision_evidence_scarcity",
+    "do_not_backfill_with_ineligible_cases",
+    "request_human_evidence_only_for_genuine_revision_cases"
+  ],
+  "cases": [
+    {
+      "case_id": "seg-ec100d8686d3891e-0209",
+      "segment_id": "seg-ec100d8686d3891e-0209",
+      "segment_index": 209,
+      "coverage_zone": "end",
+      "case_role": "revision_case",
+      "score": 30.0,
+      "reasons": [
+        "revision_with_repair_link",
+        "meaningful_initial_final_revision"
+      ],
+      "academic_candidate_status": "eligible",
+      "features": {
+        "source_chars": 21,
+        "clause_markers": 0,
+        "punctuation_count": 0,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": true,
+        "has_repair_history": false,
+        "has_human_revision_action": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": []
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "revision_with_repair_link；meaningful_initial_final_revision"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0272",
+      "segment_id": "seg-ec100d8686d3891e-0272",
+      "segment_index": 272,
+      "coverage_zone": "end",
+      "case_role": "revision_case",
+      "score": 13.0,
+      "reasons": [
+        "meaningful_initial_final_revision",
+        "quotation_or_dash_complexity"
+      ],
+      "academic_candidate_status": "eligible",
+      "features": {
+        "source_chars": 103,
+        "clause_markers": 0,
+        "punctuation_count": 3,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": false,
+        "has_repair_history": false,
+        "has_human_revision_action": false,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": []
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "meaningful_initial_final_revision；quotation_or_dash_complexity"
+    }
+  ],
+  "content_hash": "bca598e9f8d5adebef2513f5802bd531b9f153c3aec6d7e70b3d2aec6f24e1db"
+}

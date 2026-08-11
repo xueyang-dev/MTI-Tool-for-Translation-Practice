@@ -7,16 +7,18 @@ asks a model to count, invent missing history, or verify literature.
 """
 from __future__ import annotations
 
+import difflib
 import hashlib
 import json
 import re
+import unicodedata
 from collections import Counter, defaultdict
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from . import assets
 from . import report_evidence
 
-SCHEMA_VERSION = "academic-evidence-v2"
+SCHEMA_VERSION = "academic-evidence-v3"
 ALLOWED_SOURCE_STATUSES = {
     "metadata_verified", "user_provided", "imported_unverified", "candidate",
     "rejected",
@@ -49,6 +51,43 @@ def stable_hash(value: Any) -> str:
     raw = json.dumps(value, ensure_ascii=False, sort_keys=True,
                      separators=(",", ":"), default=str)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def normalized_translation_target(value: Any, *, ignore_punctuation: bool = False) -> str:
+    """Conservatively normalize a saved translation for revision eligibility."""
+    text = unicodedata.normalize("NFKC", str(value or ""))
+    if ignore_punctuation:
+        text = "".join(ch for ch in text
+                       if not ch.isspace()
+                       and not unicodedata.category(ch).startswith(("P", "Z")))
+    else:
+        text = re.sub(r"\s+", "", text)
+    return text.casefold()
+
+
+def has_meaningful_revision(
+    initial: Any, final: Any, *, allow_formatting_revision: bool = False,
+) -> bool:
+    """True only for a real lexical/content initial→final target change.
+
+    Whitespace and punctuation-only differences remain non-revision cases.
+    """
+    if initial is None or final is None:
+        return False
+    initial_text = normalized_translation_target(initial)
+    final_text = normalized_translation_target(final)
+    if not initial_text or not final_text or initial_text == final_text:
+        return False
+    content_changed = normalized_translation_target(
+        initial, ignore_punctuation=True) != normalized_translation_target(
+            final, ignore_punctuation=True)
+    return content_changed or allow_formatting_revision
+
+
+def case_role(segment: Dict[str, Any]) -> str:
+    return "revision_case" if has_meaningful_revision(
+        segment.get("initial_target"), segment.get("final_target")) \
+        else "non_revision_case"
 
 
 def normalize_literature_registry(
@@ -189,27 +228,31 @@ def _candidate_features(
     blocking = sum(f.get("severity") == "blocking" for f in findings)
     actionable = sum(f.get("severity") == "actionable" for f in findings)
     informational = sum(f.get("severity") == "informational" for f in findings)
-    repaired = bool(initial is not None and initial != final) or any(
-        f.get("suggested_target") for f in findings) or bool(
-            segment["process_evidence"]["human_actions"])
+    revised = has_meaningful_revision(initial, final)
+    repair_history = bool(segment["process_evidence"].get("repair_history"))
+    human_actions = bool(segment["process_evidence"].get("human_actions"))
+    repaired = bool(revised and (repair_history or human_actions))
     conflict = any(bool(f.get("conflict")) for f in findings)
-    complete_chain = bool(
-        source and initial is not None and final and findings and repaired)
+    complete_chain = bool(source and revised and findings and repaired)
+    integrity_flags = list(segment.get("integrity_flags") or [])
 
     score = 0.0
     reasons: List[str] = []
     if complete_chain:
-        score += 10
+        score += 40
         reasons.append("complete_translation_evidence_chain")
     if blocking:
-        score += 7 + min(blocking, 2)
+        score += 24 + min(blocking, 2)
         reasons.append("blocking_finding")
     if actionable:
-        score += 5 + min(actionable, 3)
+        score += 20 + min(actionable, 3)
         reasons.append("actionable_finding")
     if repaired:
-        score += 6
-        reasons.append("repair_or_initial_final_change")
+        score += 18
+        reasons.append("revision_with_repair_link")
+    if revised:
+        score += 12
+        reasons.append("meaningful_initial_final_revision")
     if conflict:
         score += 5
         reasons.append("terminology_conflict")
@@ -236,10 +279,15 @@ def _candidate_features(
         reasons.append("quotation_or_dash_complexity")
     if informational and not (blocking or actionable):
         score += min(1, informational * 0.2)
+    if integrity_flags:
+        score -= 100
+        reasons.append("integrity_review_required")
 
     return {
         "score": round(score, 3),
         "reasons": reasons,
+        "academic_candidate_status": (
+            "review_required" if integrity_flags else "eligible"),
         "features": {
             "source_chars": len(source),
             "clause_markers": clauses,
@@ -249,12 +297,36 @@ def _candidate_features(
             "blocking_findings": blocking,
             "actionable_findings": actionable,
             "informational_findings": informational,
+            "has_meaningful_revision": revised,
             "repair_evidence": repaired,
+            "has_repair_history": repair_history,
+            "has_human_revision_action": human_actions,
             "complete_evidence_chain": complete_chain,
             "terminology_conflict": conflict,
             "tm_reuse": bool(segment.get("from_tm")),
+            "integrity_flags": integrity_flags,
         },
     }
+
+
+def _mark_neighbor_target_overlap(segments: List[Dict[str, Any]]) -> None:
+    """Flag likely cross-segment target duplication after a revision."""
+    for current, following in zip(segments, segments[1:]):
+        if case_role(current) != "revision_case":
+            continue
+        current_final = normalized_translation_target(current.get("final_target"))
+        following_final = normalized_translation_target(following.get("final_target"))
+        if len(following_final) < 60 or len(current_final) < len(following_final):
+            continue
+        tail = current_final[-len(following_final):]
+        overlap = difflib.SequenceMatcher(
+            None, tail, following_final, autojunk=False).ratio()
+        if overlap >= 0.75:
+            current.setdefault("integrity_flags", []).append({
+                "type": "probable_adjacent_target_overlap",
+                "following_segment_id": following.get("segment_id"),
+                "similarity": round(overlap, 3),
+            })
 
 
 def mine_candidate_cases(
@@ -262,15 +334,19 @@ def mine_candidate_cases(
     glossary: Optional[List[Dict[str, Any]]] = None,
     max_candidates: int = 80,
 ) -> List[Dict[str, Any]]:
-    """Scan every segment, then retain a bounded, explainable candidate pool."""
+    """Mine only genuine revision cases, then rank academic usefulness."""
     scored = []
     for segment in segments:
+        role = case_role(segment)
+        if role != "revision_case":
+            continue
         details = _candidate_features(segment, glossary or [])
         scored.append({
             "case_id": segment["segment_id"],
             "segment_id": segment["segment_id"],
             "segment_index": segment["segment_index"],
             "coverage_zone": segment["coverage_zone"],
+            "case_role": role,
             **details,
         })
     scored.sort(key=lambda x: (-x["score"], x["segment_index"]))
@@ -295,14 +371,17 @@ def _project_statistics(state: Dict[str, Any], segments: List[Dict[str, Any]]) -
     findings = state.get("findings") or []
     by_severity = Counter(str(f.get("severity") or "unknown") for f in findings)
     by_type = Counter(str(f.get("type") or "unknown") for f in findings)
-    repaired = set()
-    for segment in segments:
-        if segment.get("initial_target") is not None \
-                and segment.get("initial_target") != segment.get("final_target"):
-            repaired.add(segment["segment_index"])
-        if segment["process_evidence"]["repair_history"] or \
-                segment["process_evidence"]["human_actions"]:
-            repaired.add(segment["segment_index"])
+    with_versions = [s for s in segments if s.get("initial_target") is not None
+                     and s.get("final_target") is not None]
+    revised = [s for s in with_versions if has_meaningful_revision(
+        s.get("initial_target"), s.get("final_target"))]
+    revision_with_findings = [s for s in revised
+                              if s["process_evidence"].get("findings")]
+    revision_with_repair_history = [s for s in revised
+                                    if s["process_evidence"].get("repair_history")]
+    complete_chains = [s for s in revised if _candidate_features(s, {})[
+        "features"]["complete_evidence_chain"]]
+    academically_eligible = [s for s in revised if not s.get("integrity_flags")]
     stats = {
         "total_segments": len(state.get("paras") or state.get("pairs") or []),
         "translated_segments": len(state.get("pairs") or []),
@@ -310,15 +389,19 @@ def _project_statistics(state: Dict[str, Any], segments: List[Dict[str, Any]]) -
         "blocking_findings": by_severity.get("blocking", 0),
         "actionable_findings": by_severity.get("actionable", 0),
         "informational_findings": by_severity.get("informational", 0),
-        "repaired_segments": len(repaired),
+        "segments_with_initial_final_data": len(with_versions),
+        "unchanged_segments": len(with_versions) - len(revised),
+        "meaningfully_revised_segments": len(revised),
+        "revision_cases_with_findings": len(revision_with_findings),
+        "revision_cases_with_repair_history": len(revision_with_repair_history),
+        "revision_cases_with_complete_repair_chains": len(complete_chains),
+        "revision_cases_academically_eligible": len(academically_eligible),
+        "repaired_segments": len(revised),
         "term_conflicts": sum(bool(f.get("conflict")) for f in findings),
         "tm_reuse_count": sum(bool(p.get("from_tm")) for p in state.get("pairs") or []),
         "issue_category_distribution": dict(sorted(by_type.items())),
         "repair_category_distribution": {
-            "initial_final_changed": sum(
-                p.get("initial_target") is not None
-                and p.get("initial_target") != p.get("target")
-                for p in state.get("pairs") or []),
+            "initial_final_changed": len(revised),
             "suggested_target_recorded": sum(bool(f.get("suggested_target")) for f in findings),
             "human_action_recorded": len(state.get("human_actions") or []),
         },
@@ -357,6 +440,9 @@ def build_academic_evidence(
             "reviewed": bool(pair.get("reviewed")),
             "from_tm": bool(pair.get("from_tm")),
             "coverage_zone": _zone(i, len(pairs)),
+            "case_role": "revision_case" if has_meaningful_revision(
+                pair.get("initial_target"), pair.get("target"))
+            else "non_revision_case",
             "location": _location(state.get("document_profile"), i),
             "process_evidence": {
                 "findings": findings_by_seg.get(i, []),
@@ -380,12 +466,21 @@ def build_academic_evidence(
             },
         })
 
+    _mark_neighbor_target_overlap(segments)
     candidates = mine_candidate_cases(segments, glossary, max_candidates=max_candidates)
     statistics = _project_statistics(state, segments)
     limitations = []
     if any(s["availability"]["initial_target"] == "not_recorded" for s in segments):
         limitations.append(
             "Historical job: initial translations, glossary injection, or repair history may be unavailable.")
+    academically_eligible = sum(
+        x.get("academic_candidate_status") == "eligible" for x in candidates)
+    if academically_eligible < 3:
+        status = "two_case_fallback_available" if academically_eligible == 2 \
+            else "insufficient_revision_cases"
+        limitations.append(
+            f"{status}: only {academically_eligible} academically eligible meaningful "
+            "revisions are available; ineligible cases must not be used as backfill.")
     artifact = {
         "schema_version": SCHEMA_VERSION,
         "job_id": job_id,
@@ -402,6 +497,11 @@ def build_academic_evidence(
             "zone_minimum_candidates": min(3, max(1, len(segments) // 3))
             if segments else 0,
             "bounded": len(segments) > max_candidates,
+            "eligibility_rule": "revision_case_only",
+            "preferred_core_case_count": 3,
+            "minimum_core_case_count": 2,
+            "revision_candidate_pool": len(candidates),
+            "eligible_revision_cases": academically_eligible,
         },
         "project_evidence": {
             "segments": segments,

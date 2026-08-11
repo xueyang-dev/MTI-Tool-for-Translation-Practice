@@ -1,0 +1,14 @@
+{
+  "pilot": "two-core-case-human-evidence-pilot",
+  "job_id": "ec100d8686d3891e",
+  "case_ids": [
+    "0209",
+    "0272"
+  ],
+  "artifact_source": "human-evidence-questions-target-cases.json",
+  "number_of_questions": 4,
+  "estimated_author_burden": "~8-12 minutes",
+  "status": "awaiting_author_input",
+  "phase_b_started": false,
+  "revision_eligibility_immutable": true
+}

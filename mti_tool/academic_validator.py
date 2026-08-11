@@ -5,15 +5,15 @@ import re
 from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional
 
-from .academic_evidence import literature_index, segment_index, stable_hash
-from . import literature_evidence
+from .academic_evidence import has_meaningful_revision, literature_index, segment_index, stable_hash
+from . import case_analysis, literature_evidence
 
 SCHEMA_VERSION = "academic-validation-v2"
-VALIDATOR_VERSION = "validator-v2"
+VALIDATOR_VERSION = "validator-v4"
 
 _SEGMENT_REF = re.compile(r"\[(seg-[A-Za-z0-9_-]+-\d{4,})\]")
 _QUOTE = re.compile(
-    r"^\s*>\s*\[(SOURCE|TARGET)\s+(seg-[A-Za-z0-9_-]+-\d{4,})\]:\s*(.*)$",
+    r"^\s*>\s*\[(SOURCE|INITIAL|TARGET)\s+(seg-[A-Za-z0-9_-]+-\d{4,})\]:\s*(.*)$",
     re.MULTILINE,
 )
 _STAT = re.compile(r"(-?\d[\d,.]*(?:%)?)<!--stat:([A-Za-z0-9_.-]+)-->")
@@ -27,6 +27,13 @@ _LIT_EVIDENCE = re.compile(r"<!--lit-evidence:([A-Za-z0-9_.:-]+)-->")
 _LIT_QUOTE = re.compile(
     r"^\s*>\s*\[LITERATURE\s+(LE-[A-Za-z0-9_-]+)\]:\s*(.*)$", re.MULTILINE)
 _HUMAN_EV = re.compile(r"<!--human-ev:([A-Za-z0-9_.:-]+)-->")
+_CASE_COUNT_POLICY = re.compile(
+    r"<!--case-count-policy:(sufficient_revision_cases|two_case_fallback|"
+    r"insufficient_revision_cases)-->")
+_THREE_CORE_CASES = re.compile(
+    r"(?<!第)(?:三个|3\s*个|三则|three)\s*"
+    r"(?:真实|核心|修订|translation\s+revision\s+)*案例",
+    re.IGNORECASE)
 _FORMAL_AUTHOR_YEAR = re.compile(
     r"(?:\b[A-Z][A-Za-z'’-]+(?:\s+(?:&|and)\s+[A-Z][A-Za-z'’-]+)?\s*"
     r"\((?:19|20)\d{2}[a-z]?\)|\([A-Z][A-Za-z'’-]+(?:\s+et\s+al\.)?,\s*"
@@ -342,10 +349,14 @@ def validate_academic_report(
     for kind, seg_id, quote in _QUOTE.findall(report_md):
         if seg_id not in segs:
             continue
-        expected = segs[seg_id]["source" if kind == "SOURCE" else "final_target"]
+        expected_key = {"SOURCE": "source", "INITIAL": "initial_target",
+                        "TARGET": "final_target"}[kind]
+        expected = segs[seg_id].get(expected_key)
         if _norm(quote) != _norm(expected):
             issues.append(_issue(
-                "wrong_segment_quote",
+                "wrong_initial_translation" if kind == "INITIAL"
+                else "wrong_final_translation" if kind == "TARGET"
+                else "wrong_segment_quote",
                 f"{kind} 引文与 {seg_id} 的保存文本不一致。",
                 evidence_id=seg_id,
                 suggested_action="逐字使用学术证据库中的原文或终译。"))
@@ -601,12 +612,88 @@ def validate_academic_report(
                 section_id=section_id, evidence_id=evidence_id))
 
     selected_ids = {str(x.get("case_id")) for x in selected_cases.get("cases", [])}
+    selected_count = len(selected_ids)
+    if "selection_status" in selected_cases:
+        preferred = int(selected_cases.get("preferred_core_case_count")
+                        or selected_cases.get("requested_case_count") or 3)
+        minimum = int(selected_cases.get("minimum_core_case_count") or min(2, preferred))
+        expected_status = (
+            "sufficient_revision_cases" if selected_count >= preferred else
+            "two_case_fallback" if selected_count >= minimum else
+            "insufficient_revision_cases")
+        if selected_cases.get("selection_status") != expected_status:
+            issues.append(_issue(
+                "case_count_status_mismatch",
+                "案例数量与选择产物中的 case-count status 不一致。",
+                suggested_action="重新运行案例选择，不要手工覆盖案例数量状态。"))
+        if expected_status == "insufficient_revision_cases":
+            issues.append(_issue(
+                "insufficient_core_revision_cases",
+                f"只有 {selected_count} 个合格修订案例，少于最低要求 {minimum} 个。",
+                suggested_action="恢复可追溯历史版本或改用其他项目；不得用弱案例补位。"))
+        elif expected_status == "two_case_fallback":
+            markers = set(_CASE_COUNT_POLICY.findall(report_md))
+            if "two_case_fallback" not in markers:
+                issues.append(_issue(
+                    "missing_revision_evidence_scarcity_disclosure",
+                    "双案例章节未披露修订证据稀缺及不补造第三案例的边界。",
+                    suggested_action=(
+                        "在案例分析或结论中说明仅有两个合格核心修订案例，并保留 "
+                        "<!--case-count-policy:two_case_fallback-->。")))
+            if _THREE_CORE_CASES.search(report_md):
+                issues.append(_issue(
+                    "wrong_core_case_count_claim",
+                    "正文声称使用三个案例，但合格核心修订案例只有两个。",
+                    suggested_action="改为双案例结构，并披露第三案例未以弱证据补位。"))
     candidate_ids = {str(x.get("case_id")) for x in evidence.get("candidate_cases", [])}
     for case_id in selected_ids:
         if case_id not in candidate_ids or case_id not in segs:
             issues.append(_issue(
                 "invalid_selected_case", f"选中案例不在候选池或证据库中：{case_id}",
                 evidence_id=case_id))
+            continue
+        segment = segs[case_id]
+        if not has_meaningful_revision(
+                segment.get("initial_target"), segment.get("final_target")):
+            issues.append(_issue(
+                "non_revision_case_used_as_revision_analysis",
+                f"案例 {case_id} 没有有意义的初译→终译差异，不能作为核心修订案例。",
+                evidence_id=case_id,
+                suggested_action="替换为 revision_case；Human Evidence 不能改变该资格。"))
+
+    for plan_section in outline.get("sections", []):
+        section_id = str(plan_section.get("section_id"))
+        body = sections.get(section_id) or ""
+        revision_claims = case_analysis.detect_revision_claims(body)
+        if not revision_claims:
+            continue
+        referenced = [str(x) for x in plan_section.get("cases") or []
+                      if str(x) in body and str(x) in segs]
+        for case_id in referenced:
+            segment = segs[case_id]
+            if not has_meaningful_revision(
+                    segment.get("initial_target"), segment.get("final_target")):
+                issues.append(_issue(
+                    "invented_revision",
+                    f"章节 {section_id} 声称案例 {case_id} 发生修订，但项目记录没有真实差异。",
+                    section_id=section_id, evidence_id=case_id,
+                    suggested_action="删除该修订叙述并改用真实 revision_case。"))
+        for claim in revision_claims:
+            if not claim.get("old") or not claim.get("new"):
+                continue
+            matches_stored_delta = any(
+                claim["old"] in _norm(segs[case_id].get("initial_target"))
+                and claim["new"] in _norm(segs[case_id].get("final_target"))
+                for case_id in referenced
+                if has_meaningful_revision(segs[case_id].get("initial_target"),
+                                           segs[case_id].get("final_target")))
+            if referenced and not matches_stored_delta:
+                issues.append(_issue(
+                    "described_revision_not_in_stored_delta",
+                    f"章节 {section_id} 描述的“{claim['old']}→{claim['new']}”"
+                    "与所引案例保存的初译/终译差异不一致。",
+                    section_id=section_id,
+                    suggested_action="逐字依据 INITIAL/TARGET 记录描述实际变化。"))
 
     for i, item in enumerate(issues, 1):
         item["issue_id"] = f"AV-{i:03d}"
