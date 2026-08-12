@@ -1,0 +1,96 @@
+{
+  "schema_version": "thesis-closeout-state-v1",
+  "job_id": "ec100d8686d3891e",
+  "pipeline_version": "academic-pipeline-v6",
+  "constraint_commit": "7c7babc",
+  "status": "awaiting_author_input",
+  "formal_case_baseline": {
+    "status": "fixed",
+    "core_authentic_revision_cases": [
+      {
+        "case_id": "seg-ec100d8686d3891e-0209",
+        "role": "core_authentic_revision",
+        "eligibility": "eligible"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0272",
+        "role": "core_authentic_revision",
+        "eligibility": "eligible"
+      }
+    ],
+    "optional_supplement": {
+      "case_id": "SC-0141",
+      "role": "optional_synthetic_contrast",
+      "historical_revision": false,
+      "included_by_default": false,
+      "required_disclosure": "分析阶段生成的受控合成对比，不代表作者历史初译，也不支持错误发生频率结论。"
+    },
+    "excluded_from_core": [
+      {
+        "case_id": "seg-ec100d8686d3891e-0142",
+        "reason": "相邻段污染无法从历史记录中防御性分离。"
+      }
+    ],
+    "usage_rules": [
+      "正式第三章以0209和0272为两个核心真实修订案例。",
+      "SC-0141只能作为明确标注的可选补充，不得与真实修订等量齐观。",
+      "其他全语料组合案例不属于正式核心案例基线。",
+      "不得放宽真实初译至终译修订资格门禁。",
+      "Human Author Evidence只能丰富分析，不能改变案例资格。"
+    ],
+    "canonical_sources": {
+      "revision_audit": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/revision-case-audit.json",
+      "revision_selection": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/selected-cases.json",
+      "synthetic_validation": "eval/academic-quality/ec100d8686d3891e/synthetic-contrast-opencode-go-glm52-20260812T022000Z/synthetic-case-validation.jsonl",
+      "human_questions": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/human-evidence-questions-target-cases.json"
+    }
+  },
+  "human_evidence": {
+    "status": "awaiting_author_input",
+    "question_count": 4,
+    "answers_recorded": 0,
+    "phase_b_started": false
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "name": "2026中文论文约束",
+      "status": "completed"
+    },
+    {
+      "stage": 2,
+      "name": "正式案例基线",
+      "status": "completed"
+    },
+    {
+      "stage": 3,
+      "name": "真实作者问题",
+      "status": "awaiting_author_input"
+    },
+    {
+      "stage": 4,
+      "name": "可核验文献证据",
+      "status": "pending"
+    },
+    {
+      "stage": 5,
+      "name": "翻译审校收口",
+      "status": "pending"
+    },
+    {
+      "stage": 6,
+      "name": "Phase B与v6四章正文",
+      "status": "pending"
+    },
+    {
+      "stage": 7,
+      "name": "验证、质量比较与导师复核",
+      "status": "pending"
+    },
+    {
+      "stage": 8,
+      "name": "完整论文装配",
+      "status": "pending"
+    }
+  ]
+}
