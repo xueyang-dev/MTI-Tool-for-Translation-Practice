@@ -33,16 +33,22 @@ def _write_json(path: Path, value: dict[str, Any]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--job-id", required=True)
-    parser.add_argument("--provider", default="DeepSeek")
+    parser.add_argument("--provider", default="OpenCode Go")
     parser.add_argument("--api-key", default="")
-    parser.add_argument("--model", default="deepseek-chat")
+    parser.add_argument("--model", default="glm-5.2")
     parser.add_argument("--out-dir", required=True)
-    parser.add_argument("--max-scan", type=int, default=48)
-    parser.add_argument("--max-opportunities", type=int, default=12)
+    parser.add_argument("--max-scan", type=int, default=16)
+    parser.add_argument("--max-opportunities", type=int, default=8)
     parser.add_argument("--case-limit", type=int, default=5)
     args = parser.parse_args()
-    api_key = args.api_key or os.environ.get("DEEPSEEK_API_KEY") or getpass.getpass(
-        "Provider API key: ")
+    env_key = {
+        "DeepSeek": "DEEPSEEK_API_KEY",
+        "OpenCode Go": "OPENCODE_GO_API_KEY",
+        "OpenAI": "OPENAI_API_KEY",
+        "Gemini": "GEMINI_API_KEY",
+    }.get(args.provider, "MTI_API_KEY")
+    api_key = args.api_key or os.environ.get(env_key) or os.environ.get(
+        "MTI_API_KEY") or getpass.getpass("Provider API key: ")
     if not api_key:
         parser.error("API key is required")
 
@@ -144,8 +150,19 @@ def main() -> int:
         lines.append("No rejection decisions were produced because the pipeline failed."
                      if run_status == "failed" else "None.")
     for case in rejected:
-        lines.append(
-            f"- {case['case_id']}: {', '.join((case.get('validation') or {}).get('rejected_reasons') or ['not eligible'])}")
+        if case.get("baseline_plausibility", {}).get("status") != "plausible":
+            reason = "baseline_implausible"
+        elif case.get("error", {}).get("baseline_already_adequate"):
+            reason = "baseline_already_adequate"
+        elif case.get("error", {}).get("materiality") not in {"major", "moderate"}:
+            reason = "error_non_material"
+        elif case.get("optimized_translation", {}).get(
+                "generation_status") != "generated":
+            reason = "optimization_not_generated"
+        else:
+            reason = ", ".join((case.get("validation") or {}).get(
+                "rejected_reasons") or ["not eligible"])
+        lines.append(f"- {case['case_id']}: {reason}")
     lines.extend([
         "", "## Authentic / synthetic comparison", "",
         "| Dimension | Authentic revisions 0209/0272 | Synthetic contrasts |",

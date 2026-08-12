@@ -73,6 +73,7 @@ class SuccessfulModel:
                 "why_tempting": "stop 与 not 的表层组合容易诱发误读。",
                 "meaning_or_function_distortion": "原文实际表示他几乎直言该计划失败。",
                 "materiality": "major", "baseline_already_adequate": False,
+                "source_evidence_span": "did not stop short of",
                 "source_evidence": "did not stop short of",
             }]}, ensure_ascii=False)
         if "independently optimized" in system:
@@ -171,6 +172,7 @@ def _candidate(case_id: str, *, plausibility="plausible", materiality="major",
         "baseline_plausibility": {"status": plausibility, "reason": "review"},
         "error": {"error_id": f"ERR-{case_id.removeprefix('SC-')}",
                   "category": "lexical_polysemy", "diagnosis": "material diagnosis",
+                  "source_evidence_span": "stop short of",
                   "source_evidence": "stop short of",
                   "materiality": materiality, "baseline_already_adequate": adequate},
         "optimized_translation": {"text": optimized, "generation_status": "generated",
@@ -442,7 +444,13 @@ def test_canonical_source_identity_is_required():
     validated = result["items"][0]
     assert not validated["validation"]["academic_case_eligible"]
     assert "real_source_exists" in validated["validation"]["rejected_reasons"]
-    print("  ✓ final eligibility requires exact canonical project source identity")
+
+    passage = _candidate("SC-PASSAGE")
+    passage["source_text"] = "did not stop short of calling the plan a failure."
+    result = synthetic_cases.validate_synthetic_cases(
+        {"items": [passage]}, RejectionValidator(), "fake", "key", "model", evidence)
+    assert result["items"][0]["validation"]["academic_case_eligible"]
+    print("  ✓ final eligibility accepts only exact passages from canonical source")
 
 
 def test_quality_replacement_never_crosses_case_pools():

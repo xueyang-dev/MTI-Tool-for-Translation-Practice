@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import fitz  # PyMuPDF
+import httpx
 import pandas as pd
 from docx import Document
 from google import genai
@@ -26,6 +27,7 @@ OUTPUT_DIR = Path("outputs")
 
 # 各家模型可选列表（UI 中可切换；如模型下线，在这里更换即可）
 MODELS = {
+    "OpenCode Go": ["glm-5.2", "deepseek-v4-flash", "kimi-k3"],
     "DeepSeek": ["deepseek-chat", "deepseek-reasoner"],
     "OpenAI": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"],
     "Gemini": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
@@ -244,16 +246,31 @@ def extract_pdf_paragraphs(file_bytes):
 
 def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
     """底层大模型统一路由（超时 150 秒，模型可配置）。"""
-    if provider == "DeepSeek":
-        client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com",
-                        timeout=(15.0, 180.0), max_retries=1)
-        res = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "system", "content": system_prompt},
-                      {"role": "user", "content": user_prompt}],
-            temperature=temperature,
-        )
-        return (res.choices[0].message.content or "").strip()
+    if provider in {"DeepSeek", "OpenCode Go"}:
+        base_url = ("https://api.deepseek.com" if provider == "DeepSeek"
+                    else "https://opencode.ai/zen/go/v1")
+        client_kwargs = {
+            "api_key": api_key, "base_url": base_url,
+            "timeout": (15.0, 180.0), "max_retries": 1,
+        }
+        http_client = None
+        if provider == "OpenCode Go":
+            # ponytail: this endpoint fails TLS through the user's local proxy.
+            http_client = httpx.Client(
+                trust_env=False, timeout=(15.0, 180.0))
+            client_kwargs["http_client"] = http_client
+        try:
+            client = OpenAI(**client_kwargs)
+            res = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "system", "content": system_prompt},
+                          {"role": "user", "content": user_prompt}],
+                temperature=temperature,
+            )
+            return (res.choices[0].message.content or "").strip()
+        finally:
+            if http_client:
+                http_client.close()
     if provider == "OpenAI":
         client = OpenAI(api_key=api_key, timeout=(15.0, 180.0), max_retries=1)
         res = client.chat.completions.create(

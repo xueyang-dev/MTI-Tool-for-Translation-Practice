@@ -12,11 +12,11 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from .academic_evidence import has_meaningful_revision, segment_index, stable_hash
 
-OPPORTUNITY_VERSION = "synthetic-opportunity-v3"
+OPPORTUNITY_VERSION = "synthetic-opportunity-v4"
 BASELINE_VERSION = "synthetic-baseline-v1"
-ERROR_MANIFEST_VERSION = "synthetic-error-manifest-v1"
+ERROR_MANIFEST_VERSION = "synthetic-error-manifest-v2"
 OPTIMIZER_VERSION = "synthetic-optimizer-v1"
-VALIDATION_VERSION = "synthetic-validation-v2"
+VALIDATION_VERSION = "synthetic-validation-v3"
 
 CASE_TYPE = "synthetic_contrast"
 ERROR_CATEGORIES = (
@@ -151,6 +151,20 @@ def _error_id(case: Dict[str, Any]) -> str:
     return f"ERR-{source_id.rsplit('-', 1)[-1]}"
 
 
+def _passage_for_trigger(source: str, trigger: str) -> str:
+    """Return the complete sentence range containing an exact trigger span."""
+    folded_source, folded_trigger = source.casefold(), trigger.casefold()
+    start = folded_source.find(folded_trigger)
+    if start < 0:
+        return ""
+    end = start + len(trigger)
+    prior = list(re.finditer(r"[.!?][\"'”’]?\s+", source[:start]))
+    passage_start = prior[-1].end() if prior else 0
+    following = re.search(r"[.!?][\"'”’]?(?:\s+|$)", source[end:])
+    passage_end = end + following.end() if following else len(source)
+    return source[passage_start:passage_end].strip()
+
+
 def _bounded_source_pool(
     evidence: Dict[str, Any], max_scan: int,
 ) -> List[Dict[str, Any]]:
@@ -190,7 +204,7 @@ def _bounded_source_pool(
 
 def mine_error_opportunities(
     evidence: Dict[str, Any], call_llm: Callable, provider: str, api_key: str,
-    model: str, max_scan: int = 48, max_opportunities: int = 12,
+    model: str, max_scan: int = 16, max_opportunities: int = 8,
 ) -> Dict[str, Any]:
     """Find grounded error opportunities without seeing any saved translation."""
     source_pool = _bounded_source_pool(evidence, max_scan)
@@ -245,12 +259,17 @@ def mine_error_opportunities(
         if not reason or not failure:
             rejected.append({"segment_id": segment_id, "reason": "missing_mechanism"})
             continue
+        passage = _passage_for_trigger(source["source_text"], trigger)
+        if not passage:
+            rejected.append({"segment_id": segment_id,
+                             "reason": "trigger_passage_not_recoverable"})
+            continue
         seen.add(segment_id)
         items.append({
             "opportunity_id": f"EO-{source['segment_index']:04d}",
             "segment_id": segment_id,
             "segment_index": source["segment_index"],
-            "source_text": source["source_text"],
+            "source_text": passage,
             "context_before": source["context_before"],
             "context_after": source["context_after"],
             "error_category": category,
@@ -402,7 +421,9 @@ def build_error_manifest(
         "\"case_id\":\"SC-...\",\"category\":\"...\",\"diagnosis\":\"...\","
         "\"why_tempting\":\"...\",\"meaning_or_function_distortion\":\"...\","
         "\"materiality\":\"major|moderate|minor|none\","
-        "\"baseline_already_adequate\":false,\"source_evidence\":\"...\"}]}"
+        "\"baseline_already_adequate\":false,"
+        "\"source_evidence_span\":\"exact continuous source span\","
+        "\"source_evidence\":\"brief explanation\"}]}"
     )
     diagnosis_raw = _call_json(
         call_llm, provider, api_key, model, diagnosis_system,
@@ -439,6 +460,8 @@ def build_error_manifest(
                 "materiality": materiality,
                 "baseline_already_adequate": bool(raw_error.get(
                     "baseline_already_adequate", True)),
+                "source_evidence_span": str(raw_error.get(
+                    "source_evidence_span") or "")[:300],
                 "source_evidence": str(raw_error.get("source_evidence") or "")[:500],
             },
         })
@@ -577,18 +600,20 @@ def validate_synthetic_cases(
             case.get("source_segment_id") or ""))
         source_text = str(case.get("source_text") or "")
         trigger = str(case.get("difficulty", {}).get("trigger") or "")
-        source_evidence = str(case.get("error", {}).get("source_evidence") or "")
+        source_evidence_span = str(case.get("error", {}).get(
+            "source_evidence_span") or "")
+        canonical_source = str((canonical_segment or {}).get("source") or "")
         requirements = {
             "real_source_exists": bool(canonical_segment)
-            and str(canonical_segment.get("source") or "") == source_text,
+            and bool(source_text) and source_text in canonical_source,
             "opportunity_grounded": bool(trigger and case.get(
                 "difficulty", {}).get("reason"))
             and trigger.casefold() in source_text.casefold(),
             "baseline_plausible": case.get("baseline_plausibility", {}).get(
                 "status") == "plausible",
             "diagnosis_evidence_backed": checks["diagnosis_grounding"] == "confirmed"
-            and bool(source_evidence)
-            and source_evidence.casefold() in source_text.casefold(),
+            and bool(source_evidence_span)
+            and source_evidence_span.casefold() in source_text.casefold(),
             "error_confirmed": checks["error_materiality"] == "confirmed"
             and case.get("error", {}).get("materiality") in {"major", "moderate"}
             and bool(case.get("error", {}).get("diagnosis")),

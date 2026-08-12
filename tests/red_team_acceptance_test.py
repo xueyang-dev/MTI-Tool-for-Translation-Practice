@@ -694,7 +694,8 @@ def test_external_evidence_attack_and_prompt_scan():
     for line in hits.splitlines():
         if "PRESERVE_RE" in line or "example.com" in line and "系统" not in line:
             continue
-        if "https://api.deepseek.com" in line:
+        if any(endpoint in line for endpoint in (
+                "https://api.deepseek.com", "https://opencode.ai/zen/go/v1")):
             continue
         prompt_files.append(line)
     assert not prompt_files, f"发现可疑 URL 引用：{prompt_files}"

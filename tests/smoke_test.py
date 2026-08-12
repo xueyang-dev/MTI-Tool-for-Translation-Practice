@@ -16,6 +16,36 @@ import core
 from docx import Document
 
 
+def test_opencode_go_provider_route():
+    calls = []
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            calls.append(kwargs)
+            message = type("Message", (), {"content": '{"ok":true}'})()
+            choice = type("Choice", (), {"message": message})()
+            return type("Response", (), {"choices": [choice]})()
+
+    class FakeOpenAI:
+        def __init__(self, **kwargs):
+            calls.append(kwargs)
+            self.chat = type("Chat", (), {"completions": FakeCompletions()})()
+
+    original = core.OpenAI
+    core.OpenAI = FakeOpenAI
+    try:
+        result = core.call_llm(
+            "OpenCode Go", "secret", "deepseek-v4-flash", "system", "user")
+    finally:
+        core.OpenAI = original
+    assert result == '{"ok":true}'
+    assert calls[0]["base_url"] == "https://opencode.ai/zen/go/v1"
+    assert calls[0]["http_client"]._trust_env is False
+    assert calls[0]["http_client"].is_closed
+    assert calls[1]["model"] == "deepseek-v4-flash"
+    print("  ✓ OpenCode Go provider route")
+
+
 def test_parse_json_array():
     assert core.parse_json_array('["a", "b"]') == ["a", "b"]
     assert core.parse_json_array('```json\n["a"]\n```') == ["a"]
@@ -861,6 +891,7 @@ def test_missing_source():
 
 if __name__ == "__main__":
     print("core 冒烟测试：")
+    test_opencode_go_provider_route()
     test_parse_json_array()
     test_misc_helpers()
     test_parse_translation_array()

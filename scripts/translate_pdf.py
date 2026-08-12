@@ -1,7 +1,7 @@
 """命令行翻译器：使用 MTI-Tool 核心流水线翻译 PDF/DOCX（含批次翻译、确定性检查、独立审校、翻译记忆）。
 
 用法：
-  # 环境变量提供 API Key（DeepSeek/OpenAI/Gemini 任一）
+  # 环境变量提供 API Key（DeepSeek/OpenCode Go/OpenAI/Gemini 任一）
   export MTI_API_KEY=sk-xxx
   # 翻译整个文档
   python scripts/translate_pdf.py "文档.pdf" --target-lang 简体中文
@@ -32,6 +32,7 @@ import core
 def resolve_key_and_model(provider, model):
     env_keys = {
         "DeepSeek": ("MTI_API_KEY", "DEEPSEEK_API_KEY"),
+        "OpenCode Go": ("MTI_API_KEY", "OPENCODE_GO_API_KEY"),
         "OpenAI": ("MTI_API_KEY", "OPENAI_API_KEY"),
         "Gemini": ("MTI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"),
     }
@@ -41,7 +42,8 @@ def resolve_key_and_model(provider, model):
         raise SystemExit(
             f"未找到 {provider} API Key。请先设置环境变量，例如：\n"
             f"  export MTI_API_KEY=你的Key\n"
-            f"（或 DEEPSEEK_API_KEY / OPENAI_API_KEY / GEMINI_API_KEY）")
+            f"（或 DEEPSEEK_API_KEY / OPENCODE_GO_API_KEY / OPENAI_API_KEY / "
+            f"GEMINI_API_KEY）")
     if not model:
         model = core.MODELS[provider][0]
     return key, model
@@ -72,7 +74,7 @@ def load_document(path, pages=None):
 def main():
     ap = argparse.ArgumentParser(description="MTI-Tool 命令行翻译器")
     ap.add_argument("document", help="PDF 或 DOCX 路径")
-    ap.add_argument("--provider", default="DeepSeek", choices=["DeepSeek", "OpenAI", "Gemini"])
+    ap.add_argument("--provider", default="OpenCode Go", choices=list(core.MODELS))
     ap.add_argument("--model", default=None, help="默认取该 provider 第一个模型")
     ap.add_argument("--target-lang", default="简体中文",
                     choices=["简体中文", "English", "日本語"])

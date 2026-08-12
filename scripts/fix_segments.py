@@ -1,7 +1,7 @@
 """定点重译任务中的问题段落（截断/审校 blocking），并清洗翻译记忆。
 
 用法（项目根目录）：
-    DEEPSEEK_API_KEY=... .venv/bin/python scripts/fix_segments.py --job <job_id>
+    OPENCODE_GO_API_KEY=... .venv/bin/python scripts/fix_segments.py --job <job_id>
 """
 import argparse
 import json
@@ -19,14 +19,17 @@ import core
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--job", required=True)
-    ap.add_argument("--provider", default="DeepSeek")
-    ap.add_argument("--model", default="deepseek-chat")
+    ap.add_argument("--provider", default="OpenCode Go")
+    ap.add_argument("--model", default="glm-5.2")
     ap.add_argument("--target-lang", default="简体中文")
     args = ap.parse_args()
 
-    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    env_key = {"OpenCode Go": "OPENCODE_GO_API_KEY",
+               "DeepSeek": "DEEPSEEK_API_KEY", "OpenAI": "OPENAI_API_KEY",
+               "Gemini": "GEMINI_API_KEY"}.get(args.provider, "MTI_API_KEY")
+    api_key = os.environ.get(env_key) or os.environ.get("MTI_API_KEY")
     if not api_key:
-        sys.exit("请设置 DEEPSEEK_API_KEY")
+        sys.exit(f"请设置 {env_key} 或 MTI_API_KEY")
 
     # 1) 清洗翻译记忆：剔除截断/不完整译文（备份原文件）
     tm_file = core.tm_path()

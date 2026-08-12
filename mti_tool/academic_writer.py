@@ -1910,9 +1910,9 @@ def run_academic_pipeline(
         if synthetic_policy not in {"authentic_only", "synthetic_only", "mixed"}:
             synthetic_policy = "mixed"
         synthetic_enabled = synthetic_policy != "authentic_only"
-        max_scan = max(1, int(settings.get("synthetic_max_scan") or 48))
+        max_scan = max(1, int(settings.get("synthetic_max_scan") or 16))
         max_opportunities = max(1, int(settings.get(
-            "synthetic_max_opportunities") or 12))
+            "synthetic_max_opportunities") or 8))
 
         stage("synthetic_opportunities", "【学术写作】挖掘合成对比案例的翻译难点...")
         synthetic_opportunity_dep = academic_evidence.stable_hash({

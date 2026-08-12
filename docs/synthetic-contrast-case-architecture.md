@@ -107,14 +107,15 @@ case，方法/局限节另依赖 synthetic 是否启用。因此 synthetic 候�
 
 ## 真实项目运行状态
 
-已对 `ec100d8686d3891e` 启动隔离运行。系统扫描 273 个真实源文段，确定性预筛保留 48 段
-交给 Difficulty Analyzer；DeepSeek 随后返回 `402 Insufficient Balance`。最新版评估正确记录
-`status=failed` 并以非零状态退出，因此本次的“0 个 opportunity”是 provider 不可用，不是
-语料没有翻译难点，也不是 eligibility gate 的学术结论。
+2026-08-12 使用 `OpenCode Go / GLM-5.2` 对 `ec100d8686d3891e` 完成隔离运行。系统扫描
+273 个真实源文段，确定性预筛保留 16 段交给 Difficulty Analyzer，得到 3 个 grounded
+opportunity 和 3 个模拟初译。1 个基线被独立诊断为本来就成立，1 个未通过 plausibility，
+二者均未进入优化；SC-0141 通过完整门禁并入选。
 
-失败运行仍证明两项隔离条件：历史 `state.json` 前后保持不变；真实案例 0209、0272 原样
-保留。Top synthetic cases、有效拒绝分布和 mixed-case 学术比较必须在 provider 恢复后重新运行，
-当前不能据此生成或推断。
+最终 mixed selection 为真实修订案例 0209、0272 加合成对比案例 SC-0141。SC-0141 展示
+`What do you need that Ben-Gurion for?` 从中性信息问句“你为什么需要……”到带有驳斥意味的
+“你要……干什么”的语用修复。该案例只能说明一种经验证的合理失败模式，不代表作者历史初译，
+也不支持人类错误频率结论。历史 `state.json` 前后摘要一致，真实案例与生产 TM 均未改变。
 
-2026-08-12 的最终重试仍返回 `402 Insufficient Balance`。评估报告会把该错误显示为运行失败，
-并明确说明“零 opportunity”不是语料或资格判断；不会把未发生的 eligibility 决策写成“无拒绝”。
+更早的 DeepSeek 运行因 `402 Insufficient Balance` 失败；OpenCode Go 的 DeepSeek V4 Flash
+又因长时间无响应被放弃。它们保留为 provider 运行审计，不作为语料或 eligibility 结论。

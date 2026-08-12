@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import argparse
 import copy
+import getpass
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,9 +35,9 @@ def main() -> int:
     parser.add_argument("--job-id", required=True)
     parser.add_argument("--theory", default="功能对等理论")
     parser.add_argument("--research-questions", action="append", default=[])
-    parser.add_argument("--provider", default="DeepSeek")
-    parser.add_argument("--api-key", required=True)
-    parser.add_argument("--model", default="deepseek-chat")
+    parser.add_argument("--provider", default="OpenCode Go")
+    parser.add_argument("--api-key", default="")
+    parser.add_argument("--model", default="glm-5.2")
     parser.add_argument("--out-dir", required=True)
     parser.add_argument("--resume", action="store_true",
                         help="Resume from an existing state-eval.json in out-dir "
@@ -44,6 +46,13 @@ def main() -> int:
     parser.add_argument("--tag", default="eval")
     parser.add_argument("--quality-rounds", type=int, default=1)
     args = parser.parse_args()
+    env_key = {"OpenCode Go": "OPENCODE_GO_API_KEY",
+               "DeepSeek": "DEEPSEEK_API_KEY", "OpenAI": "OPENAI_API_KEY",
+               "Gemini": "GEMINI_API_KEY"}.get(args.provider, "MTI_API_KEY")
+    args.api_key = args.api_key or os.environ.get(env_key) or os.environ.get(
+        "MTI_API_KEY") or getpass.getpass("Provider API key: ")
+    if not args.api_key:
+        parser.error("API key is required")
 
     source_state_path = Path("outputs") / args.job_id / "state.json"
     if not source_state_path.is_file():
