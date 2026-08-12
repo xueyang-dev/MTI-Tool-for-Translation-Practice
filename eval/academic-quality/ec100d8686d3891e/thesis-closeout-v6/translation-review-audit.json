@@ -3,7 +3,7 @@
   "job_id": "ec100d8686d3891e",
   "generated_at": "2026-08-12T11:19:52+00:00",
   "pre_review_state_sha256": "9ff6cd1fac9663af394a772cc99842be789c8e20085fb1fdba184db81bae2e1f",
-  "post_review_state_sha256": "db8b83f70129748244cda20021e18109e2dda859b76c18a081137bd7efeb5524",
+  "post_review_state_sha256": "af99941920031e87ddfa6e71c3ae96e9de3fddbf98b39667338b3e0a1a412bc3",
   "historical_initial_targets_modified": false,
   "original_actionable_findings": 32,
   "original_actionable_findings_resolved": 32,
@@ -219,9 +219,11 @@
   ],
   "unreviewed_after": [],
   "changed_segment_indexes": [
+    1,
     4,
     5,
     7,
+    14,
     56,
     57,
     59,
@@ -229,6 +231,8 @@
     81,
     82,
     83,
+    93,
+    101,
     103,
     119,
     139,
@@ -242,6 +246,7 @@
     155,
     156,
     170,
+    201,
     209,
     216,
     233,
@@ -251,9 +256,14 @@
     239
   ],
   "system_repair_segments": [
+    1,
+    14,
+    93,
+    101,
     142,
     144,
     145,
+    201,
     209,
     236,
     239
@@ -455,6 +465,9 @@
     ],
     "content_hash": "dea40b24ab5ca609eb201e00bbbe9fc721572a0c10ea7a286e1f26e1a90059f4"
   },
-  "content_hash": "f8d713be2a020d510aa1413196ae33dfc5d22f97e89e10ff9646549d7e66cba6",
-  "system_actions_separated_from_human_actions": true
+  "content_hash": "392358fc6d1fb103dd24f1de83386c670d47fede7e6b5891c33ee745caf4254b",
+  "system_actions_separated_from_human_actions": true,
+  "supplemental_alignment_repairs": [
+    14
+  ]
 }

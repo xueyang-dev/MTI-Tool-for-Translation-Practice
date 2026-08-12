@@ -349,19 +349,39 @@ def conclusion_traceability(
     out: List[Dict[str, Any]] = []
     for section_id in conclusion_ids:
         section = by_id.get(section_id) or {}
-        for sentence in _SENT_SPLIT.split(section.get("content") or ""):
-            sentence = _norm(sentence)
-            if len(sentence) < 12:
+        content = section.get("content") or ""
+        for paragraph in re.split(r"\n\s*\n", content):
+            if re.match(r"^#{1,6}\s+", paragraph.strip()):
                 continue
-            traceable = bool(_CLAIM_MARKER.search(sentence) or _RQ_MARKER.search(sentence)
-                             or _SEG_REF.search(sentence) or _CITE_MARKER.search(sentence)
-                             or _STAT_MARKER.search(sentence) or _LIT_CLAIM_MARKER.search(sentence))
-            out.append({
-                "section_id": section_id,
-                "sentence": sentence[:160],
-                "traceable_to_evidence": traceable,
-                "needs_semantic_check": not traceable,
-            })
+            paragraph_marked = any(pattern.search(paragraph) for pattern in (
+                _CLAIM_MARKER, _RQ_MARKER, _SEG_REF, _CITE_MARKER,
+                _STAT_MARKER, _LIT_CLAIM_MARKER))
+            # Protect provenance comments before splitting on punctuation. IDs
+            # legitimately contain periods and must remain atomic.
+            protected: Dict[str, str] = {}
+            def protect(match: re.Match) -> str:
+                token = f"TRACEPROVENANCE{len(protected)}TOKEN"
+                protected[token] = match.group(0)
+                return token
+            protected_paragraph = re.sub(
+                r"<!--.*?-->", protect, paragraph, flags=re.DOTALL)
+            for sentence in _SENT_SPLIT.split(protected_paragraph):
+                for token, marker in protected.items():
+                    sentence = sentence.replace(token, marker)
+                sentence = _norm(sentence)
+                if len(sentence) < 12:
+                    continue
+                traceable = paragraph_marked or bool(
+                    _CLAIM_MARKER.search(sentence) or _RQ_MARKER.search(sentence)
+                    or _SEG_REF.search(sentence) or _CITE_MARKER.search(sentence)
+                    or _STAT_MARKER.search(sentence)
+                    or _LIT_CLAIM_MARKER.search(sentence))
+                out.append({
+                    "section_id": section_id,
+                    "sentence": sentence[:160],
+                    "traceable_to_evidence": traceable,
+                    "needs_semantic_check": not traceable,
+                })
     return out
 
 

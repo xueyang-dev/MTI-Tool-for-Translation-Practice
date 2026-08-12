@@ -149,6 +149,38 @@ def test_single_chapter_is_not_all_treated_as_conclusion():
     print("  ✓ isolated chapter is not wholly classified as a conclusion")
 
 
+def test_conclusion_markers_survive_sentence_splitting():
+    traces = academic_quality.conclusion_traceability(
+        {"sections": [
+            {"section_id": "3", "title": "案例分析"},
+            {"section_id": "4", "title": "总结与反思"},
+        ]},
+        [{"section_id": "3", "content": "分析。"}, {
+            "section_id": "4",
+            "content": "### 4.1 研究问题回应\n\n"
+            "<!--rq:RQ1--><!--claim:C1-->该结论由第一项研究问题和论点支持。",
+        }])
+    assert len(traces) == 1
+    assert traces[0]["traceable_to_evidence"]
+    assert "<!--rq:RQ1-->" in traces[0]["sentence"]
+    print("  ✓ conclusion provenance markers survive sentence splitting")
+
+
+def test_conclusion_trace_inherits_within_paragraph_only():
+    traces = academic_quality.conclusion_traceability(
+        {"sections": [
+            {"section_id": "3", "title": "案例分析"},
+            {"section_id": "4", "title": "总结与反思"},
+        ]},
+        [{"section_id": "3", "content": "分析。"}, {
+            "section_id": "4", "content": (
+                "<!--claim:C1-->第一句有论点标记。第二句沿用同一段落中的完整论证依据。\n\n"
+                "新段提出了另一项没有证据标记的结论。"),
+        }])
+    assert [item["traceable_to_evidence"] for item in traces] == [True, True, False]
+    print("  ✓ conclusion trace inherits within one paragraph, never across paragraphs")
+
+
 def _quality_inputs(weak_case: str, strong_case: str):
     state = _state()
     evidence = academic_evidence.build_academic_evidence(state, JOB, max_candidates=9)
@@ -345,6 +377,8 @@ if __name__ == "__main__":
     test_evidence_utilization_and_cross_section()
     test_quality_depth_does_not_replace_top_level_dimensions()
     test_single_chapter_is_not_all_treated_as_conclusion()
+    test_conclusion_markers_survive_sentence_splitting()
+    test_conclusion_trace_inherits_within_paragraph_only()
     test_replacement_selection()
     test_replacement_prefers_evidence_richness_over_mining_score()
     test_end_to_end_quality_repair_with_case_replacement()

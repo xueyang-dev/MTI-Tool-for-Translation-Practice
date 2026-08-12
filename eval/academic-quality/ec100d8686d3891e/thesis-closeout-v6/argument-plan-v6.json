@@ -1,0 +1,178 @@
+{
+  "schema_version": "argument-planner-v2",
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim": "本报告的质量判断以源文、初译、终译和过程记录的可检验比较为基础，而不以脱离文本的总体印象代替分析。",
+      "research_question": "RQ3",
+      "project_evidence": [
+        "metric:total_segments"
+      ],
+      "literature_claims": [
+        "LC-001",
+        "LC-002"
+      ],
+      "literature_evidence": [
+        "LE-e5ded84745ab50ba",
+        "LE-7570ee4c4bb53468"
+      ],
+      "human_author_evidence": [],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "high",
+      "planned_sections": [
+        "1"
+      ],
+      "reasoning": "项目保存完整段落证据；House文献支持把语言描述、解释和评价分开。",
+      "counterargument": "可检验不等于结论必然正确，仍需导师判断理论解释是否充分。"
+    },
+    {
+      "claim_id": "C2",
+      "claim": "源文本的文学性军事回忆叙事要求把人物关系意象、文化对象身份和回指形式放入各自语篇链中分析。",
+      "research_question": "RQ1",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0139",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0272"
+      ],
+      "literature_claims": [
+        "LC-004",
+        "LC-007"
+      ],
+      "literature_evidence": [
+        "LE-3998419e29ec39a1",
+        "LE-0009ea2f3fde992f"
+      ],
+      "human_author_evidence": [],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "3"
+      ],
+      "reasoning": "三案例覆盖隐喻、文化专名/人称回指和元语言回指；文献提供语篇分析维度。",
+      "counterargument": "三案例不能穷尽全书所有文本特征。"
+    },
+    {
+      "claim_id": "C3",
+      "claim": "项目的可追溯工作流能够区分当前待处理问题、历史问题和系统完整性修复，从而为正式案例资格提供边界。",
+      "research_question": "RQ3",
+      "project_evidence": [
+        "metric:reviewed_segments",
+        "metric:actionable_findings",
+        "metric:recorded_actionable_findings",
+        "metric:tm_reuse_count"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "human_author_evidence": [],
+      "support_category": "project_evidence_only",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "high",
+      "planned_sections": [
+        "2"
+      ],
+      "reasoning": "这些数字和状态均由最终项目证据确定性重算。",
+      "counterargument": "流程记录能证明发生了什么，不能自动证明每一项语言判断最佳。"
+    },
+    {
+      "claim_id": "C4",
+      "claim": "案例0139的修订同时处理汉语叙事节奏和反复出现的手部意象，使人物关系仍可在语篇链中被识别。",
+      "research_question": "RQ2",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0139"
+      ],
+      "literature_claims": [
+        "LC-007",
+        "LC-009"
+      ],
+      "literature_evidence": [
+        "LE-0009ea2f3fde992f",
+        "LE-e7bd2ad9342a7490"
+      ],
+      "human_author_evidence": [],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "3"
+      ],
+      "reasoning": "初译、终译、审校问题和修复说明均已记录；文献只提供叙事视角分析维度。",
+      "counterargument": "没有作者回答，不能把终译文本效果写成译者当时的心理动机。"
+    },
+    {
+      "claim_id": "C5",
+      "claim": "案例0233的修订解决了影片名误译和明确主语泛化两个不同层次的问题，恢复文化对象身份和局部指称链。",
+      "research_question": "RQ2",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0233"
+      ],
+      "literature_claims": [
+        "LC-004",
+        "LC-008"
+      ],
+      "literature_evidence": [
+        "LE-d74ce265282f2156",
+        "LE-79875e659daeb23e"
+      ],
+      "human_author_evidence": [],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "3"
+      ],
+      "reasoning": "片名和主语差异可逐字比较；文献支持在语篇链中分析指称与视角标记。",
+      "counterargument": "读者效果没有在本项目中实验测量，只能表述为文本层解释。"
+    },
+    {
+      "claim_id": "C6",
+      "claim": "案例0272把目标语中不成立的计字回指改为整句回指，避免源语计词单位机械迁移到汉语。",
+      "research_question": "RQ2",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0272"
+      ],
+      "literature_claims": [
+        "LC-004"
+      ],
+      "literature_evidence": [
+        "LE-3998419e29ec39a1"
+      ],
+      "human_author_evidence": [],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "3"
+      ],
+      "reasoning": "可观察差异只有“这五个字”至“这句话”；指称文献用于限定分析方法。",
+      "counterargument": "没有同期审校记录或修订理由，不能宣称已恢复历史动机。"
+    },
+    {
+      "claim_id": "C7",
+      "claim": "三案例能够回答本项目的具体研究问题，但单一项目、三项核心修订和跨语言文献不能支持普遍发生率或读者反应结论。",
+      "research_question": "RQ3",
+      "project_evidence": [
+        "metric:revision_cases_academically_eligible"
+      ],
+      "literature_claims": [
+        "LC-006"
+      ],
+      "literature_evidence": [
+        "LE-e628d716576bbbfa"
+      ],
+      "human_author_evidence": [],
+      "support_category": "mixed_evidence",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "high",
+      "planned_sections": [
+        "4"
+      ],
+      "reasoning": "宏观结构研究明确限制单一指标外推，本项目也没有读者实验或作者回答。",
+      "counterargument": "局限不否定案例的项目内解释价值。"
+    }
+  ],
+  "planner_fallback": false,
+  "rejected_source_only_support": 0,
+  "content_hash": "49d7e77aac9a273fa0171f3abecd5bdff57df338f6b60fc980d9cd303f3155c5"
+}

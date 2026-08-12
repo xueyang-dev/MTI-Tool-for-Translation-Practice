@@ -28,7 +28,7 @@ def main() -> None:
                 for x in evidence["project_evidence"]["segments"]}
     assert all(academic_evidence.is_eligible_revision_case(segments[i])
                for i in selected)
-    for index in (142, 144, 145, 209, 236, 239):
+    for index in (1, 14, 93, 101, 142, 144, 145, 201, 209, 236, 239):
         assert segments[index]["integrity_flags"]
         assert not academic_evidence.is_eligible_revision_case(segments[index])
     assert all(not segments[i]["process_evidence"]["human_actions"]
@@ -38,7 +38,12 @@ def main() -> None:
     assert closeout["formal_case_baseline"]["status"] == \
         "sufficient_revision_cases"
     assert closeout["human_evidence"]["answers_recorded"] == 0
-    assert closeout["human_evidence"]["phase_b_started"] is False
+    # The author-question path was withdrawn, but the later explicitly
+    # requested system-analysis Phase B has completed without human evidence.
+    assert closeout["human_evidence"]["phase_b_started"] is True
+    assert closeout["phase_b"]["human_author_evidence_entries_used"] == 0
+    assert closeout["phase_b"][
+        "system_actions_presented_as_author_intention"] is False
     print("closeout case baseline: PASS")
 
 

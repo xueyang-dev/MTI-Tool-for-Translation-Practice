@@ -288,9 +288,15 @@
     },
     {
       "source": "ZE’EV RAZ",
-      "target": "天空曾属于我们",
+      "target": "泽夫·拉兹",
       "reviewed": true,
-      "from_tm": false
+      "from_tm": false,
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史终译把作者名ZE’EV RAZ误写成书名语义。"
+        }
+      ]
     },
     {
       "source": "Copyright © 2025 Ze’ev Raz",
@@ -366,9 +372,15 @@
     },
     {
       "source": "Riot in Cell Block 11",
-      "target": "11号牢房的暴动",
+      "target": "牢狱大暴动",
       "reviewed": true,
-      "from_tm": false
+      "from_tm": false,
+      "integrity_flags": [
+        {
+          "type": "system_terminology_consistency_repair",
+          "reason": "章节标题与正文中同名影片的已核验译名不一致；统一为《牢狱大暴动》。"
+        }
+      ]
     },
     {
       "source": "And We Shall Remember Them All",
@@ -1011,12 +1023,18 @@
     },
     {
       "source": "All at once, everything falls into place and aligns.",
-      "target": "卡梅尔山脊在谷地定居点的灯光映衬下，呈现出剪影般的轮廓。",
+      "target": "刹那间，一切都各就其位，彼此对准。",
       "initial_target": "卡梅尔山脊在谷地定居点的灯光映衬下，呈现出剪影般的轮廓。",
       "reviewed": true,
-      "from_tm": true,
+      "from_tm": false,
       "glossary_entry_ids": [],
-      "glossary_hash_used": null
+      "glossary_hash_used": null,
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译和终译均复制0092内容，与0093源文不对应。"
+        }
+      ]
     },
     {
       "source": "I speak with the control tower, and descend with the wheels down.",
@@ -1083,12 +1101,18 @@
     },
     {
       "source": "In a war, you’re allowed to die.",
-      "target": "正如我们在空军中所说：",
+      "target": "战争中，人可以死。",
       "initial_target": "正如我们在空军中所说：",
       "reviewed": true,
-      "from_tm": true,
+      "from_tm": false,
       "glossary_entry_ids": [],
-      "glossary_hash_used": null
+      "glossary_hash_used": null,
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译和终译均复制0100内容，与0101源文不对应。"
+        }
+      ]
     },
     {
       "source": "A LOTTERY TICKET IN AFULA",
@@ -2029,12 +2053,18 @@
     },
     {
       "source": "My phone rings.",
-      "target": "弹匣已经空了。基列山丘上方的地平线开始泛白。乌里和整个小队消失得无影无踪，仿佛从未存在过。我们已不再是十九岁。",
+      "target": "我的电话响了。",
       "initial_target": "弹匣已经空了。基列山丘上方的地平线开始泛白。乌里和整个小队消失得无影无踪，仿佛从未存在过。我们已不再是十九岁。",
       "reviewed": true,
-      "from_tm": true,
+      "from_tm": false,
       "glossary_entry_ids": [],
-      "glossary_hash_used": null
+      "glossary_hash_used": null,
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译和终译均复制0200内容，与0201源文不对应。"
+        }
+      ]
     },
     {
       "source": "On the line is a woman from IDF Radio. It should not be legal to sound so young.",
@@ -7322,9 +7352,11 @@
       215
     ],
     "translation_targets_changed": [
+      1,
       4,
       5,
       7,
+      14,
       56,
       57,
       59,
@@ -7332,6 +7364,8 @@
       81,
       82,
       83,
+      93,
+      101,
       103,
       119,
       139,
@@ -7345,6 +7379,7 @@
       155,
       156,
       170,
+      201,
       209,
       216,
       233,
@@ -7354,15 +7389,23 @@
       239
     ],
     "system_repair_segments": [
+      1,
+      14,
+      93,
+      101,
       142,
       144,
       145,
+      201,
       209,
       236,
       239
     ],
     "historical_initial_targets_modified": false,
-    "system_actions_separated": true
+    "system_actions_separated": true,
+    "supplemental_alignment_repairs": [
+      14
+    ]
   },
   "system_actions": [
     {
@@ -7643,6 +7686,41 @@
       "action": "system_alignment_fixed",
       "note": "历史初译和终译均复制0238内容，与0239源文不对应。",
       "timestamp": "2026-08-12T11:19:52+00:00",
+      "actor": "system_academic_review"
+    },
+    {
+      "finding_id": "segment:1",
+      "action": "system_alignment_fixed",
+      "note": "历史终译把作者名ZE’EV RAZ误写成书名语义。",
+      "timestamp": "2026-08-12T11:38:08+00:00",
+      "actor": "system_academic_review"
+    },
+    {
+      "finding_id": "segment:93",
+      "action": "system_alignment_fixed",
+      "note": "历史初译和终译均复制0092内容，与0093源文不对应。",
+      "timestamp": "2026-08-12T11:38:08+00:00",
+      "actor": "system_academic_review"
+    },
+    {
+      "finding_id": "segment:101",
+      "action": "system_alignment_fixed",
+      "note": "历史初译和终译均复制0100内容，与0101源文不对应。",
+      "timestamp": "2026-08-12T11:38:08+00:00",
+      "actor": "system_academic_review"
+    },
+    {
+      "finding_id": "segment:201",
+      "action": "system_alignment_fixed",
+      "note": "历史初译和终译均复制0200内容，与0201源文不对应。",
+      "timestamp": "2026-08-12T11:38:08+00:00",
+      "actor": "system_academic_review"
+    },
+    {
+      "finding_id": "segment:14",
+      "action": "system_alignment_fixed",
+      "note": "章节标题与正文中同名影片的已核验译名不一致；统一为《牢狱大暴动》。",
+      "timestamp": "2026-08-12T13:18:18+00:00",
       "actor": "system_academic_review"
     }
   ]

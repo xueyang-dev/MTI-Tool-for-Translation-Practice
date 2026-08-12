@@ -29,9 +29,11 @@ ACTOR = "system_academic_review"
 
 
 TARGET_REPAIRS: dict[int, str] = {
+    1: "泽夫·拉兹",
     4: "希伯来文译者：萨拉·马吉尼",
     5: "编辑：埃文·戈登",
     7: "献给祖母萨拉和祖父雅科夫",
+    14: "牢狱大暴动",
     56: "“接下来就靠你自己了。”我通过只有我和他能听见的无线电频率告诉他。",
     57: "他左翼尖端的红灯慢慢从我眼前飘远，一切正如应有的那样。真是个飞行员。太棒了。",
     59: "八千英尺，三百二十节，航向285度，地平线稳定。这该死的“神秘”式飞机的地平仪。就连“马吉斯特”教练机的人工地平仪都比它强。",
@@ -39,6 +41,8 @@ TARGET_REPAIRS: dict[int, str] = {
     81: "飞机正平缓左转，机头恰好位于地平线上。",
     82: "我陷入了空间定向障碍，沙乌尔正坐在后座舱里。",
     83: "“我来接管！”他立即对我说。",
+    93: "刹那间，一切都各就其位，彼此对准。",
+    101: "战争中，人可以死。",
     103: "我们在基利波山对面长大，那座山仿佛就是世界的尽头。我们看着努里斯、马扎尔和扎林几个村庄的废墟渐渐消失，努里特和伊兹雷尔村取而代之。",
     119: "礼赞困惑，谴责笃定",
     139: "那时，父亲还没有盖房子，仍在修理机器。即便当时，我想自己已经隐约意识到：他会做一些我永远也做不到的事。多年后，我请他教我焊接。他仍用一贯的口吻答道：“学那个干什么？”又一次避开了我伸向他的手。",
@@ -51,6 +55,7 @@ TARGET_REPAIRS: dict[int, str] = {
     155: "我们手牵着手，沿大家称作“斜坡”的坡道向下走，寻找枣子。",
     156: "凡是在那条旱谷一侧岸边长大的人，都熟悉那里的玄武岩，以及结着橙色果实的多刺枣树。",
     170: "我们当时十九岁。正值夏天，或是夏末。金鱼草开着白花，茴香开着黄花。队伍中一个戴针织基帕帽的人告诉我们，茴香叶可以吃；尝起来果然不错——有茴芹味。",
+    201: "我的电话响了。",
     209: "牢狱大暴动",
     216: "归途中，阿莫斯唱起《为我漂泊的民族建立一个国家》《加利利的特尔海》和《星期五晚上我总是没衣服穿》。女孩们跟着他唱，有几个男孩也加入了。",
     233: "路上，阿莫斯说海法有两部电影可看——皇宫影院放《热情似火》，多米诺影院放《牢狱大暴动》。女孩们想去皇宫，我们想去多米诺。投票结果打成平手——十一个女孩对十一个男孩。他低声念叨：“皇宫，皇宫。”阿莫斯说，既然平票，就由他决定：去多米诺。有人说：“玛丽莲·梦露。”阿莫斯回答：“要是碧姬·芭铎还差不多……”诺姆又加了一句：“或者罗妮·霍夫纳。”但他坐在卡车第二排最那头，她没有听见。",
@@ -65,6 +70,7 @@ REPAIR_NOTES: dict[int, str] = {
     4: "将版权页译者姓名转写为中文，清除残留英文。",
     5: "将编辑姓名转写为中文，清除残留英文。",
     7: "调整题献语中文语序并统一姓名转写。",
+    14: "将同名章节标题统一为已核验影片译名《牢狱大暴动》。",
     56: "按单飞放手语境改为自然中文表达。",
     57: "恢复缓慢飘离的动态并收紧叙事评价。",
     59: "补足航向单位并统一机型和仪表术语。",
@@ -90,6 +96,22 @@ REPAIR_NOTES: dict[int, str] = {
 
 
 SYSTEM_FLAGS: dict[int, list[dict[str, str]]] = {
+    1: [{
+        "type": "system_alignment_repair",
+        "reason": "历史终译把作者名ZE’EV RAZ误写成书名语义。",
+    }],
+    14: [{
+        "type": "system_terminology_consistency_repair",
+        "reason": "章节标题与正文中同名影片的已核验译名不一致；统一为《牢狱大暴动》。",
+    }],
+    93: [{
+        "type": "system_alignment_repair",
+        "reason": "历史初译和终译均复制0092内容，与0093源文不对应。",
+    }],
+    101: [{
+        "type": "system_alignment_repair",
+        "reason": "历史初译和终译均复制0100内容，与0101源文不对应。",
+    }],
     142: [{
         "type": "system_boundary_repair",
         "reason": "历史终译吞入0143内容；按PDF跨页边界恢复后仍不得作为真实修订案例。",
@@ -108,6 +130,10 @@ SYSTEM_FLAGS: dict[int, list[dict[str, str]]] = {
     209: [{
         "type": "system_alignment_repair",
         "reason": "历史初译来自0208，历史终译未翻译章节标题。",
+    }],
+    201: [{
+        "type": "system_alignment_repair",
+        "reason": "历史初译和终译均复制0200内容，与0201源文不对应。",
     }],
     236: [{
         "type": "system_alignment_repair",
@@ -209,6 +235,45 @@ def main() -> int:
             _write(manifest_path, manifest)
         if not reviewed_state_path.is_file():
             shutil.copyfile(state_path, reviewed_state_path)
+        supplemental_targets = {index: TARGET_REPAIRS[index]
+                                for index in (1, 14, 93, 101, 201)}
+        applied = []
+        for index, target in supplemental_targets.items():
+            pair = state["pairs"][index]
+            if pair.get("target") != target:
+                pair["target"] = target
+                pair["from_tm"] = False
+                pair["reviewed"] = True
+                pair["integrity_flags"] = SYSTEM_FLAGS[index]
+                _add_action(
+                    state, f"segment:{index}", "system_alignment_fixed",
+                    SYSTEM_FLAGS[index][0]["reason"],
+                    datetime.now(timezone.utc).isoformat(timespec="seconds"))
+                applied.append(index)
+        if applied:
+            state["closeout_translation_review"]["supplemental_alignment_repairs"] = applied
+            state["closeout_translation_review"]["translation_targets_changed"] = sorted(set(
+                state["closeout_translation_review"].get(
+                    "translation_targets_changed") or []) | set(applied))
+            state["closeout_translation_review"]["system_repair_segments"] = sorted(set(
+                state["closeout_translation_review"].get(
+                    "system_repair_segments") or []) | set(applied))
+            core.save_job_state(args.job_id, state)
+            shutil.copyfile(state_path, reviewed_state_path)
+            after_hash = _sha256(state_path)
+            audit = _load(audit_path)
+            audit["post_review_state_sha256"] = after_hash
+            audit["supplemental_alignment_repairs"] = applied
+            audit["changed_segment_indexes"] = sorted(set(
+                audit.get("changed_segment_indexes") or []) | set(applied))
+            audit["system_repair_segments"] = sorted(set(
+                audit.get("system_repair_segments") or []) | set(applied))
+            audit["content_hash"] = academic_evidence.stable_hash(
+                {k: v for k, v in audit.items() if k != "content_hash"})
+            _write(audit_path, audit)
+            manifest = _load(manifest_path)
+            manifest["state_sha256_after"] = after_hash
+            _write(manifest_path, manifest)
         print(out_dir)
         return 0
 
@@ -412,6 +477,8 @@ def main() -> int:
 
 ## 系统故障与论文案例边界
 
+- 0001、0093、0101、0201：全量对齐补遗发现作者名误译和相邻段复制；已恢复对应译文，永久排除。
+- 0014：章节标题与正文同名影片的已核验译名不一致；已统一为《牢狱大暴动》，永久排除。
 - 0142：历史终译吞入0143内容；已按PDF跨页断句修复，永久排除出真实修订案例。
 - 0144/0145：源句跨段且0144带模型JSON外壳；已清理并重切分，永久排除。
 - 0209：`RIOT IN CELL BLOCK 11`是源文真实标题；历史初译来自0208、历史终译未翻译。现译为《牢狱大暴动》，仍永久排除。

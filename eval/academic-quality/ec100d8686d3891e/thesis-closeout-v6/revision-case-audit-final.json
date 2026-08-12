@@ -1,9 +1,9 @@
 {
   "schema_version": "revision-case-audit-v3",
   "job_id": "ec100d8686d3891e",
-  "generated_at": "2026-08-12T11:31:43+00:00",
+  "generated_at": "2026-08-12T13:22:14+00:00",
   "state_source": "outputs/ec100d8686d3891e/state.json",
-  "state_sha256": "db8b83f70129748244cda20021e18109e2dda859b76c18a081137bd7efeb5524",
+  "state_sha256": "af99941920031e87ddfa6e71c3ae96e9de3fddbf98b39667338b3e0a1a412bc3",
   "eligibility_rule": "核心案例必须存在真实、有意义的初译至终译变化，且不得带有系统对齐、跨段污染或模型序列化完整性标记。",
   "shared_gate": "mti_tool.academic_evidence.is_eligible_revision_case",
   "statistics": {
@@ -17,24 +17,24 @@
     "recorded_actionable_findings": 34,
     "recorded_informational_findings": 35,
     "segments_with_initial_final_data": 237,
-    "unchanged_segments": 209,
-    "meaningfully_revised_segments": 28,
+    "unchanged_segments": 206,
+    "meaningfully_revised_segments": 31,
     "revision_cases_with_findings": 23,
     "revision_cases_with_repair_history": 23,
     "revision_cases_with_complete_repair_chains": 23,
     "revision_cases_academically_eligible": 22,
-    "repaired_segments": 28,
+    "repaired_segments": 31,
     "term_conflicts": 0,
-    "tm_reuse_count": 191,
+    "tm_reuse_count": 188,
     "issue_category_distribution": {
       "check": 11,
       "review": 24
     },
     "repair_category_distribution": {
-      "initial_final_changed": 28,
+      "initial_final_changed": 31,
       "suggested_target_recorded": 5,
       "human_action_recorded": 2,
-      "system_action_recorded": 40
+      "system_action_recorded": 45
     },
     "coverage_distribution": {
       "beginning": 91,
@@ -452,6 +452,56 @@
   ],
   "excluded_system_repairs": [
     {
+      "case_id": "seg-ec100d8686d3891e-0001",
+      "segment_index": 1,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史终译把作者名ZE’EV RAZ误写成书名语义。"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0014",
+      "segment_index": 14,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_terminology_consistency_repair",
+          "reason": "章节标题与正文中同名影片的已核验译名不一致；统一为《牢狱大暴动》。"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0093",
+      "segment_index": 93,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译和终译均复制0092内容，与0093源文不对应。"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0101",
+      "segment_index": 101,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译和终译均复制0100内容，与0101源文不对应。"
+        },
+        {
+          "type": "probable_adjacent_initial_target_overlap",
+          "adjacent_segment_id": "seg-ec100d8686d3891e-0100",
+          "position": "previous",
+          "contained_fraction": 1.0
+        }
+      ]
+    },
+    {
       "case_id": "seg-ec100d8686d3891e-0142",
       "segment_index": 142,
       "decision": "excluded_system_repair",
@@ -485,6 +535,17 @@
         {
           "type": "system_boundary_repair",
           "reason": "0144/0145的源句跨段存储，终译按相同边界重新切分。"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0201",
+      "segment_index": 201,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译和终译均复制0200内容，与0201源文不对应。"
         }
       ]
     },
@@ -532,5 +593,5 @@
   "human_author_evidence_used": false,
   "human_author_evidence_note": "作者问题已撤回；本轮只使用可观察文本差异、历史finding和独立记录的system_actions，不生成或推断译者心理意图。",
   "decision": "three_defensible_core_revision_cases",
-  "content_hash": "e1f1474363c06dbf4a7ad5844e9f0123e4fda0b108524466a931934234a2f5b2"
+  "content_hash": "190d95adfc7928084e23839b6308cf4ea1749c7739b6b410e8a1e23e493ae952"
 }
