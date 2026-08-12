@@ -43,8 +43,8 @@
       "revision_audit": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/revision-case-audit.json",
       "revision_selection": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/selected-cases.json",
       "synthetic_validation": "eval/academic-quality/ec100d8686d3891e/synthetic-contrast-opencode-go-glm52-20260812T022000Z/synthetic-case-validation.jsonl",
-      "human_questions": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/human-evidence-questions-target-cases.json"
-      ,"corrective_audit": "eval/academic-quality/ec100d8686d3891e/revision-system-analysis-20260812T095500Z/revision-case-audit.json"
+      "human_questions": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/human-evidence-questions-target-cases.json",
+      "corrective_audit": "eval/academic-quality/ec100d8686d3891e/revision-system-analysis-20260812T095500Z/revision-case-audit.json"
     }
   },
   "human_evidence": {
@@ -73,7 +73,7 @@
     {
       "stage": 4,
       "name": "可核验文献证据",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "stage": 5,
@@ -95,5 +95,21 @@
       "name": "完整论文装配",
       "status": "pending"
     }
-  ]
+  ],
+  "literature_evidence": {
+    "status": "grounded_phase2_ready",
+    "source_count": 6,
+    "peer_reviewed_source_count": 5,
+    "grounded_claim_count": 9,
+    "all_originals_acquired": true,
+    "phase_b_started": false,
+    "artifacts": {
+      "registry": "literature-registry.json",
+      "sources": "literature-sources.json",
+      "evidence": "literature-evidence.jsonl",
+      "claims": "literature-claims.jsonl",
+      "verification": "literature-source-verification.json",
+      "report": "literature-evidence-report.md"
+    }
+  }
 }

@@ -68,6 +68,27 @@ human action 只记录 0142、0209 曾重译，没有保存修改前后快照或
 `eval/academic-quality/ec100d8686d3891e/revision-system-analysis-20260812T095500Z/`，Phase B
 仍未启动。下一恢复路径是先处理真实翻译 findings，再以新保存的修订历史重新执行资格审计。
 
+## 真实项目文献证据基线（ec100d8686d3891e）
+
+论文收口目录 `eval/academic-quality/ec100d8686d3891e/thesis-closeout-v6/` 已建立真实文献
+证据包：6 个原始全文来源、9 条有边界的 Literature Claim。5 个来源为同行评审论文，
+1 个为 University of Leeds 机构库博士论文；全部来源均已取得本地 PDF，来源元数据由
+期刊/机构库页面、Crossref、Semantic Scholar 或 OpenAlex 交叉核对。逐条主张只绑定
+`source_text_verified` 页块，不使用 fixture、摘要转述或模型记忆。
+
+证据覆盖翻译评价方法、文学翻译的衔接与连贯、叙事视角及其读者解释效应。英匈、英阿
+和荷兰语实验结论只作为分析框架或机制证据，不得外推为英汉回忆录中的发生频率，也不能
+生成译者意图或本项目读者反应。规范来源、页块、主张、核验记录和检索报告分别见
+`literature-sources.json`、`literature-evidence.jsonl`、`literature-claims.jsonl`、
+`literature-source-verification.json` 与 `literature-evidence-report.md`。准备命令为：
+
+```bash
+.venv/bin/python scripts/prepare_closeout_literature.py
+```
+
+该命令只读取已取得的本地 PDF 并更新隔离收口目录，不修改历史翻译状态，也不启动
+Phase B。
+
 可用以下命令重复执行只读审计；它不会调用模型或写回历史项目状态：
 
 ```bash
