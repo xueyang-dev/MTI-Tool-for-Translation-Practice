@@ -6,10 +6,10 @@ from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional
 
 from .academic_evidence import has_meaningful_revision, literature_index, segment_index, stable_hash
-from . import case_analysis, literature_evidence, synthetic_cases
+from . import case_analysis, literature_evidence, synthetic_cases, thesis_constraints
 
 SCHEMA_VERSION = "academic-validation-v2"
-VALIDATOR_VERSION = "validator-v5"
+VALIDATOR_VERSION = "validator-v6"
 
 _SEGMENT_REF = re.compile(r"\[(seg-[A-Za-z0-9_-]+-\d{4,})\]")
 _QUOTE = re.compile(
@@ -53,6 +53,8 @@ _FORMAL_AUTHOR_YEAR = re.compile(
     r"\((?:19|20)\d{2}[a-z]?\)|\([A-Z][A-Za-z'’-]+(?:\s+et\s+al\.)?,\s*"
     r"(?:19|20)\d{2}[a-z]?\))"
 )
+_ENGLISH_WORD = re.compile(r"\b[A-Za-z]+(?:['’-][A-Za-z]+)?\b")
+_CJK_CHAR = re.compile(r"[\u3400-\u9fff]")
 
 
 def _norm(text: Any) -> str:
@@ -161,6 +163,30 @@ def _section_map(report_md: str, outline: Dict[str, Any]) -> Dict[str, str]:
     return out
 
 
+def _visible_prose(text: str) -> str:
+    """Remove evidence quotations and hidden markers before language checks."""
+    lines = [line for line in text.splitlines() if not line.lstrip().startswith(">")]
+    return re.sub(r"<!--.*?-->", "", "\n".join(lines), flags=re.DOTALL)
+
+
+def _has_english_prose_paragraph(text: str) -> bool:
+    """Flag sustained English exposition, not terms, titles or quoted evidence."""
+    visible = _visible_prose(text)
+    for line in visible.splitlines():
+        if line.lstrip().startswith("#"):
+            continue
+        english_words = len(_ENGLISH_WORD.findall(line))
+        cjk_chars = len(_CJK_CHAR.findall(line))
+        if english_words >= 12 and english_words > cjk_chars:
+            return True
+    for paragraph in re.split(r"\n\s*\n|\n(?=#{1,6}\s)", visible):
+        english_words = len(_ENGLISH_WORD.findall(paragraph))
+        cjk_chars = len(_CJK_CHAR.findall(paragraph))
+        if english_words >= 12 and english_words > cjk_chars:
+            return True
+    return False
+
+
 def validate_academic_report(
     report_md: str,
     evidence: Dict[str, Any],
@@ -197,6 +223,67 @@ def validate_academic_report(
 
     if not report_md.strip():
         issues.append(_issue("empty_report", "报告内容为空。"))
+
+    constraints = research_model.get("institutional_constraints") or \
+        outline.get("institutional_constraints") or {}
+    required_chapters = thesis_constraints.chapter_index(constraints)
+    required_ids = list((constraints.get("document_scope") or {}).get(
+        "body_chapters") or required_chapters)
+    outline_by_id = {str(x.get("section_id")): x for x in outline.get("sections", [])}
+    if required_chapters and list(outline_by_id) != required_ids:
+        issues.append(_issue(
+            "institutional_chapter_structure_mismatch",
+            f"正文提纲必须依次采用学院规定的四章：{', '.join(required_ids)}。",
+            suggested_action="按 MTI 学院框架重新生成 academic-outline。"))
+    for section_id, chapter in required_chapters.items():
+        planned = outline_by_id.get(section_id)
+        if not planned:
+            continue
+        if _norm(planned.get("title")) != _norm(chapter.get("title")):
+            issues.append(_issue(
+                "institutional_chapter_title_mismatch",
+                f"第 {section_id} 章标题应为“{chapter.get('title')}”。",
+                section_id=section_id,
+                suggested_action="恢复学院规定章名；项目名称只能作为章名中的限定信息。"))
+        body = sections.get(section_id) or ""
+        for subsection in chapter.get("required_subsections") or []:
+            heading_id = str(subsection.get("heading_id") or "")
+            title = str(subsection.get("title") or "")
+            heading_level = int(subsection.get("level") or 2)
+            pattern = re.compile(
+                r"^" + re.escape("#" * (heading_level + 1)) + r"\s+" +
+                re.escape(heading_id) + r"(?:\s+|[.．、])" +
+                re.escape(title) + r"\s*$", re.MULTILINE)
+            if body and not pattern.search(body):
+                issues.append(_issue(
+                    "missing_institutional_subsection",
+                    f"第 {section_id} 章缺少规定小节“{heading_id} {title}”。",
+                    section_id=section_id,
+                    suggested_action="按 academic-outline.required_subsections 补写该小节。"))
+
+    body_language = (constraints.get("body_language") or {}).get("language")
+    if body_language == "zh-CN" and _has_english_prose_paragraph(report_md):
+        issues.append(_issue(
+            "thesis_body_language_mismatch",
+            "2026年及以后 MTI 论文正文必须使用中文，但报告含持续英文论述段落。",
+            suggested_action="将论述改为中文；英文只保留逐字证据、术语、专名和文献信息。"))
+
+    conclusion = sections.get(str((constraints.get("research_question_policy") or {}).get(
+        "answer_in_chapter") or "4"), "") if required_chapters else ""
+    conclusion_case_ids = set(_SEGMENT_REF.findall(conclusion)) | set(
+        _SYNTHETIC_CASE_ID.findall(conclusion))
+    analysis_body = sections.get(str((constraints.get("research_question_policy") or {}).get(
+        "develop_in_chapter") or "3"), "") if required_chapters else ""
+    analysis_case_ids = set(_SEGMENT_REF.findall(analysis_body)) | set(
+        _SYNTHETIC_CASE_ID.findall(analysis_body))
+    new_conclusion_cases = conclusion_case_ids - analysis_case_ids
+    if new_conclusion_cases:
+        issues.append(_issue(
+            "conclusion_introduces_case_evidence",
+            "总结与反思章不得首次引入案例证据：" +
+            "、".join(sorted(new_conclusion_cases)) + "。",
+            section_id="4",
+            suggested_action="删除新增案例，只综合第三章已经建立的案例发现。"))
 
     # Literature source -> exact block -> literature evidence -> literature
     # claim -> global claim integrity.  Source existence alone is never support.

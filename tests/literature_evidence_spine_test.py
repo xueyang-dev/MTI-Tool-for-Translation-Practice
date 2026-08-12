@@ -161,7 +161,9 @@ def _validation_graph():
     sources, lit_evidence, lit_claims = _literature_artifacts()
     project = academic_evidence.build_academic_evidence(_state(), JOB)
     research = academic_writer.build_research_model(
-        project, "功能对等", {"research_questions": ["如何解释受众反应？"]})
+        project, "功能对等", {"submission_year": 2025, "body_language": "zh-CN",
+                              "research_questions": ["如何解释受众反应？"]})
+    research.pop("institutional_constraints", None)
     lc = lit_claims["items"][0]
     le = lc["supporting_evidence_ids"][0]
     argument = {"claims": [{
@@ -301,6 +303,10 @@ class LiteraturePipelineMock:
                 self.repaired_sections.append(section["section_id"])
             body = "".join(f"<!--rq:{x}-->" for x in section["research_questions"])
             body += "".join(f"<!--claim:{x}-->" for x in section["claims"])
+            body += "\n" + "\n".join(
+                f"{x['markdown_prefix']} {x['heading_id']} {x['title']}\n本小节按学院框架展开。"
+                for x in (packet.get("writing_constraints") or {}).get(
+                    "required_subsections", []))
             for claim in packet["literature_claims"]:
                 body += f"<!--lit-claim:{claim['literature_claim_id']}-->"
             for evidence in packet["literature_evidence"]:

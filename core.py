@@ -1409,10 +1409,12 @@ def markdown_to_word(md_text, theory):
         line = line.strip()
         if not line:
             continue
-        if line.startswith('### '):
-            doc.add_heading(line[4:], level=3)
+        if line.startswith('#### '):
+            doc.add_heading(line[5:], level=3)
+        elif line.startswith('### '):
+            doc.add_heading(line[4:], level=2)
         elif line.startswith('## '):
-            doc.add_heading(line[3:], level=2)
+            doc.add_heading(line[3:], level=1)
         elif line.startswith('# '):
             doc.add_heading(line[2:], level=1)
         elif line.startswith(('- ', '* ')):

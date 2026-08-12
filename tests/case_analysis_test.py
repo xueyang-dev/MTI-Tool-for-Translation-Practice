@@ -260,12 +260,17 @@ class ReasoningRepairMock:
                                }}}, ensure_ascii=False)
         if "证据约束型学术写作者" in system_prompt:
             payload = json.loads(user_prompt)
-            section = payload["packet"]["current_section"]
+            packet = payload["packet"]
+            section = packet["current_section"]
             self.rewritten.append(("repair" if "existing_section" in payload else "write",
                                    section["section_id"]))
             analyses = payload["packet"].get("case_analyses") or []
             body = "".join(f"<!--rq:{x}-->" for x in section["research_questions"])
             body += "".join(f"<!--claim:{x}-->" for x in section["claims"])
+            body += "\n" + "\n".join(
+                f"{x['markdown_prefix']} {x['heading_id']} {x['title']}\n本小节按学院框架展开。"
+                for x in (packet.get("writing_constraints") or {}).get(
+                    "required_subsections", []))
             for analysis in analyses:
                 problem = analysis.get("problem", {})
                 body += (f"\n问题：{problem.get('statement', '')}\n"

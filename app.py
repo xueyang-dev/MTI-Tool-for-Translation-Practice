@@ -215,6 +215,10 @@ with st.sidebar:
             "学校/导师写作要求（可选）", height=80)
         report_target_words = st.number_input(
             "报告目标字数", min_value=1500, max_value=30000, value=4200, step=500)
+        submission_year = st.number_input(
+            "论文提交年份", min_value=2026, max_value=2100, value=2026, step=1,
+            help="学院现行规则：2026年及以后 MTI 正式论文正文使用中文撰写。")
+        st.caption("正文语言：简体中文（学院规则）；英文摘要、原文引语、译文及术语不受此限制。")
         case_policy_label = st.selectbox(
             "案例类型策略",
             ["混合：真实修订优先 + 合成对比", "仅真实修订", "仅合成对比"],
@@ -241,6 +245,8 @@ with st.sidebar:
                 literature_sources = None
     research_settings = {
         "target_words": int(report_target_words),
+        "submission_year": int(submission_year),
+        "body_language": "zh-CN",
         "case_selection_policy": {
             "混合：真实修订优先 + 合成对比": "mixed",
             "仅真实修订": "authentic_only",

@@ -1003,6 +1003,10 @@ def test_report_prompt_evidence_contract():
                 content = "".join(
                     f"<!--rq:{x}-->" for x in section["research_questions"])
                 content += "".join(f"<!--claim:{x}-->" for x in section["claims"])
+                content += "\n" + "\n".join(
+                    f"{x['markdown_prefix']} {x['heading_id']} {x['title']}\n本小节按学院框架展开。"
+                    for x in (packet.get("writing_constraints") or {}).get(
+                        "required_subsections", []))
                 content += "本节严格依据项目证据展开，不把作者分析冒充译者真实意图。"
                 for key in section["required_statistics"]:
                     content += f"本项目指标为 {{{{STAT:{key}}}}}，仅描述当前任务。"

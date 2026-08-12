@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mti_tool import academic_evidence, academic_validator, academic_writer, literature_evidence
+from mti_tool import thesis_constraints
 from scripts.run_chapter3_composition_pilot import _has_invalid_0272_count_claim
 import core
 from docx import Document
@@ -78,6 +79,115 @@ def test_whole_corpus_evidence_and_candidates():
     assert first["process_evidence"]["repair_history"]
     assert first["availability"]["initial_target"] == "recorded"
     print("  ✓ 全语料证据 / 首中尾覆盖 / 确定性候选 / 流程统计")
+
+
+def test_institutional_thesis_constraints():
+    constraints = thesis_constraints.build_constraints({"submission_year": 2026})
+    assert constraints["body_language"]["language"] == "zh-CN"
+    assert [x["section_id"] for x in constraints["chapters"]] == ["1", "2", "3", "4"]
+    assert constraints["chapters"][0]["required_subsections"][1] == {
+        "heading_id": "1.2", "title": "研究问题", "level": 2,
+        "markdown_prefix": "###"}
+
+    evidence = academic_evidence.build_academic_evidence(_state(), JOB)
+    research = academic_writer.build_research_model(
+        evidence, "目的论", {"submission_year": 2026,
+                           "research_questions": ["如何处理让步关系？"]})
+    assert research["body_language"] == "zh-CN"
+    assert research["settings_provenance"]["body_language"] == "institutional_rule"
+    selected = {"cases": [], "authentic_selection_status": "insufficient_revision_cases",
+                "preferred_core_case_count": 3, "minimum_core_case_count": 2,
+                "scarcity_disclosure": "证据不足"}
+    outline = academic_writer._fallback_outline(
+        research, {"claims": []}, selected)
+    assert [x["title"] for x in outline["sections"]] == [
+        "引言", "翻译项目概述", "翻译项目案例分析", "总结与反思"]
+    assert outline["sections"][2]["required_subsections"][-1] == {
+        "heading_id": "3.3", "title": "翻译策略与解决方案", "level": 2,
+        "markdown_prefix": "###"}
+    print("  ✓ 2026+ 中文正文 / 学院四章 / 必备小节")
+
+
+def test_validator_enforces_institutional_structure_and_language():
+    evidence = academic_evidence.build_academic_evidence(_state(), JOB)
+    research = academic_writer.build_research_model(
+        evidence, "目的论", {"submission_year": 2026,
+                           "research_questions": ["如何处理让步关系？"]})
+    outline = academic_writer._fallback_outline(
+        research, {"claims": []}, {"cases": [], "selection_policy": "synthetic_only",
+                                   "selection_status": "synthetic_only_selection",
+                                   "authentic_selection_status": "not_applicable",
+                                   "preferred_core_case_count": 3,
+                                   "minimum_core_case_count": 2})
+    report = """## 1 引言
+### 1.1 研究背景及意义
+中文背景。
+### 1.2 研究问题
+中文问题。
+### 1.3 报告结构
+中文结构。
+
+## 2 翻译项目概述
+### 2.1 项目简介
+项目事实。
+### 2.2 翻译流程
+流程概述。
+#### 2.2.1 译前准备
+准备工作。
+#### 2.2.2 翻译过程
+实施过程。
+#### 2.2.3 译后管理
+管理工作。
+
+## 3 翻译项目案例分析
+### 3.1 源语文本的类型与特征
+文本特征。
+### 3.2 翻译难点
+翻译难点。
+### 3.3 翻译策略与解决方案
+策略分析。
+
+## 4 总结与反思
+### 4.1 研究问题回应
+This paragraph presents sustained English academic exposition without Chinese analysis and explains the report findings in a complete argumentative passage.
+### 4.2 实践经验与可迁移方法
+项目内经验。
+### 4.3 局限与改进方向
+研究局限。
+"""
+    result = academic_validator.validate_academic_report(
+        report, evidence, research, {"claims": []}, {"cases": []}, outline)
+    types = {x["type"] for x in result["issues"]}
+    assert "thesis_body_language_mismatch" in types
+    assert "missing_institutional_subsection" not in types
+
+    clean_report = report.replace(
+        "This paragraph presents sustained English academic exposition without "
+        "Chinese analysis and explains the report findings in a complete "
+        "argumentative passage.", "本节逐项回应前文提出的研究问题。")
+    seg0 = f"seg-{JOB}-0000"
+    seg1 = f"seg-{JOB}-0001"
+    case_outline = json.loads(json.dumps(outline))
+    next(x for x in case_outline["sections"] if x["section_id"] == "3")[
+        "cases"] = [seg0]
+    allowed_report = clean_report.replace(
+        "策略分析。", f"策略分析。[{seg0}]").replace(
+            "本节逐项回应前文提出的研究问题。",
+            f"本节逐项回应前文提出的研究问题。[{seg0}]")
+    allowed = academic_validator.validate_academic_report(
+        allowed_report, evidence, research, {"claims": []}, {"cases": []},
+        case_outline)
+    assert "conclusion_introduces_case_evidence" not in {
+        x["type"] for x in allowed["issues"]}
+
+    new_case_report = allowed_report.replace(
+        "项目内经验。", f"项目内经验。[{seg1}]")
+    rejected = academic_validator.validate_academic_report(
+        new_case_report, evidence, research, {"claims": []}, {"cases": []},
+        case_outline)
+    assert "conclusion_introduces_case_evidence" in {
+        x["type"] for x in rejected["issues"]}
+    print("  ✓ validator 检查中文正文、学院小节与结论证据边界")
 
 
 def _artifacts_for_validation():
@@ -229,7 +339,12 @@ class PipelineMock:
                 self.repaired_sections.append(section["section_id"])
             markers = "".join(f"<!--rq:{x}-->" for x in section["research_questions"])
             markers += "".join(f"<!--claim:{x}-->" for x in section["claims"])
-            body = markers + "本节只依据已记录项目证据展开，所有解释均限定于当前任务。"
+            required = (packet.get("writing_constraints") or {}).get(
+                "required_subsections") or []
+            headings = "\n" + "\n".join(
+                f"{x['markdown_prefix']} {x['heading_id']} {x['title']}\n本小节按学院框架展开。"
+                for x in required)
+            body = markers + headings + "本节只依据已记录项目证据展开，所有解释均限定于当前任务。"
             for key in section["required_statistics"]:
                 body += f"本项目相应指标为 {{{{STAT:{key}}}}}，该数字不支持总体外推。"
             for case in packet["cases"]:
@@ -300,6 +415,8 @@ if __name__ == "__main__":
     print("学术写作架构测试：")
     test_0272_count_fact_gate()
     test_whole_corpus_evidence_and_candidates()
+    test_institutional_thesis_constraints()
+    test_validator_enforces_institutional_structure_and_language()
     test_validator_rejects_fabrication()
     test_dependency_staleness()
     test_state_drops_unbounded_histories()

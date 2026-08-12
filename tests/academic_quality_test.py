@@ -283,6 +283,10 @@ class QualityPipelineMock:
             self.written_sections.append(section["section_id"])
             body = "".join(f"<!--rq:{x}-->" for x in section["research_questions"])
             body += "".join(f"<!--claim:{x}-->" for x in section["claims"])
+            body += "\n" + "\n".join(
+                f"{x['markdown_prefix']} {x['heading_id']} {x['title']}\n本小节按学院框架展开。"
+                for x in (packet.get("writing_constraints") or {}).get(
+                    "required_subsections", []))
             for case in packet["cases"]:
                 ev = case.get("evidence") or {}
                 body += (f"\n[{ev.get('segment_id', case['case_id'])}]\n"

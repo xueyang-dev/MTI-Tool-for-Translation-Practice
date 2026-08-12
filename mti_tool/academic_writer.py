@@ -19,11 +19,13 @@ from . import case_analysis
 from . import human_evidence
 from . import literature_evidence
 from . import synthetic_cases
+from . import thesis_constraints
 
-PIPELINE_VERSION = "academic-pipeline-v5"
+PIPELINE_VERSION = "academic-pipeline-v6"
 VERSIONS = {
     "evidence_version": academic_evidence.SCHEMA_VERSION,
-    "research_model_version": "research-model-v1",
+    "thesis_constraints_version": thesis_constraints.SCHEMA_VERSION,
+    "research_model_version": "research-model-v2",
     "literature_sources_version": literature_evidence.SOURCES_VERSION,
     "literature_evidence_version": literature_evidence.EVIDENCE_VERSION,
     "literature_claims_version": literature_evidence.CLAIMS_VERSION,
@@ -34,8 +36,8 @@ VERSIONS = {
     "synthetic_optimizer_version": synthetic_cases.OPTIMIZER_VERSION,
     "synthetic_validation_version": synthetic_cases.VALIDATION_VERSION,
     "case_selection_version": "case-selector-v4",
-    "outline_version": "academic-outline-v4",
-    "writer_version": "academic-writer-v5",
+    "outline_version": "academic-outline-v5",
+    "writer_version": "academic-writer-v6",
     "validator_version": academic_validator.VALIDATOR_VERSION,
     "reviewer_version": "academic-reviewer-v1",
     "literature_reviewer_version": "literature-support-reviewer-v1",
@@ -315,7 +317,9 @@ def sync_versions(state: Dict[str, Any], versions: Optional[Dict[str, str]] = No
                 "synthetic_validation", "selected_cases", "case_analysis_plans",
                 "outline", "sections", "validation", "review", "academic_quality",
             ], "synthetic validation policy changed")
-        elif old.get("research_model_version") != versions["research_model_version"] \
+        elif old.get("thesis_constraints_version") != \
+                versions["thesis_constraints_version"] \
+                or old.get("research_model_version") != versions["research_model_version"] \
                 or old.get("argument_plan_version") != versions["argument_plan_version"] \
                 or old.get("case_selection_version") != versions["case_selection_version"] \
                 or old.get("outline_version") != versions["outline_version"]:
@@ -508,6 +512,7 @@ def build_research_model(
     settings: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     settings = dict(settings or {})
+    institutional_constraints = thesis_constraints.build_constraints(settings)
     framework = _as_list(settings.get("theoretical_framework")) or [theory]
     provided_rqs = _as_list(settings.get("research_questions"))
     default_rqs = [
@@ -534,7 +539,11 @@ def build_research_model(
             "以可追溯项目证据解释翻译决策，而非还原译者不可观察的心理意图",
             "说明机器翻译、术语治理与人工审校的作用边界",
         ],
-        "writing_style": settings.get("writing_style") or "规范、克制的中文 MTI 学术书面语",
+        "institutional_constraints": institutional_constraints,
+        "submission_year": institutional_constraints["submission_year"],
+        "body_language": institutional_constraints["body_language"]["language"],
+        "writing_style": settings.get("writing_style") or institutional_constraints[
+            "style_rules"]["academic_register"],
         "report_requirements": settings.get("report_requirements") or "翻译实践报告",
         "target_words": int(settings.get("target_words") or 4200),
         "settings_provenance": {
@@ -542,6 +551,8 @@ def build_research_model(
             "theoretical_framework": "user_confirmed" if settings.get("theoretical_framework")
             else "pipeline_input",
             "method": "user_confirmed" if settings.get("method") else "default_inferred",
+            "body_language": "institutional_rule" if institutional_constraints[
+                "body_language"]["status"] == "required" else "project_configured",
         },
     }
     artifact["content_hash"] = academic_evidence.stable_hash(
@@ -862,6 +873,9 @@ def _fallback_outline(
     research_model: Dict[str, Any], argument_plan: Dict[str, Any],
     selected_cases: Dict[str, Any],
 ) -> Dict[str, Any]:
+    constraints = research_model.get("institutional_constraints") or \
+        thesis_constraints.build_constraints(research_model)
+    required_chapters = thesis_constraints.chapter_index(constraints)
     claims = [c["claim_id"] for c in argument_plan.get("claims", [])]
     rqs = [r["rq_id"] for r in research_model.get("research_questions", [])]
     cases = [c["case_id"] for c in selected_cases.get("cases", [])]
@@ -884,33 +898,41 @@ def _fallback_outline(
         conclusion_limits.append(
             "合成案例只展示合理失败模式，不证明人类译者中的发生频率")
     return {"sections": [
-        {"section_id": "1", "title": "翻译项目与研究设计", "purpose": "界定项目、研究问题、方法与证据边界。",
+        {"section_id": "1", "title": required_chapters["1"]["title"],
+         "purpose": required_chapters["1"]["purpose"],
+         "required_subsections": required_chapters["1"]["required_subsections"],
          "research_questions": rqs, "claims": claims[:1], "cases": [],
          "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": ["total_segments", "translated_segments"],
          "target_words": round(total * .2), "minimum_chars": 300,
          "allowed_conclusions": ["仅陈述证据库可支持的项目特征"]},
-        {"section_id": "2", "title": "翻译过程、术语与质量控制", "purpose": "分析术语、TM、审校和修复证据。",
-         "research_questions": rqs[-1:], "claims": claims[-1:], "cases": authentic_cases[:2],
+        {"section_id": "2", "title": required_chapters["2"]["title"],
+         "purpose": required_chapters["2"]["purpose"],
+         "required_subsections": required_chapters["2"]["required_subsections"],
+         "research_questions": rqs[-1:], "claims": claims[-1:], "cases": [],
          "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": ["reviewed_segments", "tm_reuse_count", "actionable_findings"],
          "target_words": round(total * .25), "minimum_chars": 350,
          "allowed_conclusions": ["区分可观察流程效果与推断"]},
-        {"section_id": "3", "title": "理论框架下的案例分析",
-         "purpose": "分别分析真实修订案例与明确标注的合成对比案例。",
+        {"section_id": "3", "title": required_chapters["3"]["title"],
+         "purpose": required_chapters["3"]["purpose"],
+         "required_subsections": required_chapters["3"]["required_subsections"],
          "research_questions": rqs, "claims": claims, "cases": cases,
          "case_groups": {"authentic_revision": authentic_cases,
                          "synthetic_contrast": synthetic_case_ids},
          "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": [], "target_words": round(total * .4), "minimum_chars": 600,
          "allowed_conclusions": analysis_conclusions},
-        {"section_id": "4", "title": "结论、局限与反思", "purpose": "回答研究问题并限定结论外推。",
+        {"section_id": "4", "title": required_chapters["4"]["title"],
+         "purpose": required_chapters["4"]["purpose"],
+         "required_subsections": required_chapters["4"]["required_subsections"],
          "research_questions": rqs, "claims": claims, "cases": [],
          "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": ["repaired_segments", "term_conflicts"],
          "target_words": round(total * .15), "minimum_chars": 250,
          "allowed_conclusions": conclusion_limits},
     ], "planner_fallback": True,
+        "institutional_constraints": constraints,
         "case_count_policy": {
             "status": case_status,
             "preferred": selected_cases.get("preferred_core_case_count", 3),
@@ -928,6 +950,9 @@ def build_academic_outline(
     literature_evidence_artifact: Optional[Dict[str, Any]] = None,
     literature_claims_artifact: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    constraints = research_model.get("institutional_constraints") or \
+        thesis_constraints.build_constraints(research_model)
+    required_chapters = thesis_constraints.chapter_index(constraints)
     system = (
         "你是 MTI 学术提纲规划器。提纲必须服务研究问题，并且只能引用给定 claim、case、"
         "literature claim、literature evidence 和 statistic id。只输出 JSON："
@@ -938,6 +963,10 @@ def build_academic_outline(
         "\"literature_evidence\":[\"LE-...\"],"
         "\"required_statistics\":[\"total_segments\"],\"target_words\":900,"
         "\"minimum_chars\":300,\"allowed_conclusions\":[\"...\"]}]}。"
+        "必须严格生成学院规定的四章，section_id 依次为 1、2、3、4；章名、功能和"
+        "required_subsections 以 institutional_constraints 为准，不得用通用 IMRaD 或"
+        "自由章节替代。第1章提出研究问题，第3章用文本特征、难点、案例和解决方案展开，"
+        "第4章逐项回答研究问题且不得引入新案例证据。"
         "案例数量以 selected_cases.case_count_policy 为准；two_case_fallback 是合格的"
         "双案例结构，不得虚构或要求第三个案例，并须在案例分析或结论中披露证据稀缺。"
         "若存在 synthetic_contrast，必须与 authentic_revision 分组，并规划方法说明和局限；"
@@ -953,6 +982,7 @@ def build_academic_outline(
         "literature_claims": (literature_claims_artifact or {}).get("items", []),
         "literature_evidence": (literature_evidence_artifact or {}).get("items", []),
         "available_statistics": list(evidence.get("project_evidence", {}).get("statistics", {})),
+        "institutional_constraints": constraints,
     }
     raw = _call_json(call_llm, provider, api_key, model, system,
                      json.dumps(payload, ensure_ascii=False)) or _fallback_outline(
@@ -985,8 +1015,12 @@ def build_academic_outline(
         })
         sections.append({
             "section_id": section_id,
-            "title": str(item.get("title") or f"章节 {section_id}").strip(),
-            "purpose": str(item.get("purpose") or "").strip(),
+            "title": required_chapters.get(section_id, {}).get(
+                "title") or str(item.get("title") or f"章节 {section_id}").strip(),
+            "purpose": required_chapters.get(section_id, {}).get(
+                "purpose") or str(item.get("purpose") or "").strip(),
+            "required_subsections": required_chapters.get(section_id, {}).get(
+                "required_subsections", []),
             "research_questions": [str(x) for x in item.get("research_questions") or []
                                    if str(x) in valid_rqs],
             "claims": [str(x) for x in item.get("claims") or [] if str(x) in valid_claims],
@@ -1000,13 +1034,26 @@ def build_academic_outline(
             "minimum_chars": max(100, int(item.get("minimum_chars") or 200)),
             "allowed_conclusions": _as_list(item.get("allowed_conclusions")),
         })
-    if len(sections) < 3:
+    if {x["section_id"] for x in sections} != set(required_chapters):
         sections = _fallback_outline(research_model, argument_plan, selected_cases)["sections"]
         fallback = True
     else:
         fallback = bool(raw.get("planner_fallback"))
     # Deterministically guarantee graph coverage; the writer cannot silently lose a claim/RQ.
-    analysis = max(sections, key=lambda x: len(x["cases"]))
+    section_by_id = {x["section_id"]: x for x in sections}
+    analysis = section_by_id["3"]
+    conclusion = section_by_id["4"]
+    # Institutional chapter roles are deterministic: cases belong to Chapter
+    # 3, while Chapter 4 answers the RQs without introducing case evidence.
+    for section in sections:
+        if section["section_id"] != "3":
+            section["cases"] = []
+    analysis["cases"] = [str(x.get("case_id")) for x in selected_cases.get(
+        "cases", []) if x.get("case_id")]
+    for section in (section_by_id["1"], analysis, conclusion):
+        section["research_questions"] = sorted(valid_rqs)
+    analysis["claims"] = sorted(valid_claims)
+    conclusion["claims"] = sorted(valid_claims)
     for claim_id in valid_claims:
         if not any(claim_id in x["claims"] for x in sections):
             analysis["claims"].append(claim_id)
@@ -1063,6 +1110,7 @@ def build_academic_outline(
         }
     artifact = {
         "schema_version": VERSIONS["outline_version"],
+        "institutional_constraints": constraints,
         "sections": sections,
         "planner_fallback": fallback,
         "case_count_policy": {
@@ -1147,6 +1195,11 @@ def _section_packet(
         "terminology_decisions": terminology,
         "prior_section_summaries": prior_summaries,
         "writing_constraints": {
+            "institutional_constraints": research_model.get(
+                "institutional_constraints") or outline.get(
+                    "institutional_constraints") or thesis_constraints.build_constraints(
+                        research_model),
+            "required_subsections": section.get("required_subsections") or [],
             "claim_marker": "<!--claim:C1-->",
             "rq_marker": "<!--rq:RQ1-->",
             "source_quote": "> [SOURCE seg-...]: exact source",
@@ -1209,6 +1262,22 @@ def _write_section(
         "理论解释必须写成作者分析，例如‘从结果看可解释为’，不得冒充译者真实意图。"
         "无文献证据时，不得从模型记忆补作者、年份、书名或理论命题。只输出章节正文。"
     )
+    constraints = (packet.get("writing_constraints") or {}).get(
+        "institutional_constraints") or {}
+    language = (constraints.get("body_language") or {}).get("language")
+    if language == "zh-CN":
+        system += (
+            " 学院规则要求2026年及以后 MTI 正式论文正文使用简体中文。本节的论述、分析、"
+            "标题和过渡语必须使用中文；英文仅限逐字源文/译文引语、术语、专名和参考文献"
+            "信息，不得生成英文论述段落。涉及作者本人统一称‘笔者’，不用‘我’。"
+        )
+    required_subsections = (packet.get("writing_constraints") or {}).get(
+        "required_subsections") or []
+    if required_subsections:
+        system += (
+            " 当前章必须按 required_subsections 的顺序使用可见标题，并逐项采用其中的"
+            "markdown_prefix，格式为‘markdown_prefix 编号 标题’，不得省略、改名或压平层级。"
+        )
     count_policy = (packet.get("writing_constraints") or {}).get(
         "case_count_policy") or {}
     if count_policy.get("status") == "two_case_fallback":
@@ -1413,7 +1482,10 @@ def _semantic_review(
         "overgeneralization、duplicate_argument、contradiction、descriptive_not_analytical、"
         "chapter_drift、conclusion_too_strong、synthetic_case_presented_as_historical、"
         "unsupported_human_error_frequency_claim。synthetic_contrast 只能作为明确标注的"
-        "分析实验，不能支持作者历史过程。只输出 JSON：{\"issues\":[{\"issue_id\":"
+        "分析实验，不能支持作者历史过程。还要按 institutional_constraints 检查四章功能与"
+        "章际链条：研究问题是否在第1章提出、第3章展开、第4章逐项回答，文本特征—翻译难点"
+        "—案例证据—策略/方案—效果—结论是否贯通，以及第4章是否引入了新案例。"
+        "只输出 JSON：{\"issues\":[{\"issue_id\":"
         "\"AR-001\",\"section_id\":\"3\",\"type\":\"weak_evidence\","
         "\"claim_id\":\"C1\",\"evidence_ids\":[\"seg-...\"],"
         "\"severity\":\"low|medium|high\",\"reason\":\"...\","
@@ -1421,6 +1493,7 @@ def _semantic_review(
     )
     payload = {
         "research_model": research_model,
+        "institutional_constraints": research_model.get("institutional_constraints") or {},
         "argument_plan": argument_plan,
         "outline": outline,
         "selected_cases": [
@@ -2139,6 +2212,8 @@ def run_academic_pipeline(
         stage("outline", "【学术写作 6/10】生成证据约束型学术提纲...")
         outline_dep = academic_evidence.stable_hash({
             "research": research_model["content_hash"],
+            "institutional_constraints": academic_evidence.stable_hash(
+                research_model.get("institutional_constraints") or {}),
             "argument": argument_plan["content_hash"],
             "cases": selected_cases["content_hash"],
             "literature_claims": literature_claims_artifact["content_hash"],
