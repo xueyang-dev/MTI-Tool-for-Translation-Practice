@@ -1,0 +1,160 @@
+{
+  "schema_version": "case-taxonomy-v1",
+  "derivation": "induced from recorded revisions and actionable review findings",
+  "major_problem_count": 5,
+  "subproblem_count": 13,
+  "major_problems": [
+    {
+      "major_problem_id": "textual_integrity",
+      "title": "源译对应与信息完整性",
+      "chapter_claim": "长篇翻译首先要求段落对应、信息完整和语义角色不被破坏。",
+      "subproblems": [
+        {
+          "subproblem_id": "alignment_and_omission",
+          "title": "段落错配、漏译与截断",
+          "mechanism": "核对当前源段与目标段的语义覆盖，区分完整对应、跨段串入和整段漏译。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0142",
+            "seg-ec100d8686d3891e-0144",
+            "seg-ec100d8686d3891e-0209",
+            "seg-ec100d8686d3891e-0239"
+          ]
+        },
+        {
+          "subproblem_id": "evidence_alignment",
+          "title": "审校证据与段落边界",
+          "mechanism": "先确认 finding、源段和目标段属于同一证据单元，再决定能否进入分析。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0152"
+          ]
+        }
+      ]
+    },
+    {
+      "major_problem_id": "lexical_semantic",
+      "title": "词汇语义与形象表达",
+      "chapter_claim": "词义选择、搭配和比喻处理共同决定叙事细节是否准确。",
+      "subproblems": [
+        {
+          "subproblem_id": "contextual_lexical_choice",
+          "title": "语境化词义与搭配",
+          "mechanism": "依据领域语境和搭配限制选择目标语表达，而不是沿用表面词义。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0056",
+            "seg-ec100d8686d3891e-0057",
+            "seg-ec100d8686d3891e-0080",
+            "seg-ec100d8686d3891e-0081"
+          ]
+        },
+        {
+          "subproblem_id": "figurative_language",
+          "title": "比喻与形象表达",
+          "mechanism": "识别字面动作背后的隐喻功能，并在目标语中保留其叙事作用。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0139"
+          ]
+        },
+        {
+          "subproblem_id": "title_semantics",
+          "title": "标题语义与形式",
+          "mechanism": "同时处理标题的语义核心、并列结构与文体凝练度。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0119"
+          ]
+        }
+      ]
+    },
+    {
+      "major_problem_id": "syntax_logic",
+      "title": "句法组织与逻辑关系",
+      "chapter_claim": "修饰范围、论元关系和显隐逻辑需要按目标语重新组织。",
+      "subproblems": [
+        {
+          "subproblem_id": "modifier_scope",
+          "title": "修饰范围",
+          "mechanism": "明确修饰语实际辖域，避免目标语把并列属性误写成混合关系。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0170"
+          ]
+        },
+        {
+          "subproblem_id": "argument_structure",
+          "title": "论元关系与句法重组",
+          "mechanism": "重建动词与施受事、数量或用途成分之间的关系。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0234"
+          ]
+        }
+      ]
+    },
+    {
+      "major_problem_id": "terminology_culture",
+      "title": "术语、专名与文化指称",
+      "chapter_claim": "专业术语与专名处理必须同时满足领域准确性和全篇一致性。",
+      "subproblems": [
+        {
+          "subproblem_id": "domain_terminology",
+          "title": "专业术语与技术规范",
+          "mechanism": "按领域意义和中文技术表达规范处理术语、单位与固定搭配。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0059",
+            "seg-ec100d8686d3891e-0082"
+          ]
+        },
+        {
+          "subproblem_id": "proper_name_consistency",
+          "title": "人名、地名与机构名一致性",
+          "mechanism": "依据全篇命名政策统一音译、原文保留和首次标注方式。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0140",
+            "seg-ec100d8686d3891e-0141",
+            "seg-ec100d8686d3891e-0155",
+            "seg-ec100d8686d3891e-0156",
+            "seg-ec100d8686d3891e-0215",
+            "seg-ec100d8686d3891e-0235"
+          ]
+        },
+        {
+          "subproblem_id": "cultural_title_handling",
+          "title": "作品名与文化专名",
+          "mechanism": "先确认作品或文化专名身份，再决定采用通行译名、原名或双重标注。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0216",
+            "seg-ec100d8686d3891e-0233"
+          ]
+        }
+      ]
+    },
+    {
+      "major_problem_id": "discourse_pragmatics",
+      "title": "指称衔接、叙事声音与语用力度",
+      "chapter_claim": "篇章回指、人物声音和言语行为需要超越逐词对应进行判断。",
+      "subproblems": [
+        {
+          "subproblem_id": "reference_tracking",
+          "title": "回指与主语追踪",
+          "mechanism": "恢复跨句回指对象或显式主语，使篇章指称链在中文中可追踪。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0272"
+          ]
+        },
+        {
+          "subproblem_id": "narrative_voice",
+          "title": "叙事声音与对话节奏",
+          "mechanism": "用符合人物关系和叙事速度的报告语、口语结构与节奏组织对话。",
+          "candidate_case_ids": [
+            "seg-ec100d8686d3891e-0083"
+          ]
+        },
+        {
+          "subproblem_id": "pragmatic_force",
+          "title": "反问、态度与语用力度",
+          "mechanism": "区分真实询问与反问等言语行为，保持态度、对抗性和人物刻画。",
+          "candidate_case_ids": [
+            "SC-0141"
+          ]
+        }
+      ]
+    }
+  ]
+}
