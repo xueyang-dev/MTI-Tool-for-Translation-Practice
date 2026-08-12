@@ -1,0 +1,536 @@
+{
+  "schema_version": "revision-case-audit-v3",
+  "job_id": "ec100d8686d3891e",
+  "generated_at": "2026-08-12T11:31:43+00:00",
+  "state_source": "outputs/ec100d8686d3891e/state.json",
+  "state_sha256": "db8b83f70129748244cda20021e18109e2dda859b76c18a081137bd7efeb5524",
+  "eligibility_rule": "核心案例必须存在真实、有意义的初译至终译变化，且不得带有系统对齐、跨段污染或模型序列化完整性标记。",
+  "shared_gate": "mti_tool.academic_evidence.is_eligible_revision_case",
+  "statistics": {
+    "total_segments": 273,
+    "translated_segments": 273,
+    "reviewed_segments": 273,
+    "blocking_findings": 0,
+    "actionable_findings": 0,
+    "informational_findings": 35,
+    "recorded_blocking_findings": 0,
+    "recorded_actionable_findings": 34,
+    "recorded_informational_findings": 35,
+    "segments_with_initial_final_data": 237,
+    "unchanged_segments": 209,
+    "meaningfully_revised_segments": 28,
+    "revision_cases_with_findings": 23,
+    "revision_cases_with_repair_history": 23,
+    "revision_cases_with_complete_repair_chains": 23,
+    "revision_cases_academically_eligible": 22,
+    "repaired_segments": 28,
+    "term_conflicts": 0,
+    "tm_reuse_count": 191,
+    "issue_category_distribution": {
+      "check": 11,
+      "review": 24
+    },
+    "repair_category_distribution": {
+      "initial_final_changed": 28,
+      "suggested_target_recorded": 5,
+      "human_action_recorded": 2,
+      "system_action_recorded": 40
+    },
+    "coverage_distribution": {
+      "beginning": 91,
+      "middle": 91,
+      "end": 91
+    }
+  },
+  "eligible_revision_case_count": 22,
+  "selected_core_cases": [
+    {
+      "case_id": "seg-ec100d8686d3891e-0139",
+      "segment_index": 139,
+      "case_type": "authentic_revision",
+      "role": "core_authentic_revision",
+      "eligibility": "eligible",
+      "selection_rationale": "文学隐喻与父子关系：修订保留“伸手”意象，同时改善汉语叙事节奏。",
+      "source": "Back then, Dad wasn’t building houses yet; he was repairing machines. Even then, I think I already sensed that he did things I would never be able to do. Many years later, I asked him to teach me how to weld. “What do you need that for?” he replied, as was his way, once again evading the outstretched hand.",
+      "initial_target": "那时，父亲还未开始建造房屋，他还在修理机器。即便在那时，我想我已隐约感觉到，他所做的事情是我永远无法企及的。多年以后，我请他教我焊接技术，他却以他一贯的方式回答：“你需要那个做什么？”再次避开了我伸出的手。",
+      "final_target": "那时，父亲还没有盖房子，仍在修理机器。即便当时，我想自己已经隐约意识到：他会做一些我永远也做不到的事。多年后，我请他教我焊接。他仍用一贯的口吻答道：“学那个干什么？”又一次避开了我伸向他的手。",
+      "translation_delta": {
+        "available": true,
+        "changed": true,
+        "meaningful": true,
+        "formatting_only": false,
+        "case_role": "revision_case",
+        "academically_eligible": true,
+        "lexical_changes": [
+          {
+            "old": "未开始建造",
+            "new": "没有盖"
+          },
+          {
+            "old": "屋",
+            "new": "子"
+          },
+          {
+            "old": "他还",
+            "new": "仍"
+          },
+          {
+            "old": "在那",
+            "new": "当"
+          },
+          {
+            "old": "我",
+            "new": "自己"
+          },
+          {
+            "old": "感觉",
+            "new": "意识"
+          },
+          {
+            "old": "，",
+            "new": "："
+          },
+          {
+            "old": "所",
+            "new": "会"
+          },
+          {
+            "old": "的事情是",
+            "new": "一些"
+          },
+          {
+            "old": "无法企及",
+            "new": "也做不到"
+          },
+          {
+            "old": "技术，",
+            "new": "。"
+          },
+          {
+            "old": "却以他",
+            "new": "仍用"
+          },
+          {
+            "old": "方式回",
+            "new": "口吻"
+          },
+          {
+            "old": "你需要",
+            "new": "学"
+          },
+          {
+            "old": "做",
+            "new": "干"
+          },
+          {
+            "old": "再",
+            "new": "又一"
+          },
+          {
+            "old": "出",
+            "new": "向他"
+          }
+        ],
+        "structural_changes": [
+          {
+            "addition": "经"
+          },
+          {
+            "addition": "事"
+          },
+          {
+            "removal": "以"
+          },
+          {
+            "addition": "道"
+          }
+        ],
+        "omission_addition": [
+          {
+            "addition": "经"
+          },
+          {
+            "addition": "事"
+          },
+          {
+            "removal": "以"
+          },
+          {
+            "addition": "道"
+          }
+        ],
+        "finding_link": [
+          {
+            "severity": "actionable",
+            "reason": "译文将“as was his way, once again evading the outstretched hand”译为“他却以他一贯的方式回答……再次避开了我伸出的手”，将“evading the outstretched hand"
+          }
+        ],
+        "repair_link": true,
+        "unchanged": false
+      },
+      "findings": [
+        {
+          "segment_index": 139,
+          "severity": "actionable",
+          "type": "review",
+          "reason": "译文将“as was his way, once again evading the outstretched hand”译为“他却以他一贯的方式回答……再次避开了我伸出的手”，将“evading the outstretched hand”直译，但原文中“outstretched hand”是比喻（指请求），译文“伸出的手”略显生硬，建议调整为更自然的表达。",
+          "suggested_target": "他却以他一贯的方式回答：“你需要那个做什么？”再次回避了我的请求。",
+          "resolved": true,
+          "resolution": {
+            "action": "system_fixed",
+            "note": "保留原文手势隐喻，同时改善中文句法与叙事节奏。",
+            "timestamp": "2026-08-12T11:19:52+00:00",
+            "actor": "system_academic_review"
+          }
+        }
+      ],
+      "repair_history": [
+        {
+          "severity": "actionable",
+          "reason": "译文将“as was his way, once again evading the outstretched hand”译为“他却以他一贯的方式回答……再次避开了我伸出的手”，将“evading the outstretched hand”直译，但原文中“outstretched hand”是比喻（指请求），译文“伸出的手”略显生硬，建议调整为更自然的表达。",
+          "suggested_target": "他却以他一贯的方式回答：“你需要那个做什么？”再次回避了我的请求。",
+          "resolved": true,
+          "resolution": {
+            "action": "system_fixed",
+            "note": "保留原文手势隐喻，同时改善中文句法与叙事节奏。",
+            "timestamp": "2026-08-12T11:19:52+00:00",
+            "actor": "system_academic_review"
+          }
+        }
+      ],
+      "human_actions": [],
+      "system_actions": [
+        {
+          "finding_id": "f-f372ad046129",
+          "action": "system_fixed",
+          "note": "保留原文手势隐喻，同时改善中文句法与叙事节奏。",
+          "timestamp": "2026-08-12T11:19:52+00:00",
+          "actor": "system_academic_review"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0233",
+      "segment_index": 233,
+      "case_type": "authentic_revision",
+      "role": "core_authentic_revision",
+      "eligibility": "eligible",
+      "selection_rationale": "文化专名与叙事指代：修正影片名误译，并恢复被泛化的明确主语。",
+      "source": "On the way, Amos said there were two movies in Haifa that we could see – Some Like It Hot, playing at the Palace Cinema, and Riot in Cell Block 11, showing at the Domino Cinema. The girls wanted to go to the Palace, and we wanted to go to Domino. They took a vote, and it ended in a tie – eleven girls and eleven boys. He whispered quietly, ‘Palace, Palace.’ Amos said that if it was a tie, he would decide; we were going to Domino. Someone said, ‘Marilyn Monroe,’ and Amos replied, ‘If it were Brigitte Bardot’ ... and Noam added, ‘Or Roni Hofner.’ But he was sitting at the far end of the second row in the truck, so she didn’t hear him.",
+      "initial_target": "路上，阿莫斯说海法有两部电影可选——《热情如火》在皇宫影院上映，《监狱摇滚》在多米诺影院放映。女孩们想去皇宫，我们想去多米诺。他们投票表决，结果平局——十一个女孩对十一个男孩。有人轻声嘀咕：“皇宫，皇宫。”阿莫斯说平局由他定夺，我们去多米诺。有人说：“玛丽莲·梦露。”阿莫斯回应：“要是碧姬·芭铎……”诺姆插嘴：“或者罗妮·霍夫纳。”但他坐在卡车第二排靠边位置，她没听见。",
+      "final_target": "路上，阿莫斯说海法有两部电影可看——皇宫影院放《热情似火》，多米诺影院放《牢狱大暴动》。女孩们想去皇宫，我们想去多米诺。投票结果打成平手——十一个女孩对十一个男孩。他低声念叨：“皇宫，皇宫。”阿莫斯说，既然平票，就由他决定：去多米诺。有人说：“玛丽莲·梦露。”阿莫斯回答：“要是碧姬·芭铎还差不多……”诺姆又加了一句：“或者罗妮·霍夫纳。”但他坐在卡车第二排最那头，她没有听见。",
+      "translation_delta": {
+        "available": true,
+        "changed": true,
+        "meaningful": true,
+        "formatting_only": false,
+        "case_role": "revision_case",
+        "academically_eligible": true,
+        "lexical_changes": [
+          {
+            "old": "选",
+            "new": "看"
+          },
+          {
+            "old": "上映",
+            "new": "放《热情似火》"
+          },
+          {
+            "old": "映",
+            "new": "《牢狱大暴动》"
+          },
+          {
+            "old": "局",
+            "new": "手"
+          },
+          {
+            "old": "有人轻",
+            "new": "他低"
+          },
+          {
+            "old": "嘀咕",
+            "new": "念叨"
+          },
+          {
+            "old": "局",
+            "new": "票，就"
+          },
+          {
+            "old": "夺，我们",
+            "new": "："
+          },
+          {
+            "old": "应",
+            "new": "答"
+          },
+          {
+            "old": "插嘴",
+            "new": "又加了一句"
+          },
+          {
+            "old": "靠边位置",
+            "new": "最那头"
+          }
+        ],
+        "structural_changes": [
+          {
+            "removal": "《热情如火》在"
+          },
+          {
+            "removal": "《监狱摇滚》在"
+          },
+          {
+            "removal": "他们"
+          },
+          {
+            "removal": "表决，"
+          },
+          {
+            "addition": "打成"
+          },
+          {
+            "addition": "，既然"
+          },
+          {
+            "addition": "决"
+          },
+          {
+            "addition": "还差不多"
+          },
+          {
+            "addition": "有"
+          }
+        ],
+        "omission_addition": [
+          {
+            "removal": "《热情如火》在"
+          },
+          {
+            "removal": "《监狱摇滚》在"
+          },
+          {
+            "removal": "他们"
+          },
+          {
+            "removal": "表决，"
+          },
+          {
+            "addition": "打成"
+          },
+          {
+            "addition": "，既然"
+          },
+          {
+            "addition": "决"
+          },
+          {
+            "addition": "还差不多"
+          },
+          {
+            "addition": "有"
+          }
+        ],
+        "finding_link": [
+          {
+            "severity": "actionable",
+            "reason": "专有名词“Riot in Cell Block 11”的译名“监狱摇滚”不准确，该片标准译名为“监狱暴动”或“第十一牢房的暴动”；且“皇宫影院”和“多米诺影院”作为影院名，建议保留原文或加注，但此处可接受。"
+          },
+          {
+            "severity": "actionable",
+            "reason": "“He whispered quietly”译为“有人轻声嘀咕”不准确，原文主语是“他”（指前文某男孩），且“whispered quietly”应译为“他低声耳语”，漏译了主语“他”。"
+          }
+        ],
+        "repair_link": true,
+        "unchanged": false
+      },
+      "findings": [
+        {
+          "segment_index": 233,
+          "severity": "actionable",
+          "type": "review",
+          "reason": "专有名词“Riot in Cell Block 11”的译名“监狱摇滚”不准确，该片标准译名为“监狱暴动”或“第十一牢房的暴动”；且“皇宫影院”和“多米诺影院”作为影院名，建议保留原文或加注，但此处可接受。",
+          "resolved": true,
+          "resolution": {
+            "action": "system_fixed",
+            "note": "采用可核验片名《牢狱大暴动》，恢复明确主语并改善叙事衔接。",
+            "timestamp": "2026-08-12T11:19:52+00:00",
+            "actor": "system_academic_review"
+          }
+        },
+        {
+          "segment_index": 233,
+          "severity": "actionable",
+          "type": "review",
+          "reason": "“He whispered quietly”译为“有人轻声嘀咕”不准确，原文主语是“他”（指前文某男孩），且“whispered quietly”应译为“他低声耳语”，漏译了主语“他”。",
+          "resolved": true,
+          "resolution": {
+            "action": "system_fixed",
+            "note": "采用可核验片名《牢狱大暴动》，恢复明确主语并改善叙事衔接。",
+            "timestamp": "2026-08-12T11:19:52+00:00",
+            "actor": "system_academic_review"
+          }
+        }
+      ],
+      "repair_history": [
+        {
+          "severity": "actionable",
+          "reason": "专有名词“Riot in Cell Block 11”的译名“监狱摇滚”不准确，该片标准译名为“监狱暴动”或“第十一牢房的暴动”；且“皇宫影院”和“多米诺影院”作为影院名，建议保留原文或加注，但此处可接受。",
+          "suggested_target": null,
+          "resolved": true,
+          "resolution": {
+            "action": "system_fixed",
+            "note": "采用可核验片名《牢狱大暴动》，恢复明确主语并改善叙事衔接。",
+            "timestamp": "2026-08-12T11:19:52+00:00",
+            "actor": "system_academic_review"
+          }
+        },
+        {
+          "severity": "actionable",
+          "reason": "“He whispered quietly”译为“有人轻声嘀咕”不准确，原文主语是“他”（指前文某男孩），且“whispered quietly”应译为“他低声耳语”，漏译了主语“他”。",
+          "suggested_target": null,
+          "resolved": true,
+          "resolution": {
+            "action": "system_fixed",
+            "note": "采用可核验片名《牢狱大暴动》，恢复明确主语并改善叙事衔接。",
+            "timestamp": "2026-08-12T11:19:52+00:00",
+            "actor": "system_academic_review"
+          }
+        }
+      ],
+      "human_actions": [],
+      "system_actions": [
+        {
+          "finding_id": "f-a95153711b49",
+          "action": "system_fixed",
+          "note": "采用可核验片名《牢狱大暴动》，恢复明确主语并改善叙事衔接。",
+          "timestamp": "2026-08-12T11:19:52+00:00",
+          "actor": "system_academic_review"
+        },
+        {
+          "finding_id": "f-51c977d009d8",
+          "action": "system_fixed",
+          "note": "采用可核验片名《牢狱大暴动》，恢复明确主语并改善叙事衔接。",
+          "timestamp": "2026-08-12T11:19:52+00:00",
+          "actor": "system_academic_review"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0272",
+      "segment_index": 272,
+      "case_type": "authentic_revision",
+      "role": "core_authentic_revision",
+      "eligibility": "eligible",
+      "selection_rationale": "元语言回指与语义范围：避免把英文计词事实错误移植为中文计字事实。",
+      "source": "“You will not have a war,” Matti suddenly said. Those five words have echoed within me for fifty years.",
+      "initial_target": "“你不会经历战争，”马蒂突然说道。这五个字在我心中回响了五十年。",
+      "final_target": "“你不会经历战争，”马蒂突然说道。这句话在我心中回响了五十年。",
+      "translation_delta": {
+        "available": true,
+        "changed": true,
+        "meaningful": true,
+        "formatting_only": false,
+        "case_role": "revision_case",
+        "academically_eligible": true,
+        "lexical_changes": [
+          {
+            "old": "五个字",
+            "new": "句话"
+          }
+        ],
+        "structural_changes": [],
+        "omission_addition": [],
+        "finding_link": [],
+        "repair_link": false,
+        "unchanged": false
+      },
+      "findings": [],
+      "repair_history": [],
+      "human_actions": [],
+      "system_actions": []
+    }
+  ],
+  "excluded_system_repairs": [
+    {
+      "case_id": "seg-ec100d8686d3891e-0142",
+      "segment_index": 142,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_boundary_repair",
+          "reason": "历史终译吞入0143内容；按PDF跨页边界恢复后仍不得作为真实修订案例。"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0144",
+      "segment_index": 144,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "serialized_model_output_repair",
+          "reason": "历史译文带JSON代码围栏且源句跨0144/0145分段。"
+        },
+        {
+          "type": "system_boundary_repair",
+          "reason": "0144/0145的源句跨段存储，终译按相同边界重新切分。"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0145",
+      "segment_index": 145,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_boundary_repair",
+          "reason": "0144/0145的源句跨段存储，终译按相同边界重新切分。"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0209",
+      "segment_index": 209,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译来自0208，历史终译未翻译章节标题。"
+        },
+        {
+          "type": "probable_adjacent_initial_target_overlap",
+          "adjacent_segment_id": "seg-ec100d8686d3891e-0208",
+          "position": "previous",
+          "contained_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0236",
+      "segment_index": 236,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译和终译均复制0235内容，与0236源文不对应。"
+        }
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0239",
+      "segment_index": 239,
+      "decision": "excluded_system_repair",
+      "integrity_flags": [
+        {
+          "type": "system_alignment_repair",
+          "reason": "历史初译和终译均复制0238内容，与0239源文不对应。"
+        }
+      ]
+    }
+  ],
+  "revision_gate_relaxed": false,
+  "human_author_evidence_used": false,
+  "human_author_evidence_note": "作者问题已撤回；本轮只使用可观察文本差异、历史finding和独立记录的system_actions，不生成或推断译者心理意图。",
+  "decision": "three_defensible_core_revision_cases",
+  "content_hash": "e1f1474363c06dbf4a7ad5844e9f0123e4fda0b108524466a931934234a2f5b2"
+}

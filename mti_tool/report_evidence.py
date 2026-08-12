@@ -37,6 +37,12 @@ def build_segment_evidence(state: Dict[str, Any], job_id: str,
         ha.get("finding_id") == f"segment:{index}" or
         any(ha.get("finding_id") == _delivery.finding_id(f) for f in seg_findings)
     ]
+    system_actions = [
+        action for action in state.get("system_actions") or []
+        if action.get("finding_id") == f"segment:{index}" or
+        any(action.get("finding_id") == _delivery.finding_id(f)
+            for f in seg_findings)
+    ]
     fg = state.get("glossary_frozen") or {}
     return {
         "segment_id": _assets.segment_id(job_id, index),
@@ -44,6 +50,7 @@ def build_segment_evidence(state: Dict[str, Any], job_id: str,
         "source": pair.get("source", ""),
         "initial_target": pair.get("initial_target"),
         "final_target": pair.get("target", ""),
+        "integrity_flags": list(pair.get("integrity_flags") or []),
         "reviewed": bool(pair.get("reviewed")),
         "from_tm": bool(pair.get("from_tm")),
         "glossary_decisions": {
@@ -62,10 +69,16 @@ def build_segment_evidence(state: Dict[str, Any], job_id: str,
             for f in seg_findings if f.get("type") == "review"
         ],
         "repair_history": [
-            {k: f.get(k) for k in ("severity", "reason", "suggested_target")}
-            for f in seg_findings if f.get("suggested_target")
+            {k: f.get(k) for k in (
+                "severity", "reason", "suggested_target", "resolved", "resolution")}
+            for f in seg_findings
+            if f.get("suggested_target") or (
+                f.get("resolved") and f.get("resolution", {}).get("action")
+                in {"human_fixed", "retranslated", "system_fixed",
+                    "system_alignment_fixed"})
         ],
         "human_actions": human_actions,
+        "system_actions": system_actions,
     }
 
 

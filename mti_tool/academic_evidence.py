@@ -238,7 +238,8 @@ def _candidate_features(
     revised = has_meaningful_revision(initial, final)
     repair_history = bool(segment["process_evidence"].get("repair_history"))
     human_actions = bool(segment["process_evidence"].get("human_actions"))
-    repaired = bool(revised and (repair_history or human_actions))
+    system_actions = bool(segment["process_evidence"].get("system_actions"))
+    repaired = bool(revised and (repair_history or human_actions or system_actions))
     conflict = any(bool(f.get("conflict")) for f in findings)
     complete_chain = bool(source and revised and findings and repaired)
     integrity_flags = list(segment.get("integrity_flags") or [])
@@ -406,8 +407,12 @@ def mine_candidate_cases(
 
 def _project_statistics(state: Dict[str, Any], segments: List[Dict[str, Any]]) -> Dict[str, Any]:
     findings = state.get("findings") or []
-    by_severity = Counter(str(f.get("severity") or "unknown") for f in findings)
-    by_type = Counter(str(f.get("type") or "unknown") for f in findings)
+    active_findings = [f for f in findings if not f.get("resolved")]
+    by_severity = Counter(str(f.get("severity") or "unknown")
+                          for f in active_findings)
+    by_type = Counter(str(f.get("type") or "unknown") for f in active_findings)
+    recorded_by_severity = Counter(str(f.get("severity") or "unknown")
+                                   for f in findings)
     with_versions = [s for s in segments if s.get("initial_target") is not None
                      and s.get("final_target") is not None]
     revised = [s for s in with_versions if has_meaningful_revision(
@@ -426,6 +431,10 @@ def _project_statistics(state: Dict[str, Any], segments: List[Dict[str, Any]]) -
         "blocking_findings": by_severity.get("blocking", 0),
         "actionable_findings": by_severity.get("actionable", 0),
         "informational_findings": by_severity.get("informational", 0),
+        "recorded_blocking_findings": recorded_by_severity.get("blocking", 0),
+        "recorded_actionable_findings": recorded_by_severity.get("actionable", 0),
+        "recorded_informational_findings": recorded_by_severity.get(
+            "informational", 0),
         "segments_with_initial_final_data": len(with_versions),
         "unchanged_segments": len(with_versions) - len(revised),
         "meaningfully_revised_segments": len(revised),
@@ -441,6 +450,7 @@ def _project_statistics(state: Dict[str, Any], segments: List[Dict[str, Any]]) -
             "initial_final_changed": len(revised),
             "suggested_target_recorded": sum(bool(f.get("suggested_target")) for f in findings),
             "human_action_recorded": len(state.get("human_actions") or []),
+            "system_action_recorded": len(state.get("system_actions") or []),
         },
         "coverage_distribution": dict(Counter(s["coverage_zone"] for s in segments)),
     }
@@ -474,6 +484,7 @@ def build_academic_evidence(
             "source": pair.get("source", ""),
             "initial_target": pair.get("initial_target"),
             "final_target": pair.get("target", ""),
+            "integrity_flags": list(pair.get("integrity_flags") or []),
             "reviewed": bool(pair.get("reviewed")),
             "from_tm": bool(pair.get("from_tm")),
             "coverage_zone": _zone(i, len(pairs)),
@@ -487,6 +498,7 @@ def build_academic_evidence(
                 "review_findings": base.get("review_findings") or [],
                 "repair_history": base.get("repair_history") or [],
                 "human_actions": base.get("human_actions") or [],
+                "system_actions": base.get("system_actions") or [],
                 "terminology_decisions": [glossary_by_id[x] for x in injected
                                           if x in glossary_by_id],
                 "injected_glossary_entry_ids": injected,

@@ -4,10 +4,20 @@
   "pipeline_version": "academic-pipeline-v6",
   "constraint_commit": "7c7babc",
   "supersedes_case_baseline_commit": "e1661ac",
-  "status": "translation_review_required",
+  "status": "phase_b_ready",
   "formal_case_baseline": {
-    "status": "insufficient_revision_cases",
+    "status": "sufficient_revision_cases",
     "core_authentic_revision_cases": [
+      {
+        "case_id": "seg-ec100d8686d3891e-0139",
+        "role": "core_authentic_revision",
+        "eligibility": "eligible"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0233",
+        "role": "core_authentic_revision",
+        "eligibility": "eligible"
+      },
       {
         "case_id": "seg-ec100d8686d3891e-0272",
         "role": "core_authentic_revision",
@@ -16,43 +26,57 @@
     ],
     "optional_supplement": {
       "case_id": "SC-0141",
-      "role": "optional_synthetic_contrast",
-      "historical_revision": false,
+      "case_type": "synthetic_contrast",
       "included_by_default": false,
+      "counts_toward_authentic_core": false,
       "required_disclosure": "分析阶段生成的受控合成对比，不代表作者历史初译，也不支持错误发生频率结论。"
     },
-    "excluded_from_core": [
+    "excluded_system_repairs": [
       {
         "case_id": "seg-ec100d8686d3891e-0142",
-        "reason": "相邻段污染无法从历史记录中防御性分离。"
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0144",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0145",
+        "decision": "excluded_system_repair"
       },
       {
         "case_id": "seg-ec100d8686d3891e-0209",
-        "reason": "初译来自前一段，终译为未翻译的英文标题；属于系统错位重译。"
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0236",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0239",
+        "decision": "excluded_system_repair"
       }
     ],
     "usage_rules": [
-      "当前只有0272通过真实修订门禁，少于两案例最低要求。",
-      "SC-0141只能作为明确标注的可选补充，不得与真实修订等量齐观。",
-      "其他全语料组合案例不属于正式核心案例基线。",
-      "不得放宽真实初译至终译修订资格门禁。",
-      "Human Author Evidence只能丰富分析，不能改变案例资格。",
-      "先处理未审校段和actionable findings，再重新审计新产生的修订历史。"
+      "只把0139、0233、0272作为正式核心真实修订案例。",
+      "SC-0141仅在需要方法对照时使用，并明确标注为合成案例。",
+      "Human Author Evidence可以丰富分析，但不能改变案例资格。",
+      "不得把system_actions表述为作者本人意图或人工修订。"
     ],
     "canonical_sources": {
-      "revision_audit": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/revision-case-audit.json",
-      "revision_selection": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/selected-cases.json",
-      "synthetic_validation": "eval/academic-quality/ec100d8686d3891e/synthetic-contrast-opencode-go-glm52-20260812T022000Z/synthetic-case-validation.jsonl",
-      "human_questions": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/human-evidence-questions-target-cases.json",
-      "corrective_audit": "eval/academic-quality/ec100d8686d3891e/revision-system-analysis-20260812T095500Z/revision-case-audit.json"
+      "revision_audit": "revision-case-audit-final.json",
+      "revision_selection": "selected-cases-final.json",
+      "academic_evidence": "academic-evidence-final.json",
+      "translation_review": "translation-review-audit.json"
     }
   },
   "human_evidence": {
-    "status": "questions_withdrawn_after_system_analysis",
+    "status": "not_required_system_analysis_substituted",
     "question_count": 0,
     "withdrawn_question_count": 4,
     "answers_recorded": 0,
-    "phase_b_started": false
+    "phase_b_started": false,
+    "author_intention_inference_allowed": false
   },
   "stages": [
     {
@@ -63,7 +87,7 @@
     {
       "stage": 2,
       "name": "正式案例基线",
-      "status": "blocked_insufficient_revision_cases"
+      "status": "completed"
     },
     {
       "stage": 3,
@@ -78,7 +102,7 @@
     {
       "stage": 5,
       "name": "翻译审校收口",
-      "status": "pending"
+      "status": "completed"
     },
     {
       "stage": 6,
@@ -110,6 +134,21 @@
       "claims": "literature-claims.jsonl",
       "verification": "literature-source-verification.json",
       "report": "literature-evidence-report.md"
+    }
+  },
+  "translation_review": {
+    "status": "completed",
+    "original_actionable_findings_resolved": 32,
+    "unreviewed_segments_after": 0,
+    "open_blocking_after": 0,
+    "open_actionable_after": 0,
+    "historical_initial_targets_modified": false,
+    "system_actions_separated_from_human_actions": true,
+    "artifacts": {
+      "audit": "translation-review-audit.json",
+      "report": "translation-review-report.md",
+      "pre_review_backup": "translation-state-before-review.json",
+      "post_review_snapshot": "translation-state-after-review.json"
     }
   }
 }

@@ -692,6 +692,12 @@ def test_external_evidence_attack_and_prompt_scan():
         capture_output=True, text=True).stdout
     prompt_files = []
     for line in hits.splitlines():
+        path = line.split(":", 1)[0]
+        # Verified DOI/repository URLs belong in the deterministic literature
+        # registry; this scan is only a guard against asking a model to invent
+        # citation URLs in prompts.
+        if path == "scripts/prepare_closeout_literature.py":
+            continue
         if "PRESERVE_RE" in line or "example.com" in line and "系统" not in line:
             continue
         if any(endpoint in line for endpoint in (

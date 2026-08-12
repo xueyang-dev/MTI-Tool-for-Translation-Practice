@@ -111,6 +111,23 @@ def test_adjacent_initial_contamination_is_not_a_revision_case():
     print("  ✓ adjacent initial contamination is a system boundary, not revision evidence")
 
 
+def test_persisted_system_repair_flag_survives_after_text_is_corrected():
+    pair = _pair("cross-page source", "旧译。", "按源文边界修复后的译文。")
+    pair["integrity_flags"] = [{
+        "type": "system_boundary_repair",
+        "reason": "historical target contained adjacent paragraph content",
+    }]
+    evidence = academic_evidence.build_academic_evidence(_state([pair]), JOB)
+    segment = evidence["project_evidence"]["segments"][0]
+    candidate = evidence["candidate_cases"][0]
+    assert segment["integrity_flags"] == pair["integrity_flags"]
+    assert candidate["academic_candidate_status"] == "review_required"
+    assert not academic_evidence.is_eligible_revision_case(segment)
+    selected = academic_writer.select_academic_cases({}, {"claims": []}, evidence)
+    assert selected["authentic_revision_cases"] == 0
+    print("  ✓ persisted system-repair provenance cannot become a core case after correction")
+
+
 def test_two_case_fallback_is_explicit_and_outline_safe():
     evidence = academic_evidence.build_academic_evidence(_state([
         _pair("source one", "旧译一。", "新译一。"),
@@ -258,6 +275,7 @@ if __name__ == "__main__":
     test_finding_without_revision_stays_excluded()
     test_neighbor_overlap_requires_review_and_is_not_selected()
     test_adjacent_initial_contamination_is_not_a_revision_case()
+    test_persisted_system_repair_flag_survives_after_text_is_corrected()
     test_two_case_fallback_is_explicit_and_outline_safe()
     test_two_case_validator_requires_disclosure_but_not_third_case()
     test_human_evidence_cannot_promote_unchanged_case()

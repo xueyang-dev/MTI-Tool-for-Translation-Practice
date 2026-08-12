@@ -1,0 +1,46 @@
+{
+  "schema_version": "case-selection-v6-closeout",
+  "job_id": "ec100d8686d3891e",
+  "selection_status": "sufficient_revision_cases",
+  "authentic_selection_status": "sufficient_revision_cases",
+  "preferred_core_case_count": 3,
+  "minimum_core_case_count": 2,
+  "selected_case_count": 3,
+  "authentic_revision_cases": 3,
+  "synthetic_contrast_cases": 0,
+  "scarcity_disclosure_required": false,
+  "cases": [
+    {
+      "case_id": "seg-ec100d8686d3891e-0139",
+      "segment_index": 139,
+      "case_type": "authentic_revision",
+      "role": "core_authentic_revision",
+      "eligibility": "eligible",
+      "selection_rationale": "文学隐喻与父子关系：修订保留“伸手”意象，同时改善汉语叙事节奏。"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0233",
+      "segment_index": 233,
+      "case_type": "authentic_revision",
+      "role": "core_authentic_revision",
+      "eligibility": "eligible",
+      "selection_rationale": "文化专名与叙事指代：修正影片名误译，并恢复被泛化的明确主语。"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0272",
+      "segment_index": 272,
+      "case_type": "authentic_revision",
+      "role": "core_authentic_revision",
+      "eligibility": "eligible",
+      "selection_rationale": "元语言回指与语义范围：避免把英文计词事实错误移植为中文计字事实。"
+    }
+  ],
+  "optional_supplement": {
+    "case_id": "SC-0141",
+    "case_type": "synthetic_contrast",
+    "included_by_default": false,
+    "counts_toward_authentic_core": false,
+    "required_disclosure": "分析阶段生成的受控合成对比，不代表作者历史初译，也不支持错误发生频率结论。"
+  },
+  "content_hash": "afa60166607c60cf27cdbe5ab3876aecafb306f43588b1cff10e2ce7072c0ac8"
+}

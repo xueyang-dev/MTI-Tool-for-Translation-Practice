@@ -74,11 +74,43 @@ def test_whole_corpus_evidence_and_candidates():
     assert zones == {"beginning", "middle", "end"}
     stats = evidence["project_evidence"]["statistics"]
     assert stats["total_segments"] == 12 and stats["tm_reuse_count"] == 1
-    assert stats["actionable_findings"] == 1 and stats["blocking_findings"] == 1
+    assert stats["actionable_findings"] == 1 and stats["blocking_findings"] == 0
+    assert stats["recorded_actionable_findings"] == 1
+    assert stats["recorded_blocking_findings"] == 1
     first = evidence["project_evidence"]["segments"][0]
     assert first["process_evidence"]["repair_history"]
     assert first["availability"]["initial_target"] == "recorded"
     print("  ✓ 全语料证据 / 首中尾覆盖 / 确定性候选 / 流程统计")
+
+
+def test_project_statistics_separate_open_from_historical_findings():
+    state = _state()
+    state["findings"][0]["resolved"] = True
+    evidence = academic_evidence.build_academic_evidence(state, JOB)
+    stats = evidence["project_evidence"]["statistics"]
+    assert stats["actionable_findings"] == 0
+    assert stats["recorded_actionable_findings"] == 1
+    assert stats["blocking_findings"] == 0
+    assert stats["recorded_blocking_findings"] == 1
+    print("  ✓ 当前待处理 finding 与历史 finding 分开统计")
+
+
+def test_system_review_actions_are_not_human_evidence():
+    state = _state(1)
+    state["findings"][0]["resolved"] = True
+    state["findings"][0]["resolution"] = {
+        "action": "system_fixed", "note": "系统审校修复"}
+    state["human_actions"] = []
+    state["system_actions"] = [{
+        "finding_id": "segment:0", "action": "system_fixed",
+        "actor": "system_academic_review", "note": "系统审校修复"}]
+    segment = academic_evidence.build_academic_evidence(
+        state, JOB)["project_evidence"]["segments"][0]
+    process = segment["process_evidence"]
+    assert process["human_actions"] == []
+    assert process["system_actions"][0]["action"] == "system_fixed"
+    assert process["repair_history"][0]["resolution"]["action"] == "system_fixed"
+    print("  ✓ 系统审校动作不冒充 Human Author Evidence")
 
 
 def test_institutional_thesis_constraints():
@@ -415,6 +447,8 @@ if __name__ == "__main__":
     print("学术写作架构测试：")
     test_0272_count_fact_gate()
     test_whole_corpus_evidence_and_candidates()
+    test_project_statistics_separate_open_from_historical_findings()
+    test_system_review_actions_are_not_human_evidence()
     test_institutional_thesis_constraints()
     test_validator_enforces_institutional_structure_and_language()
     test_validator_rejects_fabrication()
