@@ -1377,6 +1377,15 @@ def markdown_to_word(md_text, theory):
     _apply_doc_fonts(doc)
     md_text = re.sub(r'```markdown|```', '', md_text).strip()
     md_text = re.sub(r'<!--.*?-->', '', md_text, flags=re.DOTALL)
+    quote_labels = {
+        "SYNTHETIC_SOURCE": "真实源文",
+        "SIMULATED": "模拟初译",
+        "OPTIMIZED": "优化译文",
+    }
+    md_text = re.sub(
+        r'(?m)^>\s*\[(SYNTHETIC_SOURCE|SIMULATED|OPTIMIZED)\s+(SC-\d{4,})\]:\s*',
+        lambda match: f"> {quote_labels[match.group(1)]}（{match.group(2)}）：",
+        md_text)
     title = doc.add_heading(f'翻译实践报告：基于{theory}', 0)
     title.alignment = 1
     for line in md_text.split('\n'):

@@ -2,7 +2,7 @@
 
 ## 修订案例硬资格规则
 
-核心案例分析只允许使用 `revision_case`：初译和终译均已记录，且经保守规范化后
+真实修订案例分析只允许使用 `authentic_revision`：初译和终译均已记录，且经保守规范化后
 存在有意义的文本差异。空白或纯标点变化不自动构成修订。候选挖掘先执行该门禁，
 再按完整修复链、关联 finding、repair history、实际文本差异和研究问题相关性排序。
 
@@ -15,6 +15,11 @@ Human Author Evidence 升级为修订案例。案例数量策略为“优选 3 �
 
 三个状态均不得用未修改、污染或推断出的片段回填。Human Author Evidence 只可为已通过
 资格门禁的案例补充作者事后说明，不得改变 `case_role` 或初译—终译差异。
+
+此外，学术章节可使用独立标注的 `synthetic_contrast`，但它不是第三个真实修订案例，也不
+改变上述数量状态。其模拟初译和优化译文只存在于 synthetic artifact，必须通过 plausibility、
+materiality 和 repair validation，并在正文公开方法与局限。详细设计见
+`docs/synthetic-contrast-case-architecture.md`。
 
 ## 真实项目修订案例恢复结论（ec100d8686d3891e）
 
@@ -97,6 +102,7 @@ Streamlit 展示和 `markdown_to_word` 导出 DOCX。
 
 ```text
 Academic Evidence
+→ Synthetic Difficulty / Baseline / Diagnosis / Optimization / Validation
 → Research Model
 → Literature Source Snapshot
 → Literature Evidence
@@ -132,6 +138,11 @@ dependency hash、实现版本与更新时间：
 | `literature-evidence.jsonl` | Literature Evidence → source / block / exact location / exact text / provenance / hash |
 | `literature-claims.jsonl` | Literature Claim → source / supporting evidence / 类型 / 置信度 / 落地状态 |
 | `argument-plan.json` | Global Claim → RQ → project evidence / Literature Claim / Literature Evidence / support category |
+| `synthetic-error-opportunities.jsonl` | 源文难点、精确 trigger 与可能误读机制 |
+| `synthetic-baselines.jsonl` | 分析阶段生成的模拟初译及非历史 provenance |
+| `synthetic-error-manifest.jsonl` | 独立 plausibility 结果、错误诊断与实质性 |
+| `synthetic-optimized-translations.jsonl` | 针对诊断问题生成的 AI 优化译文 |
+| `synthetic-case-validation.jsonl` | 修复正确性/价值、资格结论与拒绝原因 |
 | `selected-cases.json` | 经论点相关性与证据完整度选择的案例 |
 | `academic-outline.json` | section → purpose/RQ/global claim/case/Literature Claim/Literature Evidence/statistic/允许结论 |
 | `academic-sections.json` | 分节正文、摘要、结构化 provenance 与 section dependency hash |

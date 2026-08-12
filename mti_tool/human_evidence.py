@@ -29,6 +29,7 @@ EVIDENCE_NEED_TYPES = (
     "reviewer_feedback", "review_acceptance_reason", "repair_reason",
     "terminology_decision_reason", "context_information", "reader_response",
     "source_interpretation", "theoretical_intention", "other_author_context",
+    "synthetic_baseline_plausibility", "synthetic_optimization_preference",
 )
 RECOVERABILITY = (
     "human_recoverable", "system_recoverable", "historically_unrecoverable",
@@ -59,6 +60,15 @@ def _norm(text: Any) -> str:
 
 def dimension_to_need_type(dimension: str, plan: Dict[str, Any],
                            segment: Dict[str, Any]) -> str:
+    if plan.get("case_type") == "synthetic_contrast":
+        if dimension in {"initial_failure_or_alternative",
+                         "initial_solution_or_failure",
+                         "alternative_interpretation_or_strategy"}:
+            return "synthetic_baseline_plausibility"
+        if dimension in {"decision_rationale", "final_translation_decision",
+                         "translation_effect", "bounded_conclusion",
+                         "case_level_conclusion"}:
+            return "synthetic_optimization_preference"
     delta = plan.get("translation_delta") or {}
     if dimension == "decision_rationale":
         return "repair_reason" if delta.get("changed") else "translator_rationale"
@@ -99,7 +109,9 @@ def recoverability_of(need_type: str, plan: Dict[str, Any],
     if need_type in ("translator_rationale", "repair_reason",
                      "alternative_considered", "reader_response",
                      "source_interpretation", "theoretical_intention",
-                     "context_information", "terminology_decision_reason"):
+                     "context_information", "terminology_decision_reason",
+                     "synthetic_baseline_plausibility",
+                     "synthetic_optimization_preference"):
         return "human_recoverable"
     return "not_worth_requesting"
 
@@ -109,7 +121,9 @@ def academic_value_of(need_type: str, affected_dimensions: Iterable[str],
     if blocks_p1:
         return "critical"
     if need_type in ("translator_rationale", "repair_reason",
-                     "reader_response", "alternative_considered"):
+                     "reader_response", "alternative_considered",
+                     "synthetic_baseline_plausibility",
+                     "synthetic_optimization_preference"):
         if {"decision_rationale", "translation_effect",
             "bounded_conclusion"} & set(affected_dimensions):
             return "high"
@@ -136,7 +150,8 @@ def build_evidence_needs(
     for plan in (case_plans.get("plans") or []):
         case_id = str(plan.get("case_id") or "")
         segment = segs.get(case_id) or {}
-        if not case_analysis.translation_delta(segment).get("changed"):
+        delta = plan.get("translation_delta") or case_analysis.translation_delta(segment)
+        if not delta.get("changed"):
             continue
         completion = case_analysis.contract_completion(plan)
         depth_entry = depth.get(case_id) or {}
@@ -164,7 +179,7 @@ def build_evidence_needs(
             needs.append({
                 "need_id": f"HN-{len(needs) + 1:03d}",
                 "case_id": case_id,
-                "segment_ids": [case_id],
+                "segment_ids": [str(plan.get("source_segment_id") or case_id)],
                 "missing_evidence": need_type,
                 "reason": f"{dimension} 维度为 {completion.get(dimension, 'weak')}，"
                           f"无法用已记录项目证据回答。",
@@ -202,6 +217,16 @@ def _question_template(need: Dict[str, Any], segment: Dict[str, Any],
     finding = findings[0] if findings else {}
     suggestion = (finding.get("suggested_target") or "")[:60]
     question_type = need_type
+    if need_type == "synthetic_baseline_plausibility":
+        baseline = str((plan.get("synthetic_baseline") or {}).get("text") or "")[:100]
+        return (question_type,
+                f"这是一条为分析构造的模拟初译：「{baseline}」。你认为一名具备基本能力的"
+                "译者是否可能作出这种处理？请只评价合理性，不把它当作你的历史译文。")
+    if need_type == "synthetic_optimization_preference":
+        optimized = str((plan.get("optimized_translation") or {}).get("text") or "")[:100]
+        return (question_type,
+                f"对于这条分析用优化译文「{optimized}」，你认为它是否解决了所述问题？"
+                "如有更合适的译法，请说明。")
     if need_type == "translator_rationale":
         if final:
             return (question_type,
@@ -250,9 +275,11 @@ def generate_questions(
                        key=lambda x: rank.get(x["academic_value"], 3)):
         case_id = str(need.get("case_id") or "")
         segment = segs.get(case_id) or {}
-        if not case_analysis.translation_delta(segment).get("changed"):
-            continue
         plan = plans.get(case_id) or {}
+        synthetic = plan.get("case_type") == "synthetic_contrast"
+        delta = plan.get("translation_delta") or case_analysis.translation_delta(segment)
+        if not delta.get("changed"):
+            continue
         question_type, question = _question_template(need, segment, plan)
         questions.append({
             "question_id": f"HQ-{len(questions) + 1:03d}",
@@ -262,9 +289,19 @@ def generate_questions(
             "question_type": question_type,
             "question": question,
             "context": {
-                "source": (segment.get("source") or "")[:200],
-                "initial_target": (segment.get("initial_target") or "")[:200] or None,
-                "final_target": (segment.get("final_target") or "")[:200],
+                "case_type": plan.get("case_type", "authentic_revision"),
+                "source": (plan.get("source_text") if synthetic else segment.get(
+                    "source") or "")[:200],
+                "initial_target": None if synthetic else (
+                    segment.get("initial_target") or "")[:200] or None,
+                "final_target": "" if synthetic else (
+                    segment.get("final_target") or "")[:200],
+                "synthetic_initial_translation": (
+                    (plan.get("synthetic_baseline") or {}).get("text") or "")[:200]
+                if synthetic else None,
+                "optimized_translation": (
+                    (plan.get("optimized_translation") or {}).get("text") or "")[:200]
+                if synthetic else None,
             },
             "priority": need.get("academic_value", "low"),
             "status": "open",
@@ -388,7 +425,8 @@ def case_capabilities(
         if str(x.get("case_id")) == case_id
         and x.get("status") == "user_confirmed"]
     if not usable or not (adequacy.get("capabilities") or {}).get(
-            "has_meaningful_revision"):
+            "has_meaningful_revision") and not (adequacy.get("capabilities") or {}).get(
+                "has_validated_synthetic_contrast"):
         return dict(adequacy)
     can = set(adequacy.get("can_support") or [])
     cannot = set(adequacy.get("cannot_support") or [])
@@ -400,6 +438,10 @@ def case_capabilities(
         cannot.discard("historical_revision_reasoning")
     if "reader_response" in types:
         can.add("reader_response_claim")
+    if "synthetic_baseline_plausibility" in types:
+        can.add("author_judged_baseline_plausibility")
+    if "synthetic_optimization_preference" in types:
+        can.add("author_optimization_preference")
     level = adequacy.get("evidence_level", "source_final_only")
     if usable and level == "source_final_only":
         level = "source_final_plus_author_rationale"
@@ -414,6 +456,9 @@ def case_capabilities(
             "has_revision_rationale": bool(types & {
                 "translator_rationale", "repair_reason", "review_acceptance_reason",
                 "terminology_decision_reason"}),
+            "has_author_synthetic_judgment": bool(types & {
+                "synthetic_baseline_plausibility",
+                "synthetic_optimization_preference"}),
         },
     }
 

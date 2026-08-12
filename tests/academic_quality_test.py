@@ -274,9 +274,10 @@ def test_end_to_end_quality_repair_with_case_replacement():
             research_settings={"research_questions": ["如何处理让步关系？"]},
             auto_repair_rounds=0, auto_quality_repair_rounds=1)
         assert state["p3_done"]
-        quality_history = state["academic_state"]["academic_quality_history"]
-        assert len(quality_history) >= 2, "质量修复轮应重新评估"
-        assert quality_history[-1]["metrics"]["weak_cases"] == 0
+        quality_artifact = academic_writer._read_artifact(
+            tmp / "academic-quality-evaluation.json")
+        assert len(quality_artifact["runs"]) == 2, "质量修复轮应重新评估"
+        assert quality_artifact["runs"][-1]["metrics"]["weak_cases"] == 0
         repair_artifact = academic_writer._read_artifact(
             tmp / "academic-quality-repair-history.json")
         assert repair_artifact["rounds"]

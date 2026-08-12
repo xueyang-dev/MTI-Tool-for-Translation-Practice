@@ -342,8 +342,9 @@ def test_end_to_end_trace_repair_and_precise_staleness():
         assert repair_artifact["rounds"][0]["literature_claim_ids"] == ["LC-001"]
         assert repair_artifact["rounds"][0]["global_claim_ids"] == ["C1"]
         assert repair_artifact["rounds"][0]["repair_actions"] == ["narrow"]
-        assert state["academic_state"]["validation_history"][0]["status"] == "fail"
-        assert state["academic_state"]["validation_history"][-1]["status"] == "pass"
+        validation_artifact = academic_writer._read_artifact(
+            tmp / "academic-validation.json")
+        assert [run["status"] for run in validation_artifact["runs"]] == ["fail", "pass"]
         assert "evil2026" not in state["p3_md"]
         expected = {
             "literature-sources.json", "literature-evidence.jsonl",

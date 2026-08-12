@@ -18,8 +18,9 @@ from . import academic_validator
 from . import case_analysis
 from . import human_evidence
 from . import literature_evidence
+from . import synthetic_cases
 
-PIPELINE_VERSION = "academic-pipeline-v4"
+PIPELINE_VERSION = "academic-pipeline-v5"
 VERSIONS = {
     "evidence_version": academic_evidence.SCHEMA_VERSION,
     "research_model_version": "research-model-v1",
@@ -27,9 +28,14 @@ VERSIONS = {
     "literature_evidence_version": literature_evidence.EVIDENCE_VERSION,
     "literature_claims_version": literature_evidence.CLAIMS_VERSION,
     "argument_plan_version": "argument-planner-v2",
-    "case_selection_version": "case-selector-v3",
-    "outline_version": "academic-outline-v3",
-    "writer_version": "academic-writer-v4",
+    "synthetic_opportunity_version": synthetic_cases.OPPORTUNITY_VERSION,
+    "synthetic_baseline_version": synthetic_cases.BASELINE_VERSION,
+    "synthetic_error_manifest_version": synthetic_cases.ERROR_MANIFEST_VERSION,
+    "synthetic_optimizer_version": synthetic_cases.OPTIMIZER_VERSION,
+    "synthetic_validation_version": synthetic_cases.VALIDATION_VERSION,
+    "case_selection_version": "case-selector-v4",
+    "outline_version": "academic-outline-v4",
+    "writer_version": "academic-writer-v5",
     "validator_version": academic_validator.VALIDATOR_VERSION,
     "reviewer_version": "academic-reviewer-v1",
     "literature_reviewer_version": "literature-support-reviewer-v1",
@@ -45,6 +51,11 @@ ARTIFACT_FILES = {
     "literature_evidence": "literature-evidence.jsonl",
     "literature_claims": "literature-claims.jsonl",
     "argument_plan": "argument-plan.json",
+    "synthetic_opportunities": "synthetic-error-opportunities.jsonl",
+    "synthetic_baselines": "synthetic-baselines.jsonl",
+    "synthetic_error_manifest": "synthetic-error-manifest.jsonl",
+    "synthetic_optimized": "synthetic-optimized-translations.jsonl",
+    "synthetic_validation": "synthetic-case-validation.jsonl",
     "selected_cases": "selected-cases.json",
     "outline": "academic-outline.json",
     "sections": "academic-sections.json",
@@ -73,12 +84,6 @@ def default_academic_state() -> Dict[str, Any]:
         "quality_status": None,
         "versions": {},
         "artifacts": {},
-        "artifact_history": [],
-        "validation_history": [],
-        "review_history": [],
-        "literature_review_history": [],
-        "academic_quality_history": [],
-        "repair_history": [],
         "forced_sections": [],
         "stale_reasons": [],
         "last_error": "",
@@ -93,9 +98,10 @@ def _state(state: Dict[str, Any]) -> Dict[str, Any]:
         for key, value in base.items():
             current.setdefault(key, value)
         base = current
-    for key in ("artifacts", "artifact_history", "validation_history",
-                "review_history", "literature_review_history", "repair_history", "forced_sections",
-                "stale_reasons", "versions"):
+    for key in ("artifact_history", "validation_history", "review_history",
+                "literature_review_history", "academic_quality_history", "repair_history"):
+        base.pop(key, None)
+    for key in ("artifacts", "forced_sections", "stale_reasons", "versions"):
         if not isinstance(base.get(key), (dict if key in ("artifacts", "versions") else list)):
             base[key] = {} if key in ("artifacts", "versions") else []
     state["academic_state"] = base
@@ -161,10 +167,6 @@ def _save_artifact(
     dependency_hash: str, version: str,
 ) -> Dict[str, Any]:
     academic = _state(state)
-    old = academic["artifacts"].get(name)
-    if old and old.get("content_hash") != value.get("content_hash"):
-        academic["artifact_history"].append({**old, "name": name,
-                                              "superseded_at": _now()})
     filename = ARTIFACT_FILES[name]
     _write_artifact(artifact_dir / filename, value)
     academic["artifacts"][name] = {
@@ -192,14 +194,58 @@ def _load_valid_artifact(
     return value if content_hash == record.get("content_hash") else None
 
 
+def _load_reusable_sections(artifact_dir: Path) -> Dict[str, Dict[str, Any]]:
+    """Keep same-writer section cache available after an upstream invalidation."""
+    value = _read_artifact(artifact_dir / ARTIFACT_FILES["sections"]) or {}
+    if value.get("schema_version") != VERSIONS["writer_version"]:
+        return {}
+    return {str(x.get("section_id")): x for x in value.get("sections", [])
+            if x.get("section_id") and x.get("dependency_hash")}
+
+
+def _section_dependency_hash(
+    plan: Dict[str, Any], argument_plan: Dict[str, Any],
+    selected_cases: Dict[str, Any], evidence: Dict[str, Any],
+    literature_sources_artifact: Dict[str, Any],
+    literature_evidence_artifact: Dict[str, Any],
+    literature_claims_artifact: Dict[str, Any],
+    case_plans: Dict[str, Any], human_entries: Iterable[Dict[str, Any]],
+) -> str:
+    """Hash only case-selection state that can affect this section."""
+    case_ids = set(plan.get("cases") or [])
+    scoped_cases = [x for x in selected_cases.get("cases", [])
+                    if x.get("case_id") in case_ids]
+    section_id = str(plan.get("section_id") or "")
+    return academic_evidence.stable_hash({
+        "plan": plan,
+        "claims": argument_plan["content_hash"],
+        "evidence": evidence["content_hash"],
+        "cases": academic_evidence.stable_hash(scoped_cases),
+        "synthetic_policy": selected_cases.get("synthetic_contrast_cases", 0)
+        if section_id in {"1", "4"} else None,
+        "case_count_policy": selected_cases.get("authentic_selection_status")
+        if section_id in {"3", "4"} else None,
+        "writer": VERSIONS["writer_version"],
+        "literature_sources": literature_sources_artifact["sources_metadata_hash"],
+        "literature_evidence": literature_evidence_artifact["content_hash"],
+        "literature_claims": literature_claims_artifact["content_hash"],
+        "case_analysis": academic_evidence.stable_hash([
+            {k: p.get(k) for k in (
+                "case_id", "problem", "initial_failure", "alternatives",
+                "decision_rationale", "translation_effect", "theory_mapping",
+                "bounded_conclusion", "human_evidence_ids", "human_evidence")}
+            for p in case_plans.get("plans", []) if p.get("case_id") in case_ids]),
+        "human_evidence": academic_evidence.stable_hash([
+            {k: x.get(k) for k in ("human_evidence_id", "status",
+                                   "answer", "question_type")}
+            for x in human_entries if str(x.get("case_id")) in case_ids]),
+    })
+
+
 def _invalidate_names(state: Dict[str, Any], names: Sequence[str], reason: str) -> None:
     academic = _state(state)
     for name in names:
-        record = academic["artifacts"].pop(name, None)
-        if record:
-            academic["artifact_history"].append({**record, "name": name,
-                                                  "invalidated_at": _now(),
-                                                  "reason": reason})
+        academic["artifacts"].pop(name, None)
     if reason not in academic["stale_reasons"]:
         academic["stale_reasons"].append(reason)
     if set(names) & {"research_model", "argument_plan", "selected_cases", "outline",
@@ -233,6 +279,42 @@ def sync_versions(state: Dict[str, Any], versions: Optional[Dict[str, str]] = No
                 "literature_claims", "argument_plan", "outline", "sections",
                 "validation", "review", "literature_support_review", "repair_history",
             ], "literature claim schema/version changed")
+        elif old.get("synthetic_opportunity_version") != \
+                versions["synthetic_opportunity_version"]:
+            _invalidate_names(state, [
+                "synthetic_opportunities", "synthetic_baselines",
+                "synthetic_error_manifest", "synthetic_optimized",
+                "synthetic_validation", "selected_cases", "case_analysis_plans",
+                "outline", "sections", "validation", "review", "academic_quality",
+            ], "synthetic difficulty mining version changed")
+        elif old.get("synthetic_baseline_version") != \
+                versions["synthetic_baseline_version"]:
+            _invalidate_names(state, [
+                "synthetic_baselines", "synthetic_error_manifest",
+                "synthetic_optimized", "synthetic_validation", "selected_cases",
+                "case_analysis_plans", "outline", "sections", "validation", "review",
+                "academic_quality",
+            ], "synthetic baseline generator version changed")
+        elif old.get("synthetic_error_manifest_version") != \
+                versions["synthetic_error_manifest_version"]:
+            _invalidate_names(state, [
+                "synthetic_error_manifest", "synthetic_optimized",
+                "synthetic_validation", "selected_cases", "case_analysis_plans",
+                "outline", "sections", "validation", "review", "academic_quality",
+            ], "synthetic diagnosis version changed")
+        elif old.get("synthetic_optimizer_version") != \
+                versions["synthetic_optimizer_version"]:
+            _invalidate_names(state, [
+                "synthetic_optimized", "synthetic_validation", "selected_cases",
+                "case_analysis_plans", "outline", "sections", "validation", "review",
+                "academic_quality",
+            ], "synthetic optimizer version changed")
+        elif old.get("synthetic_validation_version") != \
+                versions["synthetic_validation_version"]:
+            _invalidate_names(state, [
+                "synthetic_validation", "selected_cases", "case_analysis_plans",
+                "outline", "sections", "validation", "review", "academic_quality",
+            ], "synthetic validation policy changed")
         elif old.get("research_model_version") != versions["research_model_version"] \
                 or old.get("argument_plan_version") != versions["argument_plan_version"] \
                 or old.get("case_selection_version") != versions["case_selection_version"] \
@@ -364,9 +446,10 @@ def prepare_academic_inputs(
     old_translation_hash = academic.get("translation_evidence_hash")
     if old_translation_hash and old_translation_hash != translation_hash:
         _invalidate_names(state, [
-            "evidence", "research_model", "argument_plan", "selected_cases", "outline",
-            "sections", "validation", "review", "literature_support_review",
-            "repair_history",
+            "evidence", "synthetic_opportunities", "synthetic_baselines",
+            "synthetic_error_manifest", "synthetic_optimized", "synthetic_validation",
+            "research_model", "argument_plan", "selected_cases", "outline", "sections",
+            "validation", "review", "literature_support_review", "repair_history",
         ], "translation evidence changed")
     academic["translation_evidence_hash"] = translation_hash
     academic["research_settings_hash"] = settings_hash
@@ -648,79 +731,124 @@ def build_argument_plan(
 def select_academic_cases(
     research_model: Dict[str, Any], argument_plan: Dict[str, Any],
     evidence: Dict[str, Any], limit: int = 3,
+    synthetic_artifact: Optional[Dict[str, Any]] = None,
+    policy: str = "mixed", preferred_authentic_count: int = 3,
+    minimum_authentic_count: int = 2,
 ) -> Dict[str, Any]:
+    if policy not in {"authentic_only", "synthetic_only", "mixed"}:
+        policy = "mixed"
     revision_pool = academic_evidence.candidate_index(evidence)
     candidates = {case_id: item for case_id, item in revision_pool.items()
                   if item.get("academic_candidate_status", "eligible") == "eligible"}
     eligible_pool = list(candidates.values())
     selected: Dict[str, Dict[str, Any]] = {}
-    for claim in argument_plan.get("claims", []):
-        for evidence_id in claim.get("project_evidence") or []:
-            if evidence_id not in candidates:
-                continue
-            case = selected.setdefault(evidence_id, {
-                **candidates[evidence_id], "supports_claims": [],
-                "research_questions": [],
-            })
-            case["supports_claims"].append(claim["claim_id"])
-            case["research_questions"].append(claim["research_question"])
-    for zone in ("beginning", "middle", "end"):
-        item = next((x for x in eligible_pool
-                     if x.get("coverage_zone") == zone), None)
-        if item and len(selected) < limit:
+    if policy != "synthetic_only":
+        for claim in argument_plan.get("claims", []):
+            for evidence_id in claim.get("project_evidence") or []:
+                if evidence_id not in candidates:
+                    continue
+                case = selected.setdefault(evidence_id, {
+                    **candidates[evidence_id], "supports_claims": [],
+                    "research_questions": [],
+                })
+                case["supports_claims"].append(claim["claim_id"])
+                case["research_questions"].append(claim["research_question"])
+        for zone in ("beginning", "middle", "end"):
+            item = next((x for x in eligible_pool
+                         if x.get("coverage_zone") == zone), None)
+            if item and len(selected) < limit:
+                selected.setdefault(item["case_id"], {
+                    **item, "supports_claims": [], "research_questions": []})
+        for item in eligible_pool:
+            if len(selected) >= limit:
+                break
             selected.setdefault(item["case_id"], {
                 **item, "supports_claims": [], "research_questions": []})
-    for item in eligible_pool:
-        if len(selected) >= limit:
-            break
-        selected.setdefault(item["case_id"], {
-            **item, "supports_claims": [], "research_questions": []})
     cases = list(selected.values())[:limit]
+    authentic_count = len(cases)
+    if policy != "authentic_only" and len(cases) < limit:
+        segs = academic_evidence.segment_index(evidence)
+        for item in synthetic_cases.select_diverse_cases(
+                synthetic_artifact or {}, limit - len(cases)):
+            source_segment = segs.get(str(item.get("source_segment_id") or "")) or {}
+            cases.append({
+                **item,
+                "coverage_zone": source_segment.get("coverage_zone"),
+                "academic_candidate_status": "eligible",
+                "supports_claims": [],
+                "research_questions": [],
+                "selection_rationale": (
+                    "eligible synthetic contrast with independently confirmed repair"),
+            })
     for case in cases:
         case["supports_claims"] = sorted(set(case["supports_claims"]))
         case["research_questions"] = sorted(set(case["research_questions"]))
-        case["selection_rationale"] = (
-            "；".join(case.get("reasons") or []) or "whole-corpus coverage")
-    minimum = min(2, limit)
-    if len(cases) >= limit:
-        selection_status = "sufficient_revision_cases"
+        if case.get("case_type") == "authentic_revision":
+            case["selection_rationale"] = (
+                "；".join(case.get("reasons") or []) or "whole-corpus coverage")
+    minimum = min(minimum_authentic_count, preferred_authentic_count)
+    if policy == "synthetic_only":
+        authentic_status = "not_applicable"
+        recommendations = []
+        scarcity_disclosure = ""
+    elif authentic_count >= preferred_authentic_count:
+        authentic_status = "sufficient_revision_cases"
         recommendations: List[str] = []
         scarcity_disclosure = ""
-    elif len(cases) >= minimum:
-        selection_status = "two_case_fallback"
+    elif authentic_count >= minimum:
+        authentic_status = "two_case_fallback"
         recommendations = [
-            "proceed_with_two_core_cases",
+            "retain_verified_authentic_cases",
             "disclose_revision_evidence_scarcity",
             "do_not_backfill_with_ineligible_cases",
-            "request_human_evidence_only_for_genuine_revision_cases",
+            "use_only_explicitly_labeled_eligible_synthetic_contrasts",
         ]
         scarcity_disclosure = (
-            f"现有项目证据仅支持 {len(cases)} 个通过修订资格门禁的核心案例；"
+            f"现有项目证据仅支持 {authentic_count} 个通过修订资格门禁的真实修订案例；"
             "未用弱证据或无真实修订的片段补足第三个案例。")
     else:
-        selection_status = "insufficient_revision_cases"
+        authentic_status = "insufficient_revision_cases"
         recommendations = [
             "recover_historical_translation_versions_or_revision_records",
-            "select_another_translation_job",
             "do_not_backfill_with_ineligible_cases",
-            "request_human_evidence_only_for_genuine_revision_cases",
+            "use_only_explicitly_labeled_eligible_synthetic_contrasts",
         ]
         scarcity_disclosure = (
-            f"现有项目证据仅支持 {len(cases)} 个通过修订资格门禁的核心案例，"
+            f"现有项目证据仅支持 {authentic_count} 个通过修订资格门禁的真实修订案例，"
             f"少于最低要求 {minimum} 个。")
+    synthetic_count = len(cases) - authentic_count
+    selection_status = (
+        "mixed_case_selection" if authentic_count and synthetic_count else
+        "synthetic_only_selection" if synthetic_count else
+        "no_eligible_synthetic_cases" if policy == "synthetic_only" else
+        authentic_status)
     artifact = {
         "schema_version": VERSIONS["case_selection_version"],
-        "selection_policy": "revision eligibility > argument relevance > complete repair chain > meaningful delta > complexity",
-        "eligibility_rule": "revision_case_only",
+        "selection_policy": policy,
+        "preference_order": (
+            "verified authentic revision > eligible synthetic contrast > "
+            "weak authentic evidence > unsupported reconstructed history"),
+        "eligibility_rule": "case_type_specific_gate",
         "requested_case_count": limit,
-        "preferred_core_case_count": limit,
+        "preferred_core_case_count": preferred_authentic_count,
         "minimum_core_case_count": minimum,
-        "case_count_policy": "prefer_three_allow_two_when_revision_evidence_is_scarce",
+        "case_count_policy": "authentic_and_synthetic_pools_remain_distinct",
         "eligible_case_count": len(candidates),
         "revision_candidate_pool_count": len(revision_pool),
+        "eligible_synthetic_case_count": sum(
+            x.get("validation", {}).get("academic_case_eligible")
+            for x in (synthetic_artifact or {}).get("items", [])),
+        "synthetic_pipeline_status": (synthetic_artifact or {}).get(
+            "pipeline_status", "not_run"),
         "selected_case_count": len(cases),
+        "authentic_revision_cases": authentic_count,
+        "synthetic_contrast_cases": synthetic_count,
+        "authentic_selection_status": authentic_status,
         "selection_status": selection_status,
-        "scarcity_disclosure_required": selection_status == "two_case_fallback",
+        "scarcity_disclosure_required": authentic_status in {
+            "two_case_fallback", "insufficient_revision_cases"},
+        "synthetic_methodology_disclosure_required": synthetic_count > 0,
+        "synthetic_limitation_disclosure_required": synthetic_count > 0,
         "scarcity_disclosure": scarcity_disclosure,
         "scarcity_recommendations": recommendations,
         "cases": cases,
@@ -737,14 +865,24 @@ def _fallback_outline(
     claims = [c["claim_id"] for c in argument_plan.get("claims", [])]
     rqs = [r["rq_id"] for r in research_model.get("research_questions", [])]
     cases = [c["case_id"] for c in selected_cases.get("cases", [])]
+    authentic_cases = [c["case_id"] for c in selected_cases.get("cases", [])
+                       if c.get("case_type") == "authentic_revision"]
+    synthetic_case_ids = [c["case_id"] for c in selected_cases.get("cases", [])
+                          if c.get("case_type") == "synthetic_contrast"]
     total = int(research_model.get("target_words") or 4200)
-    case_status = selected_cases.get("selection_status")
+    case_status = selected_cases.get(
+        "authentic_selection_status", selected_cases.get("selection_status"))
     scarcity = str(selected_cases.get("scarcity_disclosure") or "")
     analysis_conclusions = ["理论解释必须表述为作者分析而非真实心理意图"]
     conclusion_limits = ["结论强度不得超过项目与文献证据"]
     if case_status == "two_case_fallback" and scarcity:
         analysis_conclusions.append(scarcity)
         conclusion_limits.append("明确披露核心修订案例只有两个，不补造第三案例")
+    if synthetic_case_ids:
+        analysis_conclusions.append(
+            "合成对比案例必须标为模拟初译/优化译文，不能写成作者历史修订")
+        conclusion_limits.append(
+            "合成案例只展示合理失败模式，不证明人类译者中的发生频率")
     return {"sections": [
         {"section_id": "1", "title": "翻译项目与研究设计", "purpose": "界定项目、研究问题、方法与证据边界。",
          "research_questions": rqs, "claims": claims[:1], "cases": [],
@@ -753,13 +891,16 @@ def _fallback_outline(
          "target_words": round(total * .2), "minimum_chars": 300,
          "allowed_conclusions": ["仅陈述证据库可支持的项目特征"]},
         {"section_id": "2", "title": "翻译过程、术语与质量控制", "purpose": "分析术语、TM、审校和修复证据。",
-         "research_questions": rqs[-1:], "claims": claims[-1:], "cases": cases[:2],
+         "research_questions": rqs[-1:], "claims": claims[-1:], "cases": authentic_cases[:2],
          "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": ["reviewed_segments", "tm_reuse_count", "actionable_findings"],
          "target_words": round(total * .25), "minimum_chars": 350,
          "allowed_conclusions": ["区分可观察流程效果与推断"]},
-        {"section_id": "3", "title": "理论框架下的案例分析", "purpose": "用完整证据链分析代表性翻译决策。",
+        {"section_id": "3", "title": "理论框架下的案例分析",
+         "purpose": "分别分析真实修订案例与明确标注的合成对比案例。",
          "research_questions": rqs, "claims": claims, "cases": cases,
+         "case_groups": {"authentic_revision": authentic_cases,
+                         "synthetic_contrast": synthetic_case_ids},
          "literature_claims": [], "literature_evidence": [], "literature_sources": [],
          "required_statistics": [], "target_words": round(total * .4), "minimum_chars": 600,
          "allowed_conclusions": analysis_conclusions},
@@ -799,6 +940,8 @@ def build_academic_outline(
         "\"minimum_chars\":300,\"allowed_conclusions\":[\"...\"]}]}。"
         "案例数量以 selected_cases.case_count_policy 为准；two_case_fallback 是合格的"
         "双案例结构，不得虚构或要求第三个案例，并须在案例分析或结论中披露证据稀缺。"
+        "若存在 synthetic_contrast，必须与 authentic_revision 分组，并规划方法说明和局限；"
+        "不得把模拟初译写成历史初译。"
     )
     payload = {
         "research_model": research_model,
@@ -878,16 +1021,21 @@ def build_academic_outline(
         for case_id in claim.get("project_evidence") or []:
             case_claims.setdefault(str(case_id), set()).add(claim["claim_id"])
     selected_ids = {str(x.get("case_id")) for x in selected_cases.get("cases", [])}
+    selected_by_id = {str(x.get("case_id")): x
+                      for x in selected_cases.get("cases", [])}
     for section in sections:
-        section["cases"] = section["cases"][:4]
+        section["cases"] = section["cases"][:max(4, len(selected_ids))]
     assigned = {case_id for section in sections for case_id in section["cases"]}
     for case_id in sorted(selected_ids - assigned):
-        if case_id not in case_claims:
+        if case_id not in case_claims and selected_by_id.get(case_id, {}).get(
+                "case_type") != "synthetic_contrast":
             # Zone-coverage candidates without a claim binding do not need a
             # section; forcing them in would create impossible validation.
             continue
-        best = max(sections, key=lambda x: len(
-            set(x["claims"]) & (case_claims.get(case_id) or set())))
+        best = analysis if selected_by_id.get(case_id, {}).get(
+            "case_type") == "synthetic_contrast" else max(
+                sections, key=lambda x: len(
+                    set(x["claims"]) & (case_claims.get(case_id) or set())))
         best["cases"].append(case_id)
     claims_by_id = {x["claim_id"]: x for x in argument_plan.get("claims", [])}
     for section in sections:
@@ -905,16 +1053,31 @@ def build_academic_outline(
             lit_evidence[x]["source_id"] for x in section["literature_evidence"]
             if x in lit_evidence and lit_evidence[x].get("source_id") in lit_sources
         })
+        section["case_groups"] = {
+            "authentic_revision": [case_id for case_id in section["cases"]
+                                     if selected_by_id.get(case_id, {}).get(
+                                         "case_type") == "authentic_revision"],
+            "synthetic_contrast": [case_id for case_id in section["cases"]
+                                    if selected_by_id.get(case_id, {}).get(
+                                        "case_type") == "synthetic_contrast"],
+        }
     artifact = {
         "schema_version": VERSIONS["outline_version"],
         "sections": sections,
         "planner_fallback": fallback,
         "case_count_policy": {
-            "status": selected_cases.get("selection_status"),
+            "status": selected_cases.get(
+                "authentic_selection_status", selected_cases.get("selection_status")),
             "preferred": selected_cases.get("preferred_core_case_count", 3),
             "minimum": selected_cases.get("minimum_core_case_count", 2),
             "selected": len(selected_cases.get("cases", [])),
             "scarcity_disclosure": selected_cases.get("scarcity_disclosure", ""),
+        },
+        "case_groups": {
+            "authentic_revision": [case_id for case_id, item in selected_by_id.items()
+                                     if item.get("case_type") == "authentic_revision"],
+            "synthetic_contrast": [case_id for case_id, item in selected_by_id.items()
+                                    if item.get("case_type") == "synthetic_contrast"],
         },
     }
     artifact["content_hash"] = academic_evidence.stable_hash(
@@ -941,7 +1104,10 @@ def _section_packet(
     plans = case_analysis.plan_index(case_analysis_plans or {})
     case_term_ids = set()
     for case_id in section.get("cases", []):
-        case_term_ids.update((segments.get(case_id) or {}).get(
+        selected = cases.get(case_id) or {}
+        source_id = case_id if selected.get("case_type") == "authentic_revision" \
+            else selected.get("source_segment_id")
+        case_term_ids.update((segments.get(str(source_id)) or {}).get(
             "process_evidence", {}).get("injected_glossary_entry_ids", []))
     all_terms = evidence.get("project_evidence", {}).get("glossary", [])
     if "术语" in (section.get("title", "") + section.get("purpose", "")):
@@ -958,8 +1124,11 @@ def _section_packet(
         ],
         "current_section": section,
         "claims": [claims[x] for x in section.get("claims", []) if x in claims],
-        "cases": [{**cases[x], "evidence": segments.get(x)} for x in section.get("cases", [])
-                  if x in cases and x in segments],
+        "cases": [{
+            **cases[x],
+            "evidence": segments.get(x) if cases[x].get(
+                "case_type") == "authentic_revision" else cases[x],
+        } for x in section.get("cases", []) if x in cases],
         "case_analyses": [{
             **plans[x],
             "analysis_contract_text": case_analysis.render_analysis_contract(plans[x]),
@@ -983,6 +1152,9 @@ def _section_packet(
             "source_quote": "> [SOURCE seg-...]: exact source",
             "initial_quote": "> [INITIAL seg-...]: exact initial target",
             "target_quote": "> [TARGET seg-...]: exact final target",
+            "synthetic_source_quote": "> [SYNTHETIC_SOURCE SC-...]: exact source",
+            "synthetic_baseline_quote": "> [SIMULATED SC-...]: exact simulated baseline",
+            "synthetic_optimized_quote": "> [OPTIMIZED SC-...]: exact AI optimization",
             "project_statistic": "{{STAT:metric_name}}",
             "terminology_decision": "{{TERM:entry_id}}",
             "formal_citation": "[@source_id]",
@@ -990,16 +1162,31 @@ def _section_packet(
             "literature_claim_marker": "<!--lit-claim:LC-001-->",
             "literature_evidence_marker": "<!--lit-evidence:LE-...-->",
             "analysis_contract": "按 case_analyses 中的 analysis_contract_text 逐项落实",
-            "evidence_level_policy": "只有 revision_case 可进入核心案例分析；"
-                                     "Human Evidence 只能解释真实修订，不能创造修订历史",
+            "evidence_level_policy": (
+                "authentic_revision 必须有真实初译→终译；synthetic_contrast 必须通过"
+                "独立合成资格门禁；两者不得互相转换"),
             "case_count_policy": {
-                "status": selected_cases.get("selection_status"),
+                "status": selected_cases.get(
+                    "authentic_selection_status", selected_cases.get("selection_status")),
                 "preferred": selected_cases.get("preferred_core_case_count", 3),
                 "minimum": selected_cases.get("minimum_core_case_count", 2),
                 "selected": len(selected_cases.get("cases", [])),
                 "scarcity_disclosure": selected_cases.get("scarcity_disclosure", ""),
                 "required_marker": "<!--case-count-policy:two_case_fallback-->"
-                if selected_cases.get("selection_status") == "two_case_fallback" else "",
+                if selected_cases.get(
+                    "authentic_selection_status", selected_cases.get(
+                        "selection_status")) == "two_case_fallback" else "",
+            },
+            "synthetic_case_policy": {
+                "present": bool(selected_cases.get("synthetic_contrast_cases")),
+                "methodology_marker": "<!--synthetic-methodology-->",
+                "methodology_disclosure": (
+                    "合成对比案例以真实源文为基础，模拟初译与优化译文均为分析阶段生成，"
+                    "不代表作者的历史翻译；其合理性、错误实质性与修复有效性分别经过检查。"),
+                "limitation_marker": "<!--synthetic-limitation-->",
+                "limitation_disclosure": (
+                    "合成案例只能展示合理的翻译失败模式，不能证明此类错误在人类译者中的"
+                    "实际发生频率。"),
             },
         },
     }
@@ -1013,8 +1200,9 @@ def _write_section(
     repair = bool(repair_issues)
     system = (
         "你是 MTI 证据约束型学术写作者。根据论点计划写当前章节，不得新增主要论点、"
-        "项目事实或文献。引用案例时必须逐字复制 packet 中 source/initial_target/final_target，"
-        "使用指定 SOURCE/INITIAL/TARGET 格式；项目数字只能用 {{STAT:key}}；正式文献只能用 [@source_id]；"
+        "项目事实或文献。authentic_revision 必须逐字使用 SOURCE/INITIAL/TARGET；"
+        "synthetic_contrast 必须逐字使用 SYNTHETIC_SOURCE/SIMULATED/OPTIMIZED，"
+        "并明确称为‘模拟初译’和‘优化译文’。项目数字只能用 {{STAT:key}}；正式文献只能用 [@source_id]；"
         "文献直接引语必须逐字复制 literature_evidence 并使用 LITERATURE 格式；文献释义必须"
         "同时保留 lit-claim 与 lit-evidence marker，并引用对应 source_id；"
         "项目术语决策用 {{TERM:entry_id}}。每个落实的 claim 和 RQ 分别保留 HTML marker。"
@@ -1030,16 +1218,39 @@ def _write_section(
             "修订证据稀缺，并逐字保留 <!--case-count-policy:two_case_fallback--> marker；"
             f"可使用的披露语句为：{count_policy.get('scarcity_disclosure')}"
         )
+    synthetic_policy = (packet.get("writing_constraints") or {}).get(
+        "synthetic_case_policy") or {}
+    section_id = str((packet.get("current_section") or {}).get("section_id") or "")
+    if synthetic_policy.get("present"):
+        system += (
+            " 合成案例绝不能使用‘笔者初译为、经审校后修改为、初译阶段出现、最终将其"
+            "修改为’等历史过程措辞，也不得称其为常见/普遍人类错误，除非 packet 提供"
+            "实证频率证据。允许的表述是‘为考察可能偏差，构造如下模拟初译’。"
+        )
+        if section_id == "1":
+            system += (
+                " 本节须包含方法披露及 marker："
+                f"{synthetic_policy.get('methodology_disclosure')}"
+                f"{synthetic_policy.get('methodology_marker')}。")
+        if section_id == "3":
+            system += (
+                " 若本节含两类案例，使用‘真实修订案例’与‘合成对比案例’两个可见小标题。")
+        if section_id == "4":
+            system += (
+                " 本节须包含局限披露及 marker："
+                f"{synthetic_policy.get('limitation_disclosure')}"
+                f"{synthetic_policy.get('limitation_marker')}。")
     if packet.get("case_analyses"):
         system += (
             " 案例分析必须按 packet.case_analyses 的 analysis_contract_text 实现："
-            "先明确翻译问题与证据，再说明初始方案/失败（必须有真实初译—终译差异；finding "
-            "证据）、备选方案（必须标注 historical_alternative / analytical_comparison / "
+            "authentic_revision 按历史初译→finding/文本差异→实际修订→历史终译；"
+            "synthetic_contrast 按翻译难点→合理模拟错误→错误诱因与诊断→意义/功能失真→"
+            "AI 优化→修复机制与有效性→有界结论。备选方案必须标注 historical_alternative / analytical_comparison / "
             "counterfactual_rendering；没有证据的备选一律 counterfactual_rendering）、"
             "最终决策与理由、翻译效果（指明具体维度与文本特征，禁止‘更自然/更准确’式"
             "空泛判断）、理论连接（仅当 theory_mapping 存在；否则禁止提及任何理论名称）、"
-            "证据边界与有界结论（只限本案例，禁止外推为一般规则）。必须逐字展示 INITIAL 与"
-            "TARGET，并使正文描述的变化与两者一致。禁止：编造译者意图或"
+            "证据边界与有界结论（只限本案例，禁止外推为一般规则）。必须使用与 case_type"
+            "对应的逐字标签，并使正文描述的变化与 artifact 一致。禁止：编造译者意图或"
             "过程历史；提及 packet 之外任何 seg 段号；把反事实备选写成历史事实。证据不足"
             "时明确写‘本项目证据不足以支持…’，并列出 recommended_human_evidence 所需"
             "的人工证据。"
@@ -1098,7 +1309,10 @@ def _is_transient_llm_error(exc: Exception) -> bool:
 def _packet_provenance(packet: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "global_claim_ids": [x.get("claim_id") for x in packet.get("claims", [])],
-        "project_evidence_ids": [x.get("case_id") for x in packet.get("cases", [])],
+        "project_evidence_ids": [x.get("case_id") for x in packet.get("cases", [])
+                                 if x.get("case_type") == "authentic_revision"],
+        "synthetic_case_ids": [x.get("case_id") for x in packet.get("cases", [])
+                               if x.get("case_type") == "synthetic_contrast"],
         "literature_claim_ids": [x.get("literature_claim_id")
                                  for x in packet.get("literature_claims", [])],
         "literature_evidence_ids": [x.get("evidence_id")
@@ -1132,10 +1346,14 @@ def _compose_report(sections: List[Dict[str, Any]]) -> str:
 
 
 _QUOTE_LINE = re.compile(
-    r"^>\s*\[(SOURCE|TARGET)\s+([A-Za-z0-9_-]+)\]:\s*(.*)$", re.MULTILINE)
+    r"^>\s*\[(SOURCE|INITIAL|TARGET|SYNTHETIC_SOURCE|SIMULATED|OPTIMIZED)\s+"
+    r"([A-Za-z0-9_-]+)\]:\s*(.*)$", re.MULTILINE)
 
 
-def normalize_report_quotes(report_md: str, evidence: Dict[str, Any]) -> str:
+def normalize_report_quotes(
+    report_md: str, evidence: Dict[str, Any],
+    selected_cases: Optional[Dict[str, Any]] = None,
+) -> str:
     """Deterministically replace segment quotes with the exact saved text.
 
     The writer is instructed to copy quotes verbatim, but a bounded repair loop
@@ -1144,19 +1362,35 @@ def normalize_report_quotes(report_md: str, evidence: Dict[str, Any]) -> str:
     artifact keeps the model's original prose for auditability.
     """
     segs = academic_evidence.segment_index(evidence)
+    selected = {str(x.get("case_id")): x
+                for x in (selected_cases or {}).get("cases", [])}
 
     def repl(match: re.Match) -> str:
-        kind, seg_id, _ = match.groups()
-        segment = segs.get(seg_id)
-        if not segment:
-            return match.group(0)
-        exact = segment["source" if kind == "SOURCE" else "final_target"]
-        return f"> [{kind} {seg_id}]: {exact}"
+        kind, case_id, _ = match.groups()
+        if kind in {"SOURCE", "INITIAL", "TARGET"}:
+            segment = segs.get(case_id)
+            if not segment:
+                return match.group(0)
+            exact = segment[{"SOURCE": "source", "INITIAL": "initial_target",
+                             "TARGET": "final_target"}[kind]]
+        else:
+            case = selected.get(case_id) or {}
+            exact = {
+                "SYNTHETIC_SOURCE": case.get("source_text"),
+                "SIMULATED": case.get("synthetic_baseline", {}).get("text"),
+                "OPTIMIZED": case.get("optimized_translation", {}).get("text"),
+            }[kind]
+            if not exact:
+                return match.group(0)
+        return f"> [{kind} {case_id}]: {exact}"
 
     return _QUOTE_LINE.sub(repl, report_md)
 
 
-def finalize_report_tokens(report_md: str, evidence: Dict[str, Any]) -> str:
+def finalize_report_tokens(
+    report_md: str, evidence: Dict[str, Any],
+    selected_cases: Optional[Dict[str, Any]] = None,
+) -> str:
     """Apply quote normalisation plus full-evidence token expansion.
 
     The scoped packet only carries a section's planned statistics, but writers
@@ -1165,7 +1399,7 @@ def finalize_report_tokens(report_md: str, evidence: Dict[str, Any]) -> str:
     scoped packet remains the writer's authority during drafting.
     """
     return academic_validator.expand_evidence_tokens(
-        normalize_report_quotes(report_md, evidence), evidence)
+        normalize_report_quotes(report_md, evidence, selected_cases), evidence)
 
 
 def _semantic_review(
@@ -1177,7 +1411,9 @@ def _semantic_review(
         "你是独立的 MTI 学术审稿人，不是写作者。检查不受确定性验证覆盖的推理问题："
         "unsupported_conclusion、weak_evidence、case_claim_mismatch、theory_case_mismatch、"
         "overgeneralization、duplicate_argument、contradiction、descriptive_not_analytical、"
-        "chapter_drift、conclusion_too_strong。只输出 JSON：{\"issues\":[{\"issue_id\":"
+        "chapter_drift、conclusion_too_strong、synthetic_case_presented_as_historical、"
+        "unsupported_human_error_frequency_claim。synthetic_contrast 只能作为明确标注的"
+        "分析实验，不能支持作者历史过程。只输出 JSON：{\"issues\":[{\"issue_id\":"
         "\"AR-001\",\"section_id\":\"3\",\"type\":\"weak_evidence\","
         "\"claim_id\":\"C1\",\"evidence_ids\":[\"seg-...\"],"
         "\"severity\":\"low|medium|high\",\"reason\":\"...\","
@@ -1187,7 +1423,10 @@ def _semantic_review(
         "research_model": research_model,
         "argument_plan": argument_plan,
         "outline": outline,
-        "selected_case_ids": [x["case_id"] for x in selected_cases.get("cases", [])],
+        "selected_cases": [
+            {"case_id": x.get("case_id"), "case_type": x.get("case_type"),
+             "provenance": x.get("provenance")}
+            for x in selected_cases.get("cases", [])],
         "report": report_md,
     }
     raw = _call_json(call_llm, provider, api_key, model, system,
@@ -1400,6 +1639,7 @@ def _apply_case_replacements(
     replacements: List[Dict[str, Any]], selected_cases: Dict[str, Any],
     argument_plan: Dict[str, Any], outline: Dict[str, Any],
     evidence: Dict[str, Any],
+    synthetic_validation_artifact: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any], List[Dict[str, Any]]]:
     """Replace weak/misaligned cases and propagate to plan/outline/sections."""
     cases = list(selected_cases.get("cases", []))
@@ -1414,7 +1654,8 @@ def _apply_case_replacements(
             continue
         claim_ids = [str(x) for x in old.get("supports_claims") or []]
         new_candidate = academic_quality.select_replacement_case(
-            old_id, claim_ids, selected_cases, argument_plan, evidence)
+            old_id, claim_ids, selected_cases, argument_plan, evidence,
+            synthetic_validation_artifact)
         if not new_candidate:
             continue
         new_id = str(new_candidate["case_id"])
@@ -1457,6 +1698,7 @@ def _run_quality_repair_round(
     literature_sources_artifact: Dict[str, Any],
     literature_evidence_artifact: Dict[str, Any],
     literature_claims_artifact: Dict[str, Any],
+    synthetic_validation_artifact: Dict[str, Any],
     case_analysis_plans: Dict[str, Any],
     human_evidence_entries: Iterable[Dict[str, Any]],
     quality: Dict[str, Any], validation: Dict[str, Any],
@@ -1473,7 +1715,8 @@ def _run_quality_repair_round(
     performed_replacements: List[Dict[str, Any]] = []
     if plan["case_replacements"]:
         selected_cases, argument_plan, outline, performed = _apply_case_replacements(
-            plan["case_replacements"], selected_cases, argument_plan, outline, evidence)
+            plan["case_replacements"], selected_cases, argument_plan, outline, evidence,
+            synthetic_validation_artifact)
         performed_replacements = performed
         new_ids = {x["new_case_id"] for x in performed}
         affected_sections.update(
@@ -1525,11 +1768,12 @@ def _run_quality_repair_round(
         })
     written = [by_id[x["section_id"]] for x in outline.get("sections", [])]
     report_md = _compose_report(written)
-    report_md = finalize_report_tokens(report_md, evidence)
+    report_md = finalize_report_tokens(report_md, evidence, selected_cases)
     validation = academic_validator.validate_academic_report(
         report_md, evidence, research_model, argument_plan, selected_cases, outline,
         literature_sources_artifact, literature_evidence_artifact,
-        literature_claims_artifact, human_evidence_entries)
+        literature_claims_artifact, human_evidence_entries,
+        synthetic_validation_artifact)
     validation = _locate_validation_issues(validation, written)
     review = _semantic_review(
         report_md, research_model, argument_plan, outline, selected_cases,
@@ -1629,6 +1873,8 @@ def run_academic_pipeline(
     """Run or resume the complete academic evidence-to-repair pipeline."""
     artifact_dir = Path(artifact_dir)
     academic = _state(state)
+    validation_runs: List[Dict[str, Any]] = []
+    quality_runs: List[Dict[str, Any]] = []
     _legacy_backup(state, artifact_dir)
     sync_versions(state)
     academic.update(status="in_progress", last_error="", updated_at=_now())
@@ -1659,6 +1905,101 @@ def run_academic_pipeline(
         if evidence is None:
             evidence = _save_artifact(state, artifact_dir, "evidence", evidence_new,
                                       evidence_dep, VERSIONS["evidence_version"])
+
+        synthetic_policy = str(settings.get("case_selection_policy") or "mixed")
+        if synthetic_policy not in {"authentic_only", "synthetic_only", "mixed"}:
+            synthetic_policy = "mixed"
+        synthetic_enabled = synthetic_policy != "authentic_only"
+        max_scan = max(1, int(settings.get("synthetic_max_scan") or 48))
+        max_opportunities = max(1, int(settings.get(
+            "synthetic_max_opportunities") or 12))
+
+        stage("synthetic_opportunities", "【学术写作】挖掘合成对比案例的翻译难点...")
+        synthetic_opportunity_dep = academic_evidence.stable_hash({
+            "evidence": evidence["content_hash"], "enabled": synthetic_enabled,
+            "max_scan": max_scan, "max_opportunities": max_opportunities,
+            "version": VERSIONS["synthetic_opportunity_version"],
+        })
+        synthetic_opportunities = _load_valid_artifact(
+            state, artifact_dir, "synthetic_opportunities", synthetic_opportunity_dep,
+            VERSIONS["synthetic_opportunity_version"])
+        if synthetic_opportunities is None:
+            synthetic_opportunities = synthetic_cases.mine_error_opportunities(
+                evidence, call_llm, provider, api_key, model, max_scan, max_opportunities) \
+                if synthetic_enabled else {
+                    "schema_version": VERSIONS["synthetic_opportunity_version"],
+                    "items": [], "content_hash": academic_evidence.stable_hash([]),
+                    "total_source_segments": len(evidence.get(
+                        "project_evidence", {}).get("segments", [])),
+                    "screened_segments": 0, "opportunities_found": 0,
+                }
+            synthetic_opportunities = _save_artifact(
+                state, artifact_dir, "synthetic_opportunities", synthetic_opportunities,
+                synthetic_opportunity_dep, VERSIONS["synthetic_opportunity_version"])
+
+        stage("synthetic_baselines", "【学术写作】生成分析用模拟初译...")
+        synthetic_baseline_dep = academic_evidence.stable_hash({
+            "opportunities": synthetic_opportunities["content_hash"],
+            "version": VERSIONS["synthetic_baseline_version"],
+        })
+        synthetic_baselines = _load_valid_artifact(
+            state, artifact_dir, "synthetic_baselines", synthetic_baseline_dep,
+            VERSIONS["synthetic_baseline_version"])
+        if synthetic_baselines is None:
+            synthetic_baselines = synthetic_cases.generate_baselines(
+                synthetic_opportunities, call_llm, provider, api_key, model)
+            synthetic_baselines = _save_artifact(
+                state, artifact_dir, "synthetic_baselines", synthetic_baselines,
+                synthetic_baseline_dep, VERSIONS["synthetic_baseline_version"])
+
+        stage("synthetic_error_manifest", "【学术写作】独立检查模拟初译并诊断错误...")
+        synthetic_error_dep = academic_evidence.stable_hash({
+            "baselines": synthetic_baselines["content_hash"],
+            "version": VERSIONS["synthetic_error_manifest_version"],
+        })
+        synthetic_error_manifest = _load_valid_artifact(
+            state, artifact_dir, "synthetic_error_manifest", synthetic_error_dep,
+            VERSIONS["synthetic_error_manifest_version"])
+        if synthetic_error_manifest is None:
+            synthetic_error_manifest = synthetic_cases.build_error_manifest(
+                synthetic_baselines, call_llm, provider, api_key, model)
+            synthetic_error_manifest = _save_artifact(
+                state, artifact_dir, "synthetic_error_manifest",
+                synthetic_error_manifest, synthetic_error_dep,
+                VERSIONS["synthetic_error_manifest_version"])
+
+        stage("synthetic_optimization", "【学术写作】生成并约束 AI 优化译文...")
+        synthetic_optimizer_dep = academic_evidence.stable_hash({
+            "errors": synthetic_error_manifest["content_hash"],
+            "terminology": academic_evidence.stable_hash(
+                evidence.get("project_evidence", {}).get("glossary", [])),
+            "version": VERSIONS["synthetic_optimizer_version"],
+        })
+        synthetic_optimized = _load_valid_artifact(
+            state, artifact_dir, "synthetic_optimized", synthetic_optimizer_dep,
+            VERSIONS["synthetic_optimizer_version"])
+        if synthetic_optimized is None:
+            synthetic_optimized = synthetic_cases.optimize_translations(
+                synthetic_error_manifest, call_llm, provider, api_key, model,
+                evidence.get("project_evidence", {}).get("glossary", []))
+            synthetic_optimized = _save_artifact(
+                state, artifact_dir, "synthetic_optimized", synthetic_optimized,
+                synthetic_optimizer_dep, VERSIONS["synthetic_optimizer_version"])
+
+        stage("synthetic_validation", "【学术写作】独立验证错误实质性与修复有效性...")
+        synthetic_validation_dep = academic_evidence.stable_hash({
+            "optimized": synthetic_optimized["content_hash"],
+            "version": VERSIONS["synthetic_validation_version"],
+        })
+        synthetic_validation = _load_valid_artifact(
+            state, artifact_dir, "synthetic_validation", synthetic_validation_dep,
+            VERSIONS["synthetic_validation_version"])
+        if synthetic_validation is None:
+            synthetic_validation = synthetic_cases.validate_synthetic_cases(
+                synthetic_optimized, call_llm, provider, api_key, model, evidence)
+            synthetic_validation = _save_artifact(
+                state, artifact_dir, "synthetic_validation", synthetic_validation,
+                synthetic_validation_dep, VERSIONS["synthetic_validation_version"])
 
         stage("literature_evidence", "【学术写作 2/10】固化文献来源与逐字证据...")
         literature_sources_new = literature_evidence.build_literature_sources(literature)
@@ -1743,13 +2084,23 @@ def run_academic_pipeline(
 
         case_dep = academic_evidence.stable_hash({
             "argument": argument_plan["content_hash"], "evidence": evidence["content_hash"],
+            "synthetic": synthetic_validation["content_hash"],
+            "policy": synthetic_policy,
+            "limit": int(settings.get("case_limit") or 5),
             "version": VERSIONS["case_selection_version"],
         })
         selected_cases = _load_valid_artifact(
             state, artifact_dir, "selected_cases", case_dep,
             VERSIONS["case_selection_version"])
         if selected_cases is None:
-            selected_cases = select_academic_cases(research_model, argument_plan, evidence)
+            selected_cases = select_academic_cases(
+                research_model, argument_plan, evidence,
+                limit=max(1, int(settings.get("case_limit") or 5)),
+                synthetic_artifact=synthetic_validation, policy=synthetic_policy,
+                preferred_authentic_count=max(1, int(settings.get(
+                    "preferred_authentic_case_count") or 3)),
+                minimum_authentic_count=max(1, int(settings.get(
+                    "minimum_authentic_case_count") or 2)))
             selected_cases = _save_artifact(
                 state, artifact_dir, "selected_cases", selected_cases, case_dep,
                 VERSIONS["case_selection_version"])
@@ -1815,31 +2166,18 @@ def run_academic_pipeline(
         })
         section_artifact = _load_valid_artifact(
             state, artifact_dir, "sections", sections_dep, VERSIONS["writer_version"])
-        existing = {x["section_id"]: x for x in (section_artifact or {}).get("sections", [])}
+        existing = ({x["section_id"]: x
+                     for x in (section_artifact or {}).get("sections", [])}
+                    if section_artifact else _load_reusable_sections(artifact_dir))
         forced = set(academic.get("forced_sections") or [])
         written: List[Dict[str, Any]] = []
         prior_summaries: List[Dict[str, str]] = []
         for plan in outline.get("sections", []):
             sid = plan["section_id"]
-            section_key = academic_evidence.stable_hash({
-                "plan": plan, "claims": argument_plan["content_hash"],
-                "cases": selected_cases["content_hash"], "writer": VERSIONS["writer_version"],
-                "literature_sources": literature_sources_artifact["sources_metadata_hash"],
-                "literature_evidence": literature_evidence_artifact["content_hash"],
-                "literature_claims": literature_claims_artifact["content_hash"],
-                "case_analysis": academic_evidence.stable_hash([
-                    {k: p.get(k) for k in (
-                        "case_id", "problem", "initial_failure", "alternatives",
-                        "decision_rationale", "translation_effect", "theory_mapping",
-                        "bounded_conclusion", "human_evidence_ids", "human_evidence")}
-                    for p in case_plans.get("plans", [])
-                    if p.get("case_id") in set(plan.get("cases") or [])]),
-                "human_evidence": academic_evidence.stable_hash([
-                    {k: x.get(k) for k in ("human_evidence_id", "status",
-                                           "answer", "question_type")}
-                    for x in human_entries
-                    if str(x.get("case_id")) in set(plan.get("cases") or [])]),
-            })
+            section_key = _section_dependency_hash(
+                plan, argument_plan, selected_cases, evidence,
+                literature_sources_artifact, literature_evidence_artifact,
+                literature_claims_artifact, case_plans, human_entries)
             old = existing.get(sid)
             if old and old.get("dependency_hash") == section_key and sid not in forced:
                 item = old
@@ -1866,26 +2204,24 @@ def run_academic_pipeline(
             save_state(state)
         academic["forced_sections"] = []
         report_md = _compose_report(written)
-        report_md = finalize_report_tokens(report_md, evidence)
+        report_md = finalize_report_tokens(report_md, evidence, selected_cases)
 
         stage("validation", "【学术写作 8/10】执行确定性证据与结构验证...")
         validation = academic_validator.validate_academic_report(
             report_md, evidence, research_model, argument_plan, selected_cases, outline,
             literature_sources_artifact, literature_evidence_artifact,
-            literature_claims_artifact, human_entries)
+            literature_claims_artifact, human_entries, synthetic_validation)
         validation = _locate_validation_issues(validation, written)
-        academic["validation_history"].append(validation)
+        validation_runs.append(validation)
 
         stage("review", "【学术写作 9/10】执行独立语义与文献支持审稿...")
         review = _semantic_review(
             report_md, research_model, argument_plan, outline, selected_cases,
             call_llm, provider, api_key, model)
-        academic["review_history"].append(review)
         literature_support_review = _literature_support_review(
             report_md, argument_plan, outline, literature_sources_artifact,
             literature_evidence_artifact, literature_claims_artifact,
             call_llm, provider, api_key, model)
-        academic["literature_review_history"].append(literature_support_review)
 
         repair_history = {"schema_version": "academic-repair-v1", "rounds": []}
         if auto_repair_rounds > 0:
@@ -1939,30 +2275,28 @@ def run_academic_pipeline(
                 _save_artifact(state, artifact_dir, "sections", section_artifact,
                                sections_dep, VERSIONS["writer_version"])
                 report_md = _compose_report(written)
-                report_md = finalize_report_tokens(report_md, evidence)
+                report_md = finalize_report_tokens(report_md, evidence, selected_cases)
                 validation = academic_validator.validate_academic_report(
                     report_md, evidence, research_model, argument_plan, selected_cases, outline,
                     literature_sources_artifact, literature_evidence_artifact,
-                    literature_claims_artifact, human_entries)
+                    literature_claims_artifact, human_entries, synthetic_validation)
                 validation = _locate_validation_issues(validation, written)
-                academic["validation_history"].append(validation)
+                validation_runs.append(validation)
                 review = _semantic_review(
                     report_md, research_model, argument_plan, outline, selected_cases,
                     call_llm, provider, api_key, model)
-                academic["review_history"].append(review)
                 literature_support_review = _literature_support_review(
                     report_md, argument_plan, outline, literature_sources_artifact,
                     literature_evidence_artifact, literature_claims_artifact,
                     call_llm, provider, api_key, model)
-                academic["literature_review_history"].append(literature_support_review)
 
-        validation_artifact = {**validation,
-                               "runs": academic["validation_history"][-2:]}
+        validation_artifact = {**validation, "runs": validation_runs[-2:]}
         validation_artifact["content_hash"] = academic_evidence.stable_hash(
             {k: v for k, v in validation_artifact.items() if k != "content_hash"})
         validation_dep = academic_evidence.stable_hash({
             "report": academic_evidence.stable_hash(report_md),
             "evidence": evidence["content_hash"], "validator": VERSIONS["validator_version"],
+            "synthetic": synthetic_validation["content_hash"],
             "literature_sources": literature_sources_artifact["content_hash"],
             "literature_evidence": literature_evidence_artifact["content_hash"],
             "literature_claims": literature_claims_artifact["content_hash"],
@@ -1998,7 +2332,7 @@ def run_academic_pipeline(
             literature_sources_artifact, literature_evidence_artifact,
             literature_claims_artifact, validation, call_llm, provider, api_key, model,
             case_plans)
-        academic["academic_quality_history"].append(quality_evaluation)
+        quality_runs.append(quality_evaluation)
         quality_repair_history = {"schema_version": "academic-quality-repair-v1",
                                   "rounds": []}
         quality_round = 0
@@ -2013,7 +2347,7 @@ def run_academic_pipeline(
                 written, report_md, evidence, research_model, argument_plan,
                 selected_cases, outline, literature_sources_artifact,
                 literature_evidence_artifact, literature_claims_artifact,
-                case_plans, human_entries, quality_evaluation,
+                synthetic_validation, case_plans, human_entries, quality_evaluation,
                 validation, prior_summaries, call_llm, provider, api_key, model)
             _save_artifact(state, artifact_dir, "selected_cases", selected_cases,
                            case_dep, VERSIONS["case_selection_version"])
@@ -2027,10 +2361,8 @@ def run_academic_pipeline(
                 {k: v for k, v in section_artifact.items() if k != "content_hash"})
             _save_artifact(state, artifact_dir, "sections", section_artifact,
                            sections_dep, VERSIONS["writer_version"])
-            academic["validation_history"].append(validation)
-            academic["review_history"].append(review)
-            academic["literature_review_history"].append(literature_support_review)
-            academic["academic_quality_history"].append(quality_evaluation)
+            validation_runs.append(validation)
+            quality_runs.append(quality_evaluation)
             quality_repair_history["rounds"].append({
                 "round": quality_round,
                 "case_replacements": performed_replacements,
@@ -2044,7 +2376,10 @@ def run_academic_pipeline(
             "argument": argument_plan["content_hash"],
             "quality_version": VERSIONS["academic_quality_version"],
         })
-        _save_artifact(state, artifact_dir, "academic_quality", quality_evaluation,
+        quality_artifact = {**quality_evaluation, "runs": quality_runs[-2:]}
+        quality_artifact["content_hash"] = academic_evidence.stable_hash(
+            {k: v for k, v in quality_artifact.items() if k != "content_hash"})
+        _save_artifact(state, artifact_dir, "academic_quality", quality_artifact,
                        quality_dep,
                        VERSIONS["academic_quality_version"])
         (artifact_dir / "academic-quality-report.md").write_text(

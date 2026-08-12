@@ -148,6 +148,16 @@ def test_dependency_staleness():
     print("  ✓ writer 版本只失效正文；研究问题变化失效规划下游")
 
 
+def test_state_drops_unbounded_histories():
+    keys = {
+        "artifact_history", "validation_history", "review_history",
+        "literature_review_history", "academic_quality_history", "repair_history",
+    }
+    state = {"academic_state": {key: [{"large": "payload"}] for key in keys}}
+    academic = academic_writer._state(state)
+    assert keys.isdisjoint(academic)
+
+
 class PipelineMock:
     def __init__(self):
         self.review_calls = 0
@@ -238,8 +248,10 @@ def test_end_to_end_pipeline_and_targeted_repair():
             "academic-evidence-warnings.md"}
         assert required.issubset({x.name for x in tmp.iterdir()})
         assert state["p3_done"] and state["academic_state"]["quality_status"] == "pass"
-        initial = state["academic_state"]["validation_history"][0]
-        final = state["academic_state"]["validation_history"][-1]
+        validation_artifact = academic_writer._read_artifact(
+            tmp / "academic-validation.json")
+        assert len(validation_artifact["runs"]) == 2
+        initial, final = validation_artifact["runs"]
         assert any(x["type"] == "invented_segment_id" for x in initial["issues"])
         assert final["status"] == "pass"
         assert set(mock.repaired_sections) == {"2", "3"}
@@ -279,5 +291,6 @@ if __name__ == "__main__":
     test_whole_corpus_evidence_and_candidates()
     test_validator_rejects_fabrication()
     test_dependency_staleness()
+    test_state_drops_unbounded_histories()
     test_end_to_end_pipeline_and_targeted_repair()
     print("\n全部通过 ✅")

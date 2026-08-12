@@ -6,16 +6,30 @@ from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional
 
 from .academic_evidence import has_meaningful_revision, literature_index, segment_index, stable_hash
-from . import case_analysis, literature_evidence
+from . import case_analysis, literature_evidence, synthetic_cases
 
 SCHEMA_VERSION = "academic-validation-v2"
-VALIDATOR_VERSION = "validator-v4"
+VALIDATOR_VERSION = "validator-v5"
 
 _SEGMENT_REF = re.compile(r"\[(seg-[A-Za-z0-9_-]+-\d{4,})\]")
 _QUOTE = re.compile(
     r"^\s*>\s*\[(SOURCE|INITIAL|TARGET)\s+(seg-[A-Za-z0-9_-]+-\d{4,})\]:\s*(.*)$",
     re.MULTILINE,
 )
+_SYNTHETIC_QUOTE = re.compile(
+    r"^\s*>\s*\[(SYNTHETIC_SOURCE|SIMULATED|OPTIMIZED)\s+(SC-\d{4,})\]:\s*(.*)$",
+    re.MULTILINE,
+)
+_SYNTHETIC_CASE_ID = re.compile(r"\b(SC-\d{4,})\b")
+_SYNTHETIC_AS_HISTORY = re.compile(
+    r"笔者(?:的)?初译|作者(?:的)?初译|译者(?:的)?初译|经(?:审校|修订)后|"
+    r"初译阶段(?:出现|存在)|(?:后来|最终)(?:将|把).{0,40}(?:改为|修改为|修订为)|"
+    r"the (?:author|translator) originally translated|after (?:review|revision)",
+    re.IGNORECASE,
+)
+_EMPIRICAL_HUMAN_ERROR = re.compile(
+    r"(?:常见|普遍|频繁)(?:的)?(?:人类|人工|译者)?(?:翻译)?错误|"
+    r"(?:common|frequent|widespread) human translation error", re.IGNORECASE)
 _STAT = re.compile(r"(-?\d[\d,.]*(?:%)?)<!--stat:([A-Za-z0-9_.-]+)-->")
 _CITATION = re.compile(
     r"(?:\[@([A-Za-z0-9_.:-]+)\]|<!--cite:([A-Za-z0-9_.:-]+)-->)")
@@ -144,6 +158,7 @@ def validate_academic_report(
     literature_evidence_artifact: Optional[Dict[str, Any]] = None,
     literature_claims_artifact: Optional[Dict[str, Any]] = None,
     human_evidence: Optional[Iterable[Dict[str, Any]]] = None,
+    synthetic_artifact: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Validate identity, provenance, statistics, citations and structure."""
     issues: List[Dict[str, Any]] = []
@@ -164,6 +179,7 @@ def validate_academic_report(
                 if x.get("id")}
     stats = _statistics(evidence)
     sections = _section_map(report_md, outline)
+    canonical_synthetic = synthetic_cases.case_index(synthetic_artifact or {})
 
     if not report_md.strip():
         issues.append(_issue("empty_report", "报告内容为空。"))
@@ -360,6 +376,29 @@ def validate_academic_report(
                 f"{kind} 引文与 {seg_id} 的保存文本不一致。",
                 evidence_id=seg_id,
                 suggested_action="逐字使用学术证据库中的原文或终译。"))
+
+    selected_synthetic = {
+        str(x.get("case_id")): x for x in selected_cases.get("cases", [])
+        if x.get("case_type") == "synthetic_contrast"}
+    synthetic_quotes = _SYNTHETIC_QUOTE.findall(report_md)
+    for kind, case_id, quote in synthetic_quotes:
+        case = canonical_synthetic.get(case_id) or selected_synthetic.get(case_id)
+        if not case:
+            issues.append(_issue(
+                "unknown_synthetic_case", f"不存在的合成案例：{case_id}",
+                evidence_id=case_id))
+            continue
+        expected = {
+            "SYNTHETIC_SOURCE": case.get("source_text"),
+            "SIMULATED": case.get("synthetic_baseline", {}).get("text"),
+            "OPTIMIZED": case.get("optimized_translation", {}).get("text"),
+        }[kind]
+        if _norm(quote) != _norm(expected):
+            issues.append(_issue(
+                "wrong_synthetic_case_quote",
+                f"{kind} 引文与 {case_id} 的合成案例 artifact 不一致。",
+                evidence_id=case_id,
+                suggested_action="逐字使用 synthetic case artifact 中对应字段。"))
 
     for rendered, key in _STAT.findall(report_md):
         if key not in stats or isinstance(stats.get(key), (dict, list)):
@@ -612,7 +651,22 @@ def validate_academic_report(
                 section_id=section_id, evidence_id=evidence_id))
 
     selected_ids = {str(x.get("case_id")) for x in selected_cases.get("cases", [])}
-    selected_count = len(selected_ids)
+    authentic_ids = {str(x.get("case_id")) for x in selected_cases.get("cases", [])
+                      if x.get("case_type") != "synthetic_contrast"}
+    synthetic_ids = selected_ids - authentic_ids
+    selected_count = len(authentic_ids)
+    if selected_cases.get("selection_policy") in {"mixed", "synthetic_only"} \
+            and selected_cases.get("synthetic_pipeline_status") == "failed":
+        issues.append(_issue(
+            "synthetic_pipeline_unavailable",
+            "合成案例 provider/stage 运行失败；当前报告只能使用已验证的真实案例。",
+            severity="warning",
+            suggested_action="恢复 provider 后重新运行 synthetic stages。"))
+    if selected_cases.get("selection_policy") == "synthetic_only" and not synthetic_ids:
+        issues.append(_issue(
+            "synthetic_only_without_eligible_cases",
+            "已请求仅使用合成案例，但没有通过完整资格门禁的合成案例。",
+            suggested_action="恢复生成/验证阶段或改用 mixed/authentic_only；不得绕过资格门禁。"))
     if "selection_status" in selected_cases:
         preferred = int(selected_cases.get("preferred_core_case_count")
                         or selected_cases.get("requested_case_count") or 3)
@@ -621,7 +675,11 @@ def validate_academic_report(
             "sufficient_revision_cases" if selected_count >= preferred else
             "two_case_fallback" if selected_count >= minimum else
             "insufficient_revision_cases")
-        if selected_cases.get("selection_status") != expected_status:
+        recorded_authentic_status = selected_cases.get(
+            "authentic_selection_status", selected_cases.get("selection_status"))
+        if recorded_authentic_status == "not_applicable":
+            expected_status = "not_applicable"
+        elif recorded_authentic_status != expected_status:
             issues.append(_issue(
                 "case_count_status_mismatch",
                 "案例数量与选择产物中的 case-count status 不一致。",
@@ -645,8 +703,68 @@ def validate_academic_report(
                     "wrong_core_case_count_claim",
                     "正文声称使用三个案例，但合格核心修订案例只有两个。",
                     suggested_action="改为双案例结构，并披露第三案例未以弱证据补位。"))
+    if synthetic_ids:
+        quote_kinds = {
+            case_id: {kind for kind, current_id, _ in synthetic_quotes
+                      if current_id == case_id}
+            for case_id in synthetic_ids}
+        for case_id, kinds in quote_kinds.items():
+            missing = {"SYNTHETIC_SOURCE", "SIMULATED", "OPTIMIZED"} - kinds
+            if missing:
+                issues.append(_issue(
+                    "missing_synthetic_case_quotes",
+                    f"合成案例 {case_id} 缺少透明展示字段：{', '.join(sorted(missing))}。",
+                    evidence_id=case_id,
+                    suggested_action="逐字展示真实源文、模拟初译和优化译文。"))
+        methodology_ok = "<!--synthetic-methodology-->" in report_md and bool(
+            re.search(r"模拟初译.{0,80}(?:不代表|并非).{0,20}(?:历史|实际|真实)",
+                      report_md, re.DOTALL))
+        if not methodology_ok:
+            issues.append(_issue(
+                "missing_synthetic_methodology_disclosure",
+                "使用合成案例时，正文必须说明模拟初译为分析生成且不代表历史译文。",
+                suggested_action="补充可见方法说明并保留 <!--synthetic-methodology-->。"))
+        limitation_ok = "<!--synthetic-limitation-->" in report_md and bool(
+            re.search(r"(?:不|不能|无法).{0,30}(?:发生频率|发生率|错误频率)", report_md))
+        if not limitation_ok:
+            issues.append(_issue(
+                "missing_synthetic_limitation_disclosure",
+                "使用合成案例时，正文必须说明它不能证明人类错误发生频率。",
+                suggested_action="补充局限说明并保留 <!--synthetic-limitation-->。"))
+        if authentic_ids and not (
+                re.search(r"^###\s+.*真实修订案例", report_md, re.MULTILINE)
+                and re.search(r"^###\s+.*合成对比案例", report_md, re.MULTILINE)):
+            issues.append(_issue(
+                "mixed_case_groups_not_visible",
+                "混合案例章节没有用可见小标题区分真实修订与合成对比。",
+                suggested_action="分别使用‘真实修订案例’和‘合成对比案例’小标题。"))
+        synthetic_sections = re.findall(
+            r"^###\s+.*合成对比案例.*?(?=^###\s+|^##\s+|\Z)", report_md,
+            re.MULTILINE | re.DOTALL)
+        for paragraph in re.split(r"\n\s*\n", report_md):
+            referenced_synthetic = synthetic_ids & set(_SYNTHETIC_CASE_ID.findall(paragraph))
+            in_synthetic_section = any(paragraph and paragraph in body
+                                       for body in synthetic_sections)
+            if (referenced_synthetic or in_synthetic_section) and \
+                    _SYNTHETIC_AS_HISTORY.search(paragraph):
+                issues.append(_issue(
+                    "synthetic_case_presented_as_historical",
+                    "合成案例被表述为作者或译者的历史初译/修订过程。",
+                    evidence_id=sorted(referenced_synthetic)[0]
+                    if referenced_synthetic else None,
+                    suggested_action="改为‘模拟初译/优化译文’，明确其为分析构造。"))
+        empirical_supported = all(
+            canonical_synthetic.get(case_id, {}).get(
+                "error_pattern_grounding", {}).get("empirical_frequency_supported")
+            for case_id in synthetic_ids)
+        if not empirical_supported and _EMPIRICAL_HUMAN_ERROR.search(report_md):
+            issues.append(_issue(
+                "unsupported_human_error_frequency_claim",
+                "合成案例没有实证频率依据，不能称为常见或普遍的人类翻译错误。",
+                suggested_action="改为‘一种合理的翻译失败模式’。"))
+
     candidate_ids = {str(x.get("case_id")) for x in evidence.get("candidate_cases", [])}
-    for case_id in selected_ids:
+    for case_id in authentic_ids:
         if case_id not in candidate_ids or case_id not in segs:
             issues.append(_issue(
                 "invalid_selected_case", f"选中案例不在候选池或证据库中：{case_id}",
@@ -660,6 +778,22 @@ def validate_academic_report(
                 f"案例 {case_id} 没有有意义的初译→终译差异，不能作为核心修订案例。",
                 evidence_id=case_id,
                 suggested_action="替换为 revision_case；Human Evidence 不能改变该资格。"))
+    for case_id in synthetic_ids:
+        case = canonical_synthetic.get(case_id)
+        selected_case = selected_synthetic.get(case_id) or {}
+        if not case or not case.get("validation", {}).get("academic_case_eligible"):
+            issues.append(_issue(
+                "ineligible_synthetic_case_selected",
+                f"合成案例 {case_id} 未通过 canonical synthetic eligibility gate。",
+                evidence_id=case_id,
+                suggested_action="从选案中移除或重新运行合成案例验证。"))
+        elif selected_case.get("provenance") != {
+                "historical": False, "generated_for_analysis": True}:
+            issues.append(_issue(
+                "synthetic_case_provenance_mismatch",
+                f"合成案例 {case_id} 的结构化 provenance 无效。",
+                evidence_id=case_id,
+                suggested_action="恢复 canonical synthetic provenance。"))
 
     for plan_section in outline.get("sections", []):
         section_id = str(plan_section.get("section_id"))
@@ -668,7 +802,7 @@ def validate_academic_report(
         if not revision_claims:
             continue
         referenced = [str(x) for x in plan_section.get("cases") or []
-                      if str(x) in body and str(x) in segs]
+                      if str(x) in body and str(x) in segs and str(x) in authentic_ids]
         for case_id in referenced:
             segment = segs[case_id]
             if not has_meaningful_revision(

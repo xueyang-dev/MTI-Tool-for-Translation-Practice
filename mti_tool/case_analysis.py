@@ -15,10 +15,10 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 
 from .academic_evidence import case_role, has_meaningful_revision, segment_index, stable_hash
 
-ANALYSIS_VERSION = "case-analysis-v2"
+ANALYSIS_VERSION = "case-analysis-v3"
 
 EVIDENCE_LEVELS = ("rich_process_evidence", "partial_process_evidence",
-                   "source_final_only")
+                   "source_final_only", "validated_synthetic_contrast")
 PROBLEM_TYPES = (
     "syntactic_ambiguity", "logical_relation", "information_structure",
     "reference_resolution", "lexical_polysemy", "cultural_reference",
@@ -205,6 +205,34 @@ def evidence_adequacy(segment: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def synthetic_evidence_adequacy(case: Dict[str, Any]) -> Dict[str, Any]:
+    """Capabilities of an eligible analytical contrast, never project history."""
+    eligible = bool(case.get("validation", {}).get("academic_case_eligible"))
+    return {
+        "case_id": case.get("case_id"),
+        "case_type": "synthetic_contrast",
+        "case_role": "synthetic_contrast_case",
+        "evidence_level": "validated_synthetic_contrast" if eligible else "source_final_only",
+        "can_support": [
+            "textual_analysis", "plausible_error_analysis", "contrastive_repair_analysis",
+            "theory_based_analysis",
+        ] if eligible else ["textual_analysis"],
+        "cannot_support": [
+            "historical_revision_reasoning", "historical_process_claims",
+            "empirical_human_error_frequency", "author_initial_translation_claim",
+        ],
+        "translation_delta": case.get("actual_delta") or {},
+        "capabilities": {
+            "has_meaningful_revision": False,
+            "has_validated_synthetic_contrast": eligible,
+            "has_review_finding": False,
+            "has_repair_history": False,
+            "has_revision_rationale": False,
+            "has_theory_support": False,
+        },
+    }
+
+
 def detect_revision_claims(text: str) -> List[Dict[str, Any]]:
     """Return deterministic revision-prose claims and any quoted X→Y pair."""
     claims = []
@@ -266,10 +294,39 @@ def _scoped_planner_input(
     cases = []
     for case in selected_cases.get("cases", []):
         case_id = str(case.get("case_id") or "")
+        synthetic = case.get("case_type") == "synthetic_contrast"
         segment = segs.get(case_id) or {}
-        adequacy = evidence_adequacy(segment)
+        adequacy = synthetic_evidence_adequacy(case) if synthetic \
+            else evidence_adequacy(segment)
+        if synthetic:
+            cases.append({
+                "case_id": case_id,
+                "case_type": "synthetic_contrast",
+                "source_segment_id": case.get("source_segment_id"),
+                "coverage_zone": case.get("coverage_zone"),
+                "supports_claims": case.get("supports_claims", []),
+                "claim_statements": [
+                    claims.get(x, {}).get("claim", "")
+                    for x in case.get("supports_claims", [])],
+                "evidence_level": adequacy["evidence_level"],
+                "case_role": adequacy["case_role"],
+                "capabilities": adequacy["capabilities"],
+                "can_support": adequacy["can_support"],
+                "cannot_support": adequacy["cannot_support"],
+                "translation_delta": adequacy["translation_delta"],
+                "source_text": case.get("source_text", "")[:800],
+                "difficulty": case.get("difficulty"),
+                "synthetic_baseline": case.get("synthetic_baseline"),
+                "baseline_plausibility": case.get("baseline_plausibility"),
+                "error": case.get("error"),
+                "optimized_translation": case.get("optimized_translation"),
+                "repair_validation": case.get("validation"),
+                "provenance": case.get("provenance"),
+            })
+            continue
         cases.append({
             "case_id": case_id,
+            "case_type": "authentic_revision",
             "coverage_zone": case.get("coverage_zone"),
             "supports_claims": case.get("supports_claims", []),
             "claim_statements": [
@@ -310,8 +367,13 @@ def build_case_analysis_plans(
     """Plan each selected case's analysis under evidence constraints."""
     segs = segment_index(evidence)
     adequacy_by_case = {
-        str(x.get("case_id")): evidence_adequacy(segs.get(str(x.get("case_id"))) or {})
+        str(x.get("case_id")): (
+            synthetic_evidence_adequacy(x)
+            if x.get("case_type") == "synthetic_contrast"
+            else evidence_adequacy(segs.get(str(x.get("case_id"))) or {}))
         for x in selected_cases.get("cases", [])}
+    selected_by_id = {str(x.get("case_id")): x
+                      for x in selected_cases.get("cases", [])}
     has_literature = bool(literature_claims.get("items"))
     usable_human = [
         x for x in (human_evidence or [])
@@ -323,10 +385,12 @@ def build_case_analysis_plans(
     system = (
         "你是保守的 MTI 案例分析规划器。为每个案例制定分析计划；只使用输入中的"
         "项目证据与文献主张，不编造译者意图、草稿、过程历史或理论。区分："
-        "所有输入案例都必须是有真实初译→终译差异的 revision_case。"
+        "authentic_revision 是真实历史初译→修订→终译；synthetic_contrast 是"
+        "为分析生成且已验证的模拟初译→错误诊断→AI 优化，绝非作者历史。"
         "evidence_level 决定案例能支持什么。对每个案例给出 problem（必须是具体"
         "翻译问题；证据不足时 grounded=false 并说明需要什么人工证据）、"
-        "initial_failure（仅当存在初译—终译差异或 finding 时才给出，否则省略）、"
+        "initial_failure（authentic 指历史初译不足；synthetic 只能指模拟初译中的"
+        "已验证错误，必须明确 simulated=true）、"
         "alternatives（必须标注 historical_alternative / analytical_comparison / "
         "counterfactual_rendering；没有证据的备选一律 counterfactual_rendering）、"
         "decision_rationale、translation_effect（dimension 必须取自 "
@@ -336,6 +400,8 @@ def build_case_analysis_plans(
         "具体文本特征；无法具体说明时省略）、theory_mapping（仅当存在文献主张时给出"
         "concept/source_feature/target_requirement/relation 四元组，否则置 null）、"
         "bounded_conclusion（只限本案例）、recommended_human_evidence（证据缺口清单）。"
+        "synthetic 的 bounded_conclusion 必须说明它只展示合理失败模式，不证明错误频率；"
+        "不得给 synthetic 使用 historical_alternative 或任何历史过程语言。"
         "只输出 JSON：{\"plans\":[{\"case_id\":\"...\",\"problem\":{\"type\":\"...\","
         "\"statement\":\"...\",\"grounded\":true},\"initial_failure\":{...}|null,"
         "\"alternatives\":[{\"label\":\"counterfactual_rendering\",\"text\":\"...\"}],"
@@ -376,6 +442,8 @@ def build_case_analysis_plans(
             continue
         seen.add(case_id)
         adequacy = adequacy_by_case.get(case_id, {})
+        selected_case = selected_by_id.get(case_id) or {}
+        case_type = selected_case.get("case_type") or "authentic_revision"
         cannot = set(adequacy.get("cannot_support") or [])
         problem = item.get("problem") if isinstance(item.get("problem"), dict) else {}
         human_ids = [str(x) for x in item.get("human_evidence_ids") or []]
@@ -386,11 +454,15 @@ def build_case_analysis_plans(
         if problem_type not in PROBLEM_TYPES:
             problem_type = "other"
         grounded = bool(problem.get("grounded"))
-        if grounded and not adequacy.get("capabilities", {}).get(
-                "has_meaningful_revision"):
+        if grounded and not (
+                adequacy.get("capabilities", {}).get("has_meaningful_revision")
+                or adequacy.get("capabilities", {}).get(
+                    "has_validated_synthetic_contrast")):
             grounded = False
         initial_failure = item.get("initial_failure")
-        if isinstance(initial_failure, dict) and cannot & {
+        if case_type == "synthetic_contrast" and isinstance(initial_failure, dict):
+            initial_failure = {**initial_failure, "simulated": True}
+        elif isinstance(initial_failure, dict) and cannot & {
                 "historical_revision_reasoning", "initial_failure_reasoning"}:
             initial_failure = None
         alternatives = []
@@ -400,8 +472,9 @@ def build_case_analysis_plans(
             label = str(alt.get("label") or "counterfactual_rendering")
             if label not in ALTERNATIVE_LABELS:
                 label = "counterfactual_rendering"
-            if label == "historical_alternative" and cannot & {
-                    "historical_revision_reasoning"}:
+            if label == "historical_alternative" and (
+                    case_type == "synthetic_contrast" or cannot & {
+                        "historical_revision_reasoning"}):
                 label = "analytical_comparison"
             alternatives.append({"label": label,
                                  "text": str(alt.get("text") or "")[:300]})
@@ -422,6 +495,8 @@ def build_case_analysis_plans(
                 }
         plans.append({
             "case_id": case_id,
+            "case_type": case_type,
+            "analysis_contract_type": case_type,
             "case_role": adequacy.get("case_role", "non_revision_case"),
             "capabilities": {
                 **adequacy.get("capabilities", {}),
@@ -432,6 +507,17 @@ def build_case_analysis_plans(
             "can_support": adequacy.get("can_support", []),
             "cannot_support": sorted(cannot),
             "translation_delta": adequacy.get("translation_delta", {}),
+            "source_segment_id": selected_case.get("source_segment_id"),
+            "source_text": selected_case.get("source_text")
+            if case_type == "synthetic_contrast" else None,
+            "synthetic_baseline": selected_case.get("synthetic_baseline")
+            if case_type == "synthetic_contrast" else None,
+            "error_manifest": selected_case.get("error")
+            if case_type == "synthetic_contrast" else None,
+            "optimized_translation": selected_case.get("optimized_translation")
+            if case_type == "synthetic_contrast" else None,
+            "synthetic_validation": selected_case.get("validation")
+            if case_type == "synthetic_contrast" else None,
             "problem": {
                 "type": problem_type,
                 "statement": str(problem.get("statement") or "")[:300],
@@ -461,14 +547,29 @@ def build_case_analysis_plans(
     missing = sorted(valid_cases - seen)
     for case_id in missing:
         adequacy = adequacy_by_case.get(case_id, {})
+        selected_case = selected_by_id.get(case_id) or {}
+        case_type = selected_case.get("case_type") or "authentic_revision"
         plans.append({
             "case_id": case_id,
+            "case_type": case_type,
+            "analysis_contract_type": case_type,
             "case_role": adequacy.get("case_role", "non_revision_case"),
             "capabilities": adequacy.get("capabilities", {}),
             "evidence_level": adequacy.get("evidence_level", "source_final_only"),
             "can_support": adequacy.get("can_support", []),
             "cannot_support": adequacy.get("cannot_support", []),
             "translation_delta": adequacy.get("translation_delta", {}),
+            "source_segment_id": selected_case.get("source_segment_id"),
+            "source_text": selected_case.get("source_text")
+            if case_type == "synthetic_contrast" else None,
+            "synthetic_baseline": selected_case.get("synthetic_baseline")
+            if case_type == "synthetic_contrast" else None,
+            "error_manifest": selected_case.get("error")
+            if case_type == "synthetic_contrast" else None,
+            "optimized_translation": selected_case.get("optimized_translation")
+            if case_type == "synthetic_contrast" else None,
+            "synthetic_validation": selected_case.get("validation")
+            if case_type == "synthetic_contrast" else None,
             "problem": {"type": "other", "statement": "", "grounded": False},
             "initial_failure": None,
             "alternatives": [],
@@ -498,6 +599,33 @@ def plan_index(artifact: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
 
 def render_analysis_contract(plan: Dict[str, Any]) -> str:
     """Human/machine-readable contract the writer must realise."""
+    if plan.get("case_type") == "synthetic_contrast":
+        baseline = (plan.get("synthetic_baseline") or {}).get("text", "")
+        optimized = (plan.get("optimized_translation") or {}).get("text", "")
+        error = plan.get("error_manifest") or {}
+        validation = plan.get("synthetic_validation") or {}
+        lines = [
+            f"案例 {plan.get('case_id')}（synthetic_contrast；非历史证据）",
+            "- 推理链：翻译难点 → 合理模拟错误 → 错误诱因 → 错误诊断 → "
+            "意义/功能失真 → AI 优化 → 修复验证 → 理论连接（若有）→ 有界结论",
+            f"- 真实源文：{plan.get('source_text') or ''}",
+            f"- 模拟初译：{baseline}",
+            f"- 错误诊断：{error.get('diagnosis') or '（未计划，需如实说明）'}",
+            f"- 优化译文：{optimized}",
+            f"- 修复验证：{validation.get('reason') or validation.get('repair_correctness')}",
+            "- 来源边界：模拟初译和优化译文均为分析阶段生成，不属于作者翻译历史。",
+            "- 必须使用 SYNTHETIC_SOURCE / SIMULATED / OPTIMIZED 标签；"
+            "禁止‘笔者初译/经审校修改/最终修订’等历史过程措辞。",
+            "- 结论边界：只说明一种合理失败模式，不声称其在人类译者中常见。",
+        ]
+        mapping = plan.get("theory_mapping")
+        if mapping:
+            lines.append(
+                f"- 理论映射：{mapping.get('concept')}：源语特征「{mapping.get('source_feature')}」"
+                f"→ 目标需求「{mapping.get('target_requirement')}」→ 关系「{mapping.get('relation')}」")
+        for item in plan.get("recommended_human_evidence") or []:
+            lines.append(f"- 可选人工判断：{item}")
+        return "\n".join(lines)
     lines = [
         f"案例 {plan.get('case_id')}（{plan.get('case_role')}；"
         f"{plan.get('evidence_level')}）",

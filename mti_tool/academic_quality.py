@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 from .academic_evidence import case_role, has_meaningful_revision, segment_index, stable_hash
 from . import case_analysis
 
-QUALITY_VERSION = "academic-quality-v3"
+QUALITY_VERSION = "academic-quality-v4"
 REPORT_VERSION = "academic-quality-report-v1"
 
 DIMENSIONS = (
@@ -45,6 +45,7 @@ _LIT_CLAIM_MARKER = re.compile(r"<!--lit-claim:([A-Za-z0-9_.:-]+)-->")
 _LIT_EVIDENCE_MARKER = re.compile(r"<!--lit-evidence:([A-Za-z0-9_.:-]+)-->")
 _CITE_MARKER = re.compile(r"\[@([A-Za-z0-9_.:-]+)\]|<!--cite:([A-Za-z0-9_.:-]+)-->")
 _SEG_REF = re.compile(r"\[(seg-[A-Za-z0-9_-]+-\d{4,})\]")
+_SYNTH_REF = re.compile(r"\b(SC-\d{4,})\b")
 _STAT_MARKER = re.compile(r"<!--stat:([A-Za-z0-9_.-]+)-->")
 _QUOTE_MARKER = re.compile(
     r"^\s*>\s*\[(SOURCE|TARGET|LITERATURE)\s+([^\]]+)\]:", re.MULTILINE)
@@ -293,21 +294,26 @@ def evidence_utilization(
     used_segments = set()
     for section in sections:
         used_segments.update(_SEG_REF.findall(section.get("content") or ""))
+        used_segments.update(_SYNTH_REF.findall(section.get("content") or ""))
     rows = []
     for case in selected_cases.get("cases", []):
         case_id = str(case.get("case_id") or "")
+        synthetic = case.get("case_type") == "synthetic_contrast"
         segment = segs.get(case_id)
         signals = case_quality_signals(segment or {}, evidence.get("findings") or [])
         used = case_id in used_segments
-        high_value_unused = bool(
-            signals["has_actionable_or_blocking"] or signals["initial_to_final_changed"]
-            or signals["has_repair_history"] or signals["terminology_decision_count"])
+        high_value_unused = bool(case.get("validation", {}).get(
+            "academic_case_eligible")) if synthetic else bool(
+                signals["has_actionable_or_blocking"] or signals[
+                    "initial_to_final_changed"] or signals["has_repair_history"]
+                or signals["terminology_decision_count"])
         rows.append({
             "case_id": case_id,
             "used_in_report": used,
-            "evidence_richness": signals["evidence_richness"],
+            "evidence_richness": None if synthetic else signals["evidence_richness"],
+            "case_type": case.get("case_type", "authentic_revision"),
             "high_value_unused": bool(high_value_unused and not used),
-            "unused_dimensions": [
+            "unused_dimensions": ["validated_synthetic_contrast"] if synthetic and not used else [
                 name for name, present in (
                     ("finding", signals["has_finding"]),
                     ("initial_final_change", signals["initial_to_final_changed"]),
@@ -360,7 +366,8 @@ def cross_section_checks(sections: Iterable[Dict[str, Any]]) -> List[Dict[str, A
     for section in sections:
         section_id = str(section.get("section_id"))
         content = section.get("content") or ""
-        for seg_id in sorted(set(_SEG_REF.findall(content))):
+        for seg_id in sorted(set(_SEG_REF.findall(content)) | set(
+                _SYNTH_REF.findall(content))):
             case_sections.setdefault(seg_id, []).append(section_id)
         for claim_id in sorted(set(_CLAIM_MARKER.findall(content))):
             claim_sections.setdefault(claim_id, []).append(section_id)
@@ -406,15 +413,43 @@ def deterministic_diagnostics(
     case_rows = []
     for case in selected_cases.get("cases", []):
         case_id = str(case.get("case_id") or "")
-        cls, reasons = classify_case(case, segs.get(case_id), findings_all, selected_ids)
+        synthetic = case.get("case_type") == "synthetic_contrast"
+        if synthetic:
+            validation = case.get("validation") or {}
+            cls = "strong_case" if validation.get("academic_case_eligible") else "weak_case"
+            reasons = [validation.get("reason") or "; ".join(
+                validation.get("rejected_reasons") or []) or "synthetic validation missing"]
+        else:
+            cls, reasons = classify_case(case, segs.get(case_id), findings_all, selected_ids)
         case_rows.append({
             "case_id": case_id,
+            "case_type": case.get("case_type", "authentic_revision"),
             "class": cls,
             "reasons": reasons,
             "supports_claims": sorted(set(case.get("supports_claims") or [])),
-            "evidence_richness": case_quality_signals(
+            "evidence_richness": None if synthetic else case_quality_signals(
                 segs.get(case_id) or {}, findings_all)["evidence_richness"],
-            "case_role": case_role(segs.get(case_id) or {}),
+            "case_role": "synthetic_contrast_case" if synthetic else case_role(
+                segs.get(case_id) or {}),
+            "synthetic_dimensions": {
+                "difficulty_validity": "confirmed" if case.get("difficulty", {}).get(
+                    "trigger") and case.get("difficulty", {}).get("reason") else "not_confirmed",
+                "baseline_plausibility": case.get("baseline_plausibility", {}).get(
+                    "status", "implausible"),
+                "error_materiality": case.get("validation", {}).get(
+                    "error_materiality", "not_confirmed"),
+                "diagnosis_depth": "confirmed" if case.get("error", {}).get(
+                    "diagnosis") and case.get("error", {}).get(
+                        "meaning_or_function_distortion") else "not_confirmed",
+                "repair_validity": case.get("validation", {}).get(
+                    "repair_correctness", "not_confirmed"),
+                "analysis_depth": "pending_semantic_review",
+                "theory_case_fit": "pending_literature_grounding",
+                "bounded_conclusion": "pending_semantic_review",
+                "provenance_correctness": "confirmed" if case.get("provenance") == {
+                    "historical": False, "generated_for_analysis": True}
+                else "not_confirmed",
+            } if synthetic else {},
         })
     return {
         "paragraph_statistics": paragraph_statistics(sections),
@@ -424,7 +459,8 @@ def deterministic_diagnostics(
         "conclusion_traceability": conclusion_traceability(outline, sections),
         "cross_section_checks": cross_section_checks(sections),
         "case_count_policy": {
-            "status": selected_cases.get("selection_status"),
+            "status": selected_cases.get(
+                "authentic_selection_status", selected_cases.get("selection_status")),
             "preferred": selected_cases.get("preferred_core_case_count"),
             "minimum": selected_cases.get("minimum_core_case_count"),
             "selected": len(selected_cases.get("cases", [])),
@@ -476,7 +512,15 @@ def _deterministic_findings(diagnostics: Dict[str, Any]) -> List[Dict[str, Any]]
             recommended_action="绑定对应 RQ，或说明其作为报告必要功能章节。",
             section_id=section_id))
     for row in diagnostics["case_quality"]:
-        if row.get("case_role") == "non_revision_case":
+        if row.get("case_type") == "synthetic_contrast" and row["class"] == "weak_case":
+            issues.append(_issue(
+                "ineligible_synthetic_case_used",
+                dimension="case_quality", severity="critical", priority="P1",
+                reason=f"合成案例 {row['case_id']} 未通过 plausibility/materiality/repair gate。",
+                recommended_action="从学术写作中移除该合成案例。",
+                case_id=row["case_id"], evidence=row["reasons"][0],
+                repair_action="replace_case"))
+        elif row.get("case_role") == "non_revision_case":
             issues.append(_issue(
                 "non_revision_case_used_as_revision_analysis",
                 dimension="case_quality", severity="critical", priority="P1",
@@ -540,6 +584,21 @@ def _scoped_inputs(
     segs = segment_index(evidence)
     case_pool = []
     for case in selected_cases.get("cases", []):
+        if case.get("case_type") == "synthetic_contrast":
+            case_pool.append({
+                "case_id": case.get("case_id"),
+                "case_type": "synthetic_contrast",
+                "source_segment_id": case.get("source_segment_id"),
+                "supports_claims": case.get("supports_claims"),
+                "source_text": (case.get("source_text") or "")[:200],
+                "difficulty": case.get("difficulty"),
+                "synthetic_baseline": case.get("synthetic_baseline"),
+                "error": case.get("error"),
+                "optimized_translation": case.get("optimized_translation"),
+                "validation": case.get("validation"),
+                "provenance": case.get("provenance"),
+            })
+            continue
         segment = segs.get(str(case.get("case_id") or "")) or {}
         case_pool.append({
             "case_id": case.get("case_id"), "coverage_zone": case.get("coverage_zone"),
@@ -559,7 +618,8 @@ def _scoped_inputs(
         "argument_plan": argument_plan,
         "selected_cases": case_pool,
         "case_count_policy": {
-            "status": selected_cases.get("selection_status"),
+            "status": selected_cases.get(
+                "authentic_selection_status", selected_cases.get("selection_status")),
             "preferred": selected_cases.get("preferred_core_case_count"),
             "minimum": selected_cases.get("minimum_core_case_count"),
             "selected": len(case_pool),
@@ -596,6 +656,8 @@ def evaluate_quality(
         revision_claims = case_analysis.detect_revision_claims(content)
         if revision_claims:
             for case in selected_cases.get("cases", []):
+                if case.get("case_type") == "synthetic_contrast":
+                    continue
                 case_id = str(case.get("case_id") or "")
                 segment = segment_index(evidence).get(case_id) or {}
                 if case_id in content and not has_meaningful_revision(
@@ -685,6 +747,9 @@ def evaluate_quality(
         "‘问题：句子很难/理由：它很复杂/策略：意译/效果：更自然’式内容必须判 weak。"
         "若 case_count_policy.status 为 two_case_fallback，两个案例已满足最低结构，"
         "不得仅因缺少第三案例给出负面判断；只检查是否披露证据稀缺。"
+        "synthetic_contrast 应按难点有效性、模拟初译合理性、错误实质性、诊断深度、"
+        "修复有效性、provenance 与结论边界评价；不得把它降格为缺少历史 finding 的"
+        "弱案例，也不得把它计入真实修订证据。"
     )
     payload = _scoped_inputs(
         research_model, argument_plan, selected_cases, outline, sections, evidence,
@@ -776,10 +841,14 @@ def evaluate_quality(
         "orphan_claims": len(diagnostics["rq_matrix"]["orphan_claims"]),
         "selected_cases": len(selected_cases.get("cases", [])),
         "case_selection_status": selected_cases.get("selection_status", "unspecified"),
-        "revision_cases": sum(1 for x in diagnostics["case_quality"]
-                              if x.get("case_role") == "revision_case"),
+        "authentic_revision_cases": sum(1 for x in diagnostics["case_quality"]
+                                         if x.get("case_type") == "authentic_revision"
+                                         and x.get("case_role") == "revision_case"),
+        "synthetic_contrast_cases": sum(1 for x in diagnostics["case_quality"]
+                                         if x.get("case_type") == "synthetic_contrast"),
         "non_revision_cases": sum(1 for x in diagnostics["case_quality"]
-                                  if x.get("case_role") == "non_revision_case"),
+                                  if x.get("case_type") == "authentic_revision"
+                                  and x.get("case_role") == "non_revision_case"),
         "strong_cases": sum(1 for x in diagnostics["case_quality"] if x["class"] == "strong_case"),
         "usable_cases": sum(1 for x in diagnostics["case_quality"] if x["class"] == "usable_case"),
         "weak_cases": sum(1 for x in diagnostics["case_quality"] if x["class"] == "weak_case"),
@@ -888,6 +957,7 @@ def quality_repair_plan(
 def select_replacement_case(
     case_id: str, claim_ids: Iterable[str], selected_cases: Dict[str, Any],
     argument_plan: Dict[str, Any], evidence: Dict[str, Any],
+    synthetic_artifact: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, Any]]:
     """Choose a stronger, non-redundant candidate from the pool.
 
@@ -896,6 +966,17 @@ def select_replacement_case(
     academic usefulness.
     """
     selected_ids = {str(x.get("case_id")) for x in selected_cases.get("cases", [])}
+    old_case = next((x for x in selected_cases.get("cases", [])
+                     if str(x.get("case_id")) == case_id), {})
+    if old_case.get("case_type") == "synthetic_contrast":
+        candidates = [x for x in (synthetic_artifact or {}).get("items", [])
+                      if str(x.get("case_id")) not in selected_ids
+                      and x.get("validation", {}).get("academic_case_eligible")]
+        candidates.sort(key=lambda x: (
+            x.get("difficulty", {}).get("academic_value") != "high",
+            x.get("difficulty", {}).get("confidence") != "high",
+            x.get("case_id")))
+        return dict(candidates[0]) if candidates else None
     claims = {x["claim_id"]: x for x in argument_plan.get("claims", [])}
     claim_topics = {
         claim_id: str(claims[claim_id].get("research_question") or "")
@@ -966,9 +1047,11 @@ def render_quality_report(
         "|---|---|---|---|---|",
     ])
     for row in (quality.get("diagnostics") or {}).get("case_quality", []):
+        richness = "-" if row.get("evidence_richness") is None \
+            else f"{row['evidence_richness']}/7"
         lines.append(
             f"| {row['case_id']} | {', '.join(row['supports_claims'][:3]) or '-'} | "
-            f"{row['evidence_richness']}/7 | {row['class']} | "
+            f"{richness} | {row['class']} | "
             f"{'; '.join(row['reasons'][:2]) or '-'} |")
     lines.extend([
         "", "> 本评估提供可追溯性、证据利用、论证关系、案例丰富度、内部一致性与"

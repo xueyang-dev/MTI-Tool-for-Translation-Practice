@@ -346,6 +346,11 @@ def mine_candidate_cases(
             "segment_id": segment["segment_id"],
             "segment_index": segment["segment_index"],
             "coverage_zone": segment["coverage_zone"],
+            "case_type": "authentic_revision",
+            "provenance": {
+                "historical": True,
+                "generated_for_analysis": False,
+            },
             "case_role": role,
             **details,
         })

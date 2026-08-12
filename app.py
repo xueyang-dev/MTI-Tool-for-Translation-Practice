@@ -215,6 +215,12 @@ with st.sidebar:
             "学校/导师写作要求（可选）", height=80)
         report_target_words = st.number_input(
             "报告目标字数", min_value=1500, max_value=30000, value=4200, step=500)
+        case_policy_label = st.selectbox(
+            "案例类型策略",
+            ["混合：真实修订优先 + 合成对比", "仅真实修订", "仅合成对比"],
+            help="合成对比案例使用分析阶段生成的模拟初译，绝不写入历史翻译记录。")
+        case_limit = st.number_input(
+            "核心案例上限", min_value=1, max_value=8, value=5, step=1)
         literature_registry_file = st.file_uploader(
             "文献证据注册表 (.json，可选)", type=["json"], key="literature_registry",
             help="只允许引用注册表中 verified 或 user_provided 且 citation_allowed 的来源。")
@@ -235,6 +241,12 @@ with st.sidebar:
                 literature_sources = None
     research_settings = {
         "target_words": int(report_target_words),
+        "case_selection_policy": {
+            "混合：真实修订优先 + 合成对比": "mixed",
+            "仅真实修订": "authentic_only",
+            "仅合成对比": "synthetic_only",
+        }[case_policy_label],
+        "case_limit": int(case_limit),
         "analysis_dimensions": [x.strip() for x in re.split(r"[;；]", analysis_dimensions_text)
                                 if x.strip()],
     }
@@ -592,6 +604,8 @@ if saved_jobs_after:
                 outline_artifact = core.load_academic_artifact(job["job_id"], "outline")
                 case_plans_artifact = core.load_academic_artifact(
                     job["job_id"], "case_analysis_plans")
+                synthetic_artifact = core.load_academic_artifact(
+                    job["job_id"], "synthetic_validation")
                 validation_artifact = core.load_academic_artifact(job["job_id"], "validation")
                 review_artifact = core.load_academic_artifact(job["job_id"], "review")
                 literature_review_artifact = core.load_academic_artifact(
@@ -610,8 +624,39 @@ if saved_jobs_after:
                         f"TM 复用 {astats.get('tm_reuse_count', 0)}")
                 if selected_cases or outline_artifact:
                     st.caption(
-                        f"已选案例 {len((selected_cases or {}).get('cases') or [])} · "
+                        f"真实修订案例 {(selected_cases or {}).get('authentic_revision_cases', 0)} · "
+                        f"合成对比案例 {(selected_cases or {}).get('synthetic_contrast_cases', 0)} · "
                         f"提纲章节 {len((outline_artifact or {}).get('sections') or [])}")
+                if synthetic_artifact:
+                    synthetic_metrics = synthetic_artifact.get("metrics") or {}
+                    if synthetic_artifact.get("pipeline_status") == "failed":
+                        st.warning("合成对比案例生成失败；当前仅保留已验证的真实案例。")
+                    st.caption(
+                        f"合成案例：已生成模拟初译 "
+                        f"{synthetic_metrics.get('synthetic_baselines_generated', 0)} · "
+                        f"不合理基线淘汰 {synthetic_metrics.get('baselines_rejected_as_implausible', 0)} · "
+                        f"学术合格 {synthetic_metrics.get('academically_eligible_synthetic_cases', 0)}")
+                    with st.expander("查看 Synthetic Contrast Cases"):
+                        for case in synthetic_artifact.get("items", []):
+                            validation = case.get("validation") or {}
+                            st.markdown(
+                                f"**{case.get('case_id')} · Synthetic Contrast Case** — "
+                                f"{'eligible' if validation.get('academic_case_eligible') else 'rejected'}")
+                            st.caption(f"Source：{(case.get('source_text') or '')[:180]}")
+                            st.caption(
+                                f"Translation Difficulty：{(case.get('difficulty') or {}).get('reason') or '-'}")
+                            st.caption(
+                                f"Simulated Initial Translation："
+                                f"{(case.get('synthetic_baseline') or {}).get('text') or '-'}")
+                            st.caption(f"Error Diagnosis：{(case.get('error') or {}).get('diagnosis') or '-'}")
+                            st.caption(
+                                f"AI-Optimized Translation："
+                                f"{(case.get('optimized_translation') or {}).get('text') or '-'}")
+                            st.caption(
+                                f"Validation：plausibility="
+                                f"{(case.get('baseline_plausibility') or {}).get('status', '-')} · "
+                                f"repair={validation.get('repair_correctness', '-')} · "
+                                f"academic eligibility={validation.get('academic_case_eligible', False)}")
                 if case_plans_artifact and case_plans_artifact.get("plans"):
                     plans = case_plans_artifact["plans"]
                     depth = (quality_artifact.get("diagnostics") or {}).get(
@@ -626,7 +671,9 @@ if saved_jobs_after:
                                 f"{k}={v.get('status', '?')}"
                                 for k, v in list(depth_entry.items())[:5]) or "未评估"
                             st.markdown(
-                                f"**{plan.get('case_id')}** — {plan.get('evidence_level')} · "
+                                f"**{plan.get('case_id')} · "
+                                f"{'Synthetic Contrast Case' if plan.get('case_type') == 'synthetic_contrast' else 'Authentic Revision Case'}** "
+                                f"— {plan.get('evidence_level')} · "
                                 f"深度：{depth_line}")
                             st.caption(
                                 f"问题：{problem.get('statement') or '未计划'}"
@@ -660,7 +707,13 @@ if saved_jobs_after:
                                     f"{case_id} · {q.get('question_type', '')} · "
                                     f"{q.get('priority', '')}"):
                                 st.caption(f"原文：{context.get('source', '')[:120]}")
-                                st.caption(f"终译：{context.get('final_target', '')[:120]}")
+                                if context.get("case_type") == "synthetic_contrast":
+                                    st.caption(
+                                        f"模拟初译：{context.get('synthetic_initial_translation', '')[:120]}")
+                                    st.caption(
+                                        f"优化译文：{context.get('optimized_translation', '')[:120]}")
+                                else:
+                                    st.caption(f"终译：{context.get('final_target', '')[:120]}")
                                 st.markdown(f"**{question}**")
                                 st.caption(
                                     "若不知道或没有相关记录，直接输入“不记得/没有相关记录”。")
