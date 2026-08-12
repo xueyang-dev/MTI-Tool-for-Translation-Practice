@@ -13,9 +13,12 @@ import json
 import re
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
-from .academic_evidence import case_role, has_meaningful_revision, segment_index, stable_hash
+from .academic_evidence import (
+    case_role, has_meaningful_revision, is_eligible_revision_case, segment_index,
+    stable_hash,
+)
 
-ANALYSIS_VERSION = "case-analysis-v3"
+ANALYSIS_VERSION = "case-analysis-v4"
 
 EVIDENCE_LEVELS = ("rich_process_evidence", "partial_process_evidence",
                    "source_final_only", "validated_synthetic_contrast")
@@ -100,6 +103,7 @@ def translation_delta(segment: Dict[str, Any]) -> Dict[str, Any]:
     final_text = str(final)
     raw_changed = _norm(initial_text) != _norm(final_text)
     meaningful = has_meaningful_revision(initial_text, final_text)
+    eligible = is_eligible_revision_case(segment)
     if not meaningful:
         return {
             "available": True,
@@ -113,6 +117,7 @@ def translation_delta(segment: Dict[str, Any]) -> Dict[str, Any]:
             "finding_link": [],
             "repair_link": bool(segment.get("process_evidence", {}).get("repair_history")),
             "unchanged": True,
+            "academically_eligible": False,
         }
     matcher = difflib.SequenceMatcher(None, initial_text, final_text, autojunk=False)
     lexical: List[str] = []
@@ -141,7 +146,8 @@ def translation_delta(segment: Dict[str, Any]) -> Dict[str, Any]:
         "changed": True,
         "meaningful": True,
         "formatting_only": False,
-        "case_role": "revision_case",
+        "case_role": "revision_case" if eligible else "revision_evidence_boundary",
+        "academically_eligible": eligible,
         "lexical_changes": lexical,
         "structural_changes": structural,
         "omission_addition": [x for x in structural
@@ -160,9 +166,10 @@ def evidence_adequacy(segment: Dict[str, Any]) -> Dict[str, Any]:
     repair = bool(process.get("repair_history"))
     has_actionable = any(x.get("severity") in ("actionable", "blocking")
                          for x in findings)
-    changed = bool(delta.get("changed"))
+    changed = bool(delta.get("changed") and delta.get("academically_eligible"))
     terms = bool(process.get("injected_glossary_entry_ids"))
-    role = case_role(segment)
+    role = "revision_case" if changed else (
+        "revision_evidence_boundary" if delta.get("changed") else case_role(segment))
     if not changed:
         level = "source_final_only"
         can = ["textual_analysis"]

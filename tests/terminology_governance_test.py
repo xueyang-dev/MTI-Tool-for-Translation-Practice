@@ -714,9 +714,7 @@ def test_retranslate_segments():
 
         def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
             if "学术翻译专家" in system_prompt:
-                if "以下译文未通过检查" in user_prompt:
-                    return json.dumps([f"完整译文：{s}" for _, s in _numbered(user_prompt)])
-                return json.dumps([f"完整译文：{s}" for _, s in _numbered(user_prompt)])
+                return json.dumps(["完整译文：中队已经为远程任务做好了充分准备。" * 5])
             return "[]"
 
         core.call_llm = llm
@@ -726,8 +724,9 @@ def test_retranslate_segments():
         assert fixed == [0]
         assert state2["pairs"][0]["target"].startswith("完整译文：")
         assert state2["pairs"][0]["reviewed"] is False, "重译段需重新审校"
-        assert not any(f["segment_index"] == 0 for f in state2["findings"]), \
-            "重译段的旧 finding 应清除"
+        old = [f for f in state2["findings"] if f["segment_index"] == 0]
+        assert old and all(f.get("resolved") for f in old), \
+            "重译段的旧 finding 应保留并标记已解决"
         assert state2["has_blocking"] is False
         assert state2["delivery_status"] == "draft"
         assert any(r["action"] == "retranslated" for r in state2["human_actions"])
@@ -736,6 +735,38 @@ def test_retranslate_segments():
         assert on_disk["pairs"][0]["target"].startswith("完整译文：")
         print("  ✓ 定点重译（fix_segments 能力复用）：替换译文/清 finding/重算交付")
     finally:
+        core.OUTPUT_DIR = old_dir
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_retranslate_keeps_postcheck_findings():
+    tmp = Path(tempfile.mkdtemp(prefix="mti-rt-postcheck-"))
+    old_dir = core.OUTPUT_DIR
+    old_call = core.call_llm
+    core.OUTPUT_DIR = tmp
+    try:
+        source = "RIOT IN CELL BLOCK 11"
+        state = core.new_job_state("title.docx")
+        state.update(
+            p1_done=True, p2_done=True, paras=[source],
+            pairs=[{"source": source, "target": "错位译文。", "reviewed": False,
+                    "from_tm": False, "glossary_entry_ids": []}],
+            findings=[{"segment_index": 0, "severity": "actionable", "type": "review",
+                       "reason": "旧问题"}], review_stats={})
+        core.save_job_state("rtpostcheck000001", state)
+        core.call_llm = lambda *_args, **_kwargs: json.dumps([source])
+        updated, fixed = core.retranslate_segments(
+            "rtpostcheck000001", [0], "DeepSeek", "k", "model", "简体中文",
+            glossary=[])
+        assert fixed == [0]
+        assert any(f.get("segment_index") == 0 and f.get("severity") == "actionable"
+                   and "未翻译" in f.get("reason", "") for f in updated["findings"])
+        assert updated["review_stats"]["actionable"] == 1
+        assert any(f.get("resolved") and f.get("reason") == "旧问题"
+                   for f in updated["findings"])
+        print("  ✓ 定点重译保留最终复验 finding")
+    finally:
+        core.call_llm = old_call
         core.OUTPUT_DIR = old_dir
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -1163,6 +1194,7 @@ if __name__ == "__main__":
     test_delivery_gate_blocking_review_required()
     test_mark_fixed_then_final()
     test_retranslate_segments()
+    test_retranslate_keeps_postcheck_findings()
     test_pipeline_blocking_delivery_status()
     test_tbx_valid_xml()
     test_tmx_only_reviewed_segments()

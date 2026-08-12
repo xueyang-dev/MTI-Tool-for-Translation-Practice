@@ -88,6 +88,29 @@ def test_neighbor_overlap_requires_review_and_is_not_selected():
     print("  ✓ probable adjacent-target overlap stays in pool but is not selected")
 
 
+def test_adjacent_initial_contamination_is_not_a_revision_case():
+    evidence = academic_evidence.build_academic_evidence(_state([
+        _pair("previous source", "那是夏天，或是夏末。那是午后。",
+              "那是夏天，或是夏末。那是午后。"),
+        _pair("RIOT IN CELL BLOCK 11", "那是夏天，或是夏末。那是午后。",
+              "RIOT IN CELL BLOCK 11"),
+    ]), JOB)
+    candidate = next(x for x in evidence["candidate_cases"]
+                     if x["segment_index"] == 1)
+    assert candidate["academic_candidate_status"] == "review_required"
+    assert candidate["features"]["integrity_flags"][0]["type"] == \
+        "probable_adjacent_initial_target_overlap"
+    segment = evidence["project_evidence"]["segments"][1]
+    assert not academic_evidence.is_eligible_revision_case(segment)
+    adequacy = case_analysis.evidence_adequacy(segment)
+    assert adequacy["case_role"] == "revision_evidence_boundary"
+    assert not adequacy["capabilities"]["has_meaningful_revision"]
+    selected = academic_writer.select_academic_cases({}, {"claims": []}, evidence)
+    assert not selected["cases"]
+    assert selected["selection_status"] == "insufficient_revision_cases"
+    print("  ✓ adjacent initial contamination is a system boundary, not revision evidence")
+
+
 def test_two_case_fallback_is_explicit_and_outline_safe():
     evidence = academic_evidence.build_academic_evidence(_state([
         _pair("source one", "旧译一。", "新译一。"),
@@ -234,6 +257,7 @@ if __name__ == "__main__":
     test_eligibility_gate_and_case_role()
     test_finding_without_revision_stays_excluded()
     test_neighbor_overlap_requires_review_and_is_not_selected()
+    test_adjacent_initial_contamination_is_not_a_revision_case()
     test_two_case_fallback_is_explicit_and_outline_safe()
     test_two_case_validator_requires_disclosure_but_not_third_case()
     test_human_evidence_cannot_promote_unchanged_case()

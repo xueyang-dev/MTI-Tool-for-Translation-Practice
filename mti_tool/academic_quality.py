@@ -14,10 +14,12 @@ import re
 from collections import Counter
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
-from .academic_evidence import case_role, has_meaningful_revision, segment_index, stable_hash
+from .academic_evidence import (
+    case_role, is_eligible_revision_case, segment_index, stable_hash,
+)
 from . import case_analysis
 
-QUALITY_VERSION = "academic-quality-v4"
+QUALITY_VERSION = "academic-quality-v5"
 REPORT_VERSION = "academic-quality-report-v1"
 
 DIMENSIONS = (
@@ -182,7 +184,7 @@ def case_quality_signals(segment: Dict[str, Any], findings: Iterable[Dict[str, A
                         if x.get("segment_index") == index]
     initial = segment.get("initial_target")
     final = segment.get("final_target")
-    changed = has_meaningful_revision(initial, final)
+    changed = is_eligible_revision_case(segment)
     repair = bool(process.get("repair_history"))
     term_ids = process.get("injected_glossary_entry_ids") or []
     availability = segment.get("availability", {})
@@ -197,7 +199,9 @@ def case_quality_signals(segment: Dict[str, Any], findings: Iterable[Dict[str, A
             x.get("severity") in ("actionable", "blocking") for x in seg_findings),
         "initial_to_final_changed": changed,
         "has_meaningful_revision": changed,
-        "case_role": case_role(segment),
+        "case_role": "revision_case" if changed else (
+            "revision_evidence_boundary" if segment.get("integrity_flags")
+            else case_role(segment)),
         "has_repair_history": repair,
         "terminology_decision_count": len(term_ids),
         "reviewed": bool(segment.get("reviewed")),
@@ -663,8 +667,7 @@ def evaluate_quality(
                     continue
                 case_id = str(case.get("case_id") or "")
                 segment = segment_index(evidence).get(case_id) or {}
-                if case_id in content and not has_meaningful_revision(
-                        segment.get("initial_target"), segment.get("final_target")):
+                if case_id in content and not is_eligible_revision_case(segment):
                     findings.append(_issue(
                         "non_revision_case_used_as_revision_analysis",
                         dimension="case_quality", severity="critical", priority="P1",
@@ -996,8 +999,7 @@ def select_replacement_case(
         if candidate.get("academic_candidate_status", "eligible") != "eligible":
             continue
         segment = segs.get(candidate_id) or {}
-        if not has_meaningful_revision(
-                segment.get("initial_target"), segment.get("final_target")):
+        if not is_eligible_revision_case(segment):
             continue
         richness = case_quality_signals(segment, evidence.get("findings") or [])[
             "evidence_richness"]

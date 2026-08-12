@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -66,14 +65,27 @@ def main() -> int:
     selected_ids = [str(x["case_id"]) for x in selected["cases"]]
 
     questions = _load(questions_path)
-    question_case_ids = {str(x.get("case_id")) for x in questions.get("questions", [])}
-    if len(questions.get("questions", [])) != 4 or question_case_ids != set(selected_ids):
-        parser.error("canonical questions are invalid for the two selected revision cases")
+    if len(questions.get("questions", [])) != 4:
+        parser.error("canonical questions artifact no longer has the expected four records")
 
     out_dir.mkdir(parents=True, exist_ok=False)
     _write(out_dir / "selected-cases.json", selected)
-    shutil.copyfile(questions_path,
-                    out_dir / "human-evidence-questions-target-cases.json")
+    dispositions = {
+        "schema_version": "human-evidence-question-disposition-v1",
+        "source_artifact": str(questions_path),
+        "active_question_count": 0,
+        "questions": [{
+            "question_id": item.get("question_id"),
+            "case_id": item.get("case_id"),
+            "prior_status": item.get("status"),
+            "status": "withdrawn_after_system_analysis",
+            "reason": (
+                "system_alignment_failure_not_author_intention"
+                if str(item.get("case_id", "")).endswith("-0209")
+                else "observable_textual_effect_can_be_analyzed_without_author_intention"),
+        } for item in questions.get("questions", [])],
+    }
+    _write(out_dir / "human-evidence-question-disposition.json", dispositions)
 
     snapshot_paths = [state_path] + sorted(
         Path("eval/academic-quality").glob(f"{args.job_id}/**/state-eval.json"))
@@ -142,6 +154,28 @@ def main() -> int:
             "subsegment revision or pre-contamination target exists, so a synthetic split "
             "would not have historical provenance."),
     }
+    system_case_index = 209
+    system_pair = state.get("pairs", [])[system_case_index]
+    preceding_pair = state.get("pairs", [])[system_case_index - 1]
+    system_case = next(x for x in candidates if x["segment_index"] == system_case_index)
+    system_investigation = {
+        "case_id": system_case["case_id"],
+        "status": "SYSTEM_ALIGNMENT_FAILURE",
+        "source": system_pair.get("source"),
+        "stored_initial_target": system_pair.get("initial_target"),
+        "stored_final_target": system_pair.get("target"),
+        "initial_target_found_in_preceding_target_after_normalization": any(
+            x.get("type") == "probable_adjacent_initial_target_overlap"
+            for x in system_case.get("features", {}).get("integrity_flags", [])),
+        "preceding_segment_id": f"seg-{args.job_id}-{system_case_index - 1:04d}",
+        "preceding_final_target": preceding_pair.get("target"),
+        "human_action": "retranslated",
+        "academic_decision": "exclude_from_authentic_revision_core",
+        "reason": (
+            "The alleged initial translation belongs to the preceding passage, and the "
+            "stored final repeats the English source title. The observed change is a "
+            "system alignment/retranslation event, not a defensible translator decision."),
+    }
 
     stats = evidence["project_evidence"]["statistics"]
     audit = {
@@ -156,7 +190,7 @@ def main() -> int:
             "initial_final_translations": "VERIFIED",
             "review_findings_for_revision_candidates": "NOT_FOUND",
             "repair_history_for_revision_candidates": "NOT_FOUND",
-            "human_actions": "VERIFIED_FOR_0142_AND_0209_WITHOUT_VERSION_CONTENT",
+            "human_actions": "VERIFIED_FOR_0142_AND_0209;_0209_IS_SYSTEM_RETRANSLATION",
             "project_session_snapshots": "COPIES_NOT_INDEPENDENT_VERSIONS",
             "prior_artifacts": "NO_ADDITIONAL_TRANSLATION_VERSION_FOUND",
             "source_document_boundary": "VERIFIED" if args.source_boundary_note else "NOT_RECORDED",
@@ -170,9 +204,10 @@ def main() -> int:
             "revision_cases_academically_eligible")},
         "candidate_cases": candidates,
         "case_0142_investigation": investigation,
-        "third_case_decision": "no_defensible_third_case_found",
+        "case_0209_investigation": system_investigation,
+        "core_case_decision": "only_0272_is_currently_defensible",
         "selected_case_ids": selected_ids,
-        "chapter_3_decision": "two_case_fallback",
+        "chapter_3_decision": "insufficient_revision_cases",
         "revision_gate_relaxed": False,
     }
     audit["content_hash"] = academic_evidence.stable_hash(
@@ -180,13 +215,14 @@ def main() -> int:
     _write(out_dir / "revision-case-audit.json", audit)
 
     pilot = {
-        "pilot": "two-core-case-human-evidence-pilot",
+        "pilot": "system-analysis-no-author-question-pilot",
         "job_id": args.job_id,
         "case_ids": [x.rsplit("-", 1)[-1] for x in selected_ids],
-        "artifact_source": "human-evidence-questions-target-cases.json",
-        "number_of_questions": len(questions["questions"]),
-        "estimated_author_burden": "~8-12 minutes",
-        "status": "awaiting_author_input",
+        "artifact_source": "human-evidence-question-disposition.json",
+        "number_of_questions": 0,
+        "withdrawn_question_count": len(questions["questions"]),
+        "estimated_author_burden": "0 minutes",
+        "status": "system_analysis_complete",
         "phase_b_started": False,
         "revision_eligibility_immutable": True,
     }
@@ -195,9 +231,9 @@ def main() -> int:
     report = f"""# Revision Case Recovery and Selection Report
 
 - job: `{args.job_id}`
-- decision: `two_case_fallback`
-- selected core cases: 0209, 0272
-- third case: `not_defensibly_recoverable`
+- decision: `insufficient_revision_cases`
+- selected core cases: 0272
+- excluded system-alignment case: 0209
 - revision eligibility gate relaxed: no
 
 ## Evidence-source audit
@@ -205,20 +241,20 @@ def main() -> int:
 - Initial/final translations: **VERIFIED**; 237 pairs contain both versions.
 - Review findings linked to the three changed pairs: **NOT_FOUND**.
 - Translation repair history linked to the three changed pairs: **NOT_FOUND**.
-- Human actions: **VERIFIED** for 0142 and 0209, but the action records do not store a revision snapshot or rationale.
+- Human actions: **VERIFIED** for 0142 and 0209. The 0209 action is a system retranslation event, not author rationale.
 - Project/session snapshots: all available copies preserve the same 0142, 0209 and 0272 pair identities; they are not independent historical versions.
 - Prior academic artifacts: no additional initial/final translation version was found.
 - Source document boundary: **{'VERIFIED' if args.source_boundary_note else 'NOT_RECORDED'}**. {args.source_boundary_note}
 
 ## Candidate decisions
 
-### Case 0209 — eligible
+### Case 0209 — excluded system-alignment failure
 
-A genuine initial-to-final replacement is stored, and a human retranslation action is recorded. The reason and expected reader effect remain Human Evidence questions; answers may enrich analysis but cannot change eligibility.
+The alleged initial target is text from the preceding passage. The retranslation then stored the English source title unchanged. This is an alignment/retranslation failure, not a defensible translation decision, so it cannot be core revision evidence.
 
-### Case 0272 — eligible
+### Case 0272 — eligible without author-intention inference
 
-A genuine initial-to-final lexical revision is stored. No contemporaneous rationale or repair event is recorded. Human Evidence may add later author explanation without rewriting project history.
+A genuine initial-to-final lexical revision is stored. Its observable referential effect can be analyzed directly; no historical motivation is inferred or requested from the author.
 
 ### Case 0142 — review_required, not recovered
 
@@ -226,16 +262,16 @@ The segment contains genuine local wording changes, but its final target also re
 
 ## Final academic decision
 
-Chapter 3 must use exactly the two defensible core revision cases, 0209 and 0272. The preferred count remains three, but two satisfies the explicit minimum when genuine revision evidence is scarce. The report must disclose that scarcity and must not backfill the missing slot with unchanged, contaminated, or inferred evidence.
+Only 0272 currently passes the authentic-revision gate, which is below the two-case minimum. Chapter 3 core composition must wait until the recorded actionable findings are repaired and the new initial-to-final histories are re-audited. SC-0141 may remain an optional synthetic supplement but cannot satisfy the authentic minimum.
 
-Human Evidence remains `awaiting_author_input` with four existing questions. Phase B has not started.
+All four prior author questions are withdrawn: two concerned a system fault, and two asked for intention/reader response that is unnecessary for evidence-bounded textual analysis. No answer is inferred or fabricated. Phase B has not started.
 """
     (out_dir / "revision-case-selection-report.md").write_text(report, encoding="utf-8")
 
     hashes = {
         name: _sha256(out_dir / name) for name in (
             "revision-case-audit.json", "selected-cases.json",
-            "human-evidence-questions-target-cases.json",
+            "human-evidence-question-disposition.json",
             "human-evidence-pilot-state.json", "revision-case-selection-report.md")
     }
     manifest = {

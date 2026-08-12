@@ -18,7 +18,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from . import assets
 from . import report_evidence
 
-SCHEMA_VERSION = "academic-evidence-v3"
+SCHEMA_VERSION = "academic-evidence-v4"
 ALLOWED_SOURCE_STATUSES = {
     "metadata_verified", "user_provided", "imported_unverified", "candidate",
     "rejected",
@@ -88,6 +88,13 @@ def case_role(segment: Dict[str, Any]) -> str:
     return "revision_case" if has_meaningful_revision(
         segment.get("initial_target"), segment.get("final_target")) \
         else "non_revision_case"
+
+
+def is_eligible_revision_case(segment: Dict[str, Any]) -> bool:
+    """A textual delta is core-eligible only when no integrity flag is present."""
+    return has_meaningful_revision(
+        segment.get("initial_target"), segment.get("final_target")) \
+        and not segment.get("integrity_flags")
 
 
 def normalize_literature_registry(
@@ -329,6 +336,31 @@ def _mark_neighbor_target_overlap(segments: List[Dict[str, Any]]) -> None:
             })
 
 
+def _mark_neighbor_initial_overlap(segments: List[Dict[str, Any]]) -> None:
+    """Flag an alleged initial translation copied from an adjacent target."""
+    for index, current in enumerate(segments):
+        if case_role(current) != "revision_case":
+            continue
+        initial = normalized_translation_target(
+            current.get("initial_target"), ignore_punctuation=True)
+        if len(initial) < 8:
+            continue
+        for neighbor_index in (index - 1, index + 1):
+            if not 0 <= neighbor_index < len(segments):
+                continue
+            neighbor = segments[neighbor_index]
+            neighbor_target = normalized_translation_target(
+                neighbor.get("final_target"), ignore_punctuation=True)
+            if initial and initial in neighbor_target:
+                current.setdefault("integrity_flags", []).append({
+                    "type": "probable_adjacent_initial_target_overlap",
+                    "adjacent_segment_id": neighbor.get("segment_id"),
+                    "position": "previous" if neighbor_index < index else "following",
+                    "contained_fraction": 1.0,
+                })
+                break
+
+
 def mine_candidate_cases(
     segments: List[Dict[str, Any]],
     glossary: Optional[List[Dict[str, Any]]] = None,
@@ -386,7 +418,7 @@ def _project_statistics(state: Dict[str, Any], segments: List[Dict[str, Any]]) -
                                     if s["process_evidence"].get("repair_history")]
     complete_chains = [s for s in revised if _candidate_features(s, {})[
         "features"]["complete_evidence_chain"]]
-    academically_eligible = [s for s in revised if not s.get("integrity_flags")]
+    academically_eligible = [s for s in revised if is_eligible_revision_case(s)]
     stats = {
         "total_segments": len(state.get("paras") or state.get("pairs") or []),
         "translated_segments": len(state.get("pairs") or []),
@@ -472,6 +504,7 @@ def build_academic_evidence(
         })
 
     _mark_neighbor_target_overlap(segments)
+    _mark_neighbor_initial_overlap(segments)
     candidates = mine_candidate_cases(segments, glossary, max_candidates=max_candidates)
     statistics = _project_statistics(state, segments)
     limitations = []

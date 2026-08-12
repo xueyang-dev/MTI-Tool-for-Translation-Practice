@@ -21,8 +21,9 @@
 
 ## 修订案例硬资格规则
 
-真实修订案例分析只允许使用 `authentic_revision`：初译和终译均已记录，且经保守规范化后
-存在有意义的文本差异。空白或纯标点变化不自动构成修订。候选挖掘先执行该门禁，
+真实修订案例分析只允许使用 `authentic_revision`：初译和终译均已记录，经保守规范化后
+存在有意义的文本差异，且两版没有相邻段污染等完整性标记。空白或纯标点变化、系统错位
+修复和污染清理均不自动构成学术修订案例。候选挖掘先执行该门禁，
 再按完整修复链、关联 finding、repair history、实际文本差异和研究问题相关性排序。
 
 `non_revision_case` 可以保留在项目证据库中，但不得进入核心修订案例池，也不能由
@@ -55,10 +56,17 @@ human action 只记录 0142、0209 曾重译，没有保存修改前后快照或
 对象；拆出 0142a 会创建没有历史来源的新证据。因此结论为 `MISMATCH`，继续保持
 `review_required`，不得进入核心案例。
 
-最终只选择 0209、0272，并将第三案例结论记为 `no_defensible_third_case_found`。
-Chapter 3 采用 `two_case_fallback`，明确说明第三位置没有用弱证据补足。真实复跑产物位于
-`eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/`；其中复用了原有
-Human Evidence 问题文件（字节一致），状态仍为 `awaiting_author_input`，未运行 Phase B。
+后续系统审计纠正了上述双案例结论。0209 的保存初译“那是夏天，或是夏末。那是午后。”
+来自前一段 0208；15:45 的 `retranslated` 动作又把英文标题原样保存为终译。该变化是段落
+错位后的系统重译事件，不是可防御的翻译决策。共享门禁现将其标为
+`probable_adjacent_initial_target_overlap`，并将 0209 降为 evidence boundary。
+
+因此当前只有 0272 通过真实修订门禁，状态为 `insufficient_revision_cases`，不能继续使用
+`two_case_fallback`。SC-0141 仍可作为明确标注的合成补充，但不能满足真实修订最低数量。
+此前针对 0209、0272 的四个人类问题全部撤回：0209 不应让作者替系统故障补理由；0272 的
+可观察指称效果可由文本直接分析，无需生成作者意图。纠正审计位于
+`eval/academic-quality/ec100d8686d3891e/revision-system-analysis-20260812T095500Z/`，Phase B
+仍未启动。下一恢复路径是先处理真实翻译 findings，再以新保存的修订历史重新执行资格审计。
 
 可用以下命令重复执行只读审计；它不会调用模型或写回历史项目状态：
 

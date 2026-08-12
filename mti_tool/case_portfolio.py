@@ -13,7 +13,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from . import academic_evidence, case_analysis, synthetic_cases
 
 
-PORTFOLIO_VERSION = "case-portfolio-v1"
+PORTFOLIO_VERSION = "case-portfolio-v2"
 TAXONOMY_VERSION = "case-taxonomy-v1"
 VALIDATOR_VERSION = "portfolio-validator-v1"
 
@@ -247,9 +247,10 @@ def _evidence_score(segment: Dict[str, Any], findings: List[Dict[str, Any]],
 def _real_candidate(segment: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     findings = [dict(x) for x in segment.get("process_evidence", {}).get(
         "findings", []) if x.get("severity") in {"actionable", "blocking"}]
-    revised = academic_evidence.has_meaningful_revision(
+    stored_change = academic_evidence.has_meaningful_revision(
         segment.get("initial_target"), segment.get("final_target"))
-    if not revised and not findings:
+    revised = academic_evidence.is_eligible_revision_case(segment)
+    if not stored_change and not findings and not segment.get("integrity_flags"):
         return None
     flags = _boundary_flags(segment, findings)
     finding_reliability_flags = _finding_reliability_flags(segment, findings)
@@ -298,12 +299,13 @@ def _real_candidate(segment: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                       else "documented_review_example"),
         "provenance": {"historical_segment": True,
                        "historical_revision": bool(revised),
+                       "recorded_initial_final_change": bool(stored_change),
                        "generated_for_analysis": False},
         "coverage_zone": segment.get("coverage_zone"),
         "source": segment.get("source"),
         "historical_initial_translation": segment.get("initial_target"),
         "historical_final_translation": segment.get("final_target"),
-        "actual_revision_delta": delta if revised else {"available": False},
+        "actual_revision_delta": delta if stored_change else {"available": False},
         "recorded_findings": findings,
         "dominant_finding": dominant,
         "repair_history": segment.get("process_evidence", {}).get("repair_history") or [],
@@ -614,6 +616,7 @@ def plan_portfolio(candidate_pool: Dict[str, Any], taxonomy: Dict[str, Any],
 
 def build_coverage_matrix(portfolio: Dict[str, Any], taxonomy: Dict[str, Any]) -> Dict[str, Any]:
     cases = portfolio.get("cases", [])
+    authentic_count = sum(x.get("case_type") == "authentic_revision" for x in cases)
     rows = []
     for major in taxonomy.get("major_problems", []):
         for sub in major.get("subproblems", []):
@@ -639,7 +642,7 @@ def build_coverage_matrix(portfolio: Dict[str, Any], taxonomy: Dict[str, Any]) -
                                        if x["coverage_status"] == "covered"}),
         "covered_subproblems": sum(x["coverage_status"] == "covered" for x in rows),
         "gaps": [
-            "Only two defensible historical revision cases are available.",
+            f"Only {authentic_count} defensible historical revision case(s) are available.",
             "No user-confirmed Human Evidence answers are available.",
             "No grounded Literature Evidence is available for theory mapping.",
         ],

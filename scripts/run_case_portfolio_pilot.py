@@ -62,7 +62,7 @@ The corpus produced {taxonomy['major_problem_count']} major problems and {taxono
 
 ## Evidence decision
 
-Only 0209 and 0272 are authentic revision cases. Supporting examples carry recorded review findings but no implemented revision history. Boundary cases are retained only to expose unusable or mismatched evidence. SC-0141 remains synthetic and supplemental.
+Only cases currently classified as `authentic_revision` by the shared integrity gate may support historical revision claims. 0209 is a system-alignment boundary case, not a translator decision; 0272 remains authentic. Supporting examples carry recorded review findings but no implemented revision history. SC-0141 remains synthetic and supplemental.
 
 ## Coverage gaps
 

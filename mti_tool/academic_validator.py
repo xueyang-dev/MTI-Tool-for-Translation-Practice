@@ -5,11 +5,13 @@ import re
 from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional
 
-from .academic_evidence import has_meaningful_revision, literature_index, segment_index, stable_hash
+from .academic_evidence import (
+    is_eligible_revision_case, literature_index, segment_index, stable_hash,
+)
 from . import case_analysis, literature_evidence, synthetic_cases, thesis_constraints
 
 SCHEMA_VERSION = "academic-validation-v2"
-VALIDATOR_VERSION = "validator-v6"
+VALIDATOR_VERSION = "validator-v7"
 
 _SEGMENT_REF = re.compile(r"\[(seg-[A-Za-z0-9_-]+-\d{4,})\]")
 _QUOTE = re.compile(
@@ -864,19 +866,21 @@ def validate_academic_report(
                 "合成案例没有实证频率依据，不能称为常见或普遍的人类翻译错误。",
                 suggested_action="改为‘一种合理的翻译失败模式’。"))
 
-    candidate_ids = {str(x.get("case_id")) for x in evidence.get("candidate_cases", [])}
+    candidate_status = {str(x.get("case_id")): x.get(
+        "academic_candidate_status", "eligible")
+        for x in evidence.get("candidate_cases", [])}
     for case_id in authentic_ids:
-        if case_id not in candidate_ids or case_id not in segs:
+        if case_id not in candidate_status or case_id not in segs:
             issues.append(_issue(
                 "invalid_selected_case", f"选中案例不在候选池或证据库中：{case_id}",
                 evidence_id=case_id))
             continue
         segment = segs[case_id]
-        if not has_meaningful_revision(
-                segment.get("initial_target"), segment.get("final_target")):
+        if candidate_status[case_id] != "eligible" or not is_eligible_revision_case(
+                segment):
             issues.append(_issue(
                 "non_revision_case_used_as_revision_analysis",
-                f"案例 {case_id} 没有有意义的初译→终译差异，不能作为核心修订案例。",
+                f"案例 {case_id} 没有通过初译→终译完整性门禁，不能作为核心修订案例。",
                 evidence_id=case_id,
                 suggested_action="替换为 revision_case；Human Evidence 不能改变该资格。"))
     for case_id in synthetic_ids:
@@ -906,8 +910,7 @@ def validate_academic_report(
                       if str(x) in body and str(x) in segs and str(x) in authentic_ids]
         for case_id in referenced:
             segment = segs[case_id]
-            if not has_meaningful_revision(
-                    segment.get("initial_target"), segment.get("final_target")):
+            if not is_eligible_revision_case(segment):
                 issues.append(_issue(
                     "invented_revision",
                     f"章节 {section_id} 声称案例 {case_id} 发生修订，但项目记录没有真实差异。",
@@ -931,8 +934,7 @@ def validate_academic_report(
                 claim["old"] in _norm(segs[case_id].get("initial_target"))
                 and claim["new"] in _norm(segs[case_id].get("final_target"))
                 for case_id in referenced
-                if has_meaningful_revision(segs[case_id].get("initial_target"),
-                                           segs[case_id].get("final_target")))
+                if is_eligible_revision_case(segs[case_id]))
             if referenced and not matches_stored_delta:
                 issues.append(_issue(
                     "described_revision_not_in_stored_delta",

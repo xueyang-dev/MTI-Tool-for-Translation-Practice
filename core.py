@@ -478,6 +478,20 @@ def check_translation_batch(sources, targets, glossary, target_lang,
                              "reason": f"疑似漏译/截断：原文 {len(src)} 字符"
                                        f"/{_count_sentences(src)} 句，译文仅 {len(tgt.strip())} 字符"
                                        f"/{_count_sentences(tgt)} 句"})
+        source_words = re.findall(r"[A-Za-z]+", src or "")
+        whole_source_preserved = any(
+            str(entry.get("behavior") or "") == "preserve"
+            and str(entry.get("status") or "") == "locked"
+            and re.sub(r"\s+", " ", str(entry.get("source") or "")).strip().casefold()
+            == re.sub(r"\s+", " ", src or "").strip().casefold()
+            for entry in glossary or [])
+        if target_lang != "English" and len(source_words) >= 2 \
+                and re.sub(r"\s+", " ", src or "").strip().casefold() \
+                == re.sub(r"\s+", " ", tgt or "").strip().casefold() \
+                and not whole_source_preserved:
+            findings.append({
+                "segment_index": i, "type": "check", "severity": "actionable",
+                "reason": "译文与英文源段完全相同，疑似整段未翻译"})
         for token, kind in extract_preserved_tokens(src).items():
             if token not in tgt:
                 findings.append({"segment_index": i, "type": "check",
@@ -1755,12 +1769,12 @@ def approve_delivery(job_id, note="", accept_blocking=False, actor="user"):
 
 def retranslate_segments(job_id, indexes, provider, api_key, model, target_lang,
                          style_rules="", glossary=None, on_status=None,
-                         on_caption=None):
+                         on_caption=None, actor="user"):
     """定点重译（抽取自 scripts/fix_segments.py 的能力）。"""
     from mti_tool import delivery as _delivery
     return _delivery.retranslate_segments(
         job_id, indexes, provider, api_key, model, target_lang,
-        style_rules, glossary, on_status, on_caption)
+        style_rules, glossary, on_status, on_caption, actor)
 
 
 def delivery_status_label(state):

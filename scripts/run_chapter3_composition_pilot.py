@@ -527,8 +527,8 @@ def main() -> int:
     state = _load(state_path)
     evidence = academic_evidence.build_academic_evidence(state, args.job_id)
     segments = academic_evidence.segment_index(evidence)
-    if any(case_id not in segments or not academic_evidence.has_meaningful_revision(
-            segments[case_id].get("initial_target"), segments[case_id].get("final_target"))
+    if any(case_id not in segments or not academic_evidence.is_eligible_revision_case(
+            segments[case_id])
            for case_id in AUTHENTIC):
         raise RuntimeError("an authentic case failed the existing revision gate")
     if synthetic_case["source_text"] not in segments[

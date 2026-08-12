@@ -125,11 +125,12 @@ def retranslate_segments(
     glossary: Optional[List[Dict[str, Any]]] = None,
     on_status=None,
     on_caption=None,
+    actor: str = "user",
 ) -> Tuple[Dict[str, Any], List[int]]:
     """重新翻译指定段落（抽取自 scripts/fix_segments.py 的能力）。
 
     每段：前后文 + 批次翻译 + 完整性把关 + 自动修复一轮；
-    清除该段旧 findings（informational 保留），重算统计与交付状态。
+    保留并关闭该段旧问题，另存最终复验 findings，重算统计与交付状态。
     """
     import core
 
@@ -167,18 +168,29 @@ def retranslate_segments(
                 if repaired and repaired[0].strip() \
                         and not core.is_incomplete_translation(src, repaired[0]):
                     tgt = core.clean_xml_chars(repaired[0]).replace("\n", " ")
+            remaining = core.check_translation_batch(
+                [src], [tgt], glossary, target_lang,
+                section_profile=section_profile)
             pairs[idx]["target"] = tgt
             pairs[idx]["from_tm"] = False
             pairs[idx]["reviewed"] = False  # 重译后需重新审校，不进 TMX final memory
-            state["findings"] = [
-                f for f in state.get("findings", [])
-                if f.get("segment_index") != idx or f.get("severity") == "informational"]
-            if core.is_incomplete_translation(src, tgt):
+            for old in state.get("findings", []):
+                if old.get("segment_index") != idx or old.get("resolved") \
+                        or old.get("severity") not in ("blocking", "actionable"):
+                    continue
+                old["resolved"] = True
+                old["resolution"] = {
+                    "action": "retranslated", "note": f"重新翻译段 {idx}",
+                    "timestamp": now_iso(), "actor": actor,
+                }
+                add_human_action(
+                    state, finding_id(old), "retranslated", f"重新翻译段 {idx}",
+                    actor)
+            for finding in remaining:
                 state["findings"].append({
-                    "segment_index": idx, "severity": "blocking", "type": "check",
-                    "reason": "重译后仍疑似不完整，需人工核对"})
+                    **finding, "segment_index": idx, "segment_id": idx})
             add_human_action(state, f"segment:{idx}", "retranslated",
-                             f"重新翻译段 {idx}", "user")
+                             f"重新翻译段 {idx}", actor)
             fixed.append(idx)
             if on_caption:
                 on_caption(f"✅ 段 {idx} 已重译（{len(src)} -> {len(tgt)} 字符）")
@@ -188,11 +200,11 @@ def retranslate_segments(
 
     stats = state.setdefault("review_stats", {})
     stats["blocking"] = sum(1 for f in state["findings"]
-                            if f["severity"] == "blocking")
+                            if f["severity"] == "blocking" and not f.get("resolved"))
     stats["actionable"] = sum(1 for f in state["findings"]
-                              if f["severity"] == "actionable")
+                              if f["severity"] == "actionable" and not f.get("resolved"))
     stats["informational"] = sum(1 for f in state["findings"]
-                                 if f["severity"] == "informational")
+                                 if f["severity"] == "informational" and not f.get("resolved"))
     state["has_blocking"] = stats["blocking"] > 0
     state["delivery_status"] = compute_delivery_status(state)
     core.save_job_state(job_id, state)
