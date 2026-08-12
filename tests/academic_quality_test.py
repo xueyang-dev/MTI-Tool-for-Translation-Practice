@@ -104,6 +104,12 @@ def test_evidence_utilization_and_cross_section():
     sections = [{"section_id": "3", "content": "正文没有引用任何案例。"}]
     usage = academic_quality.evidence_utilization(sections, selected, evidence)
     assert usage["high_value_unused_cases"] == ["seg-s-0000"]
+    quoted = academic_quality.evidence_utilization([{
+        "section_id": "3",
+        "content": "> [SOURCE seg-s-0000]: src\n> [INITIAL seg-s-0000]: 初译\n"
+                   "> [TARGET seg-s-0000]: 终译",
+    }], selected, evidence)
+    assert quoted["cases_used"] == 1 and not quoted["high_value_unused_cases"]
     issues = academic_quality.cross_section_checks([
         {"section_id": "1", "content": "同一段落文本。\n\n[seg-s-0000] 案例一。"},
         {"section_id": "2", "content": "同一段落文本。\n\n[seg-s-0000] 案例二。"},
@@ -111,6 +117,36 @@ def test_evidence_utilization_and_cross_section():
     types = {x["type"] for x in issues}
     assert {"duplicate_paragraph", "duplicate_case_analysis"}.issubset(types)
     print("  ✓ 证据利用缺失检测与跨节重复检测")
+
+
+def test_quality_depth_does_not_replace_top_level_dimensions():
+    evidence, research, argument, selected, outline, sections = _quality_inputs(
+        f"seg-{JOB}-0001", f"seg-{JOB}-0006")
+
+    def reviewer(*args, **kwargs):
+        return json.dumps({
+            "dimensions": {"case_quality": "pass_with_warnings"},
+            "findings": [],
+            "case_analysis_depth": {selected["cases"][0]["case_id"]: {
+                name: {"status": "adequate", "reason": "fixture"}
+                for name in academic_quality.case_analysis.DEPTH_DIMENSIONS}},
+        })
+
+    result = academic_quality.evaluate_quality(
+        research, argument, selected, outline, sections, evidence,
+        {"sources": []}, {"items": []}, {"items": []}, {"status": "pass"},
+        reviewer, "fake", "key", "model")
+    assert set(result["dimensions"]) == set(academic_quality.DIMENSIONS)
+    assert result["dimensions"]["case_quality"] == "pass_with_warnings"
+    print("  ✓ case-depth parsing preserves top-level quality dimensions")
+
+
+def test_single_chapter_is_not_all_treated_as_conclusion():
+    traces = academic_quality.conclusion_traceability(
+        {"sections": [{"section_id": "3", "title": "案例分析"}]},
+        [{"section_id": "3", "content": "这是分析正文，不是整篇结论。"}])
+    assert traces == []
+    print("  ✓ isolated chapter is not wholly classified as a conclusion")
 
 
 def _quality_inputs(weak_case: str, strong_case: str):
@@ -303,6 +339,8 @@ if __name__ == "__main__":
     test_paragraph_roles_and_generic()
     test_rq_alignment()
     test_evidence_utilization_and_cross_section()
+    test_quality_depth_does_not_replace_top_level_dimensions()
+    test_single_chapter_is_not_all_treated_as_conclusion()
     test_replacement_selection()
     test_replacement_prefers_evidence_richness_over_mining_score()
     test_end_to_end_quality_repair_with_case_replacement()

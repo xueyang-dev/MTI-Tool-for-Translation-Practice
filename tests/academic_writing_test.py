@@ -11,11 +11,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mti_tool import academic_evidence, academic_validator, academic_writer, literature_evidence
+from scripts.run_chapter3_composition_pilot import _has_invalid_0272_count_claim
 import core
 from docx import Document
 
 
 JOB = "academicfixture01"
+
+
+def test_0272_count_fact_gate():
+    assert not _has_invalid_0272_count_claim(
+        "源文后句写 Those five words；中文引语‘你不会经历战争’为七个汉字。")
+    assert not _has_invalid_0272_count_claim("不得声称源文为五个英文词。")
+    assert _has_invalid_0272_count_claim("源文为五个英文词。")
+    assert _has_invalid_0272_count_claim("可调整为恰好五字，如‘你不会有战争’。")
+    print("  ✓ 0272 word/character count fact gate")
 
 
 def _state(n=12):
@@ -288,6 +298,7 @@ def test_end_to_end_pipeline_and_targeted_repair():
 
 if __name__ == "__main__":
     print("学术写作架构测试：")
+    test_0272_count_fact_gate()
     test_whole_corpus_evidence_and_candidates()
     test_validator_rejects_fabrication()
     test_dependency_staleness()

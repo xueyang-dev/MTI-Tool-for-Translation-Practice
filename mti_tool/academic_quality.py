@@ -45,6 +45,8 @@ _LIT_CLAIM_MARKER = re.compile(r"<!--lit-claim:([A-Za-z0-9_.:-]+)-->")
 _LIT_EVIDENCE_MARKER = re.compile(r"<!--lit-evidence:([A-Za-z0-9_.:-]+)-->")
 _CITE_MARKER = re.compile(r"\[@([A-Za-z0-9_.:-]+)\]|<!--cite:([A-Za-z0-9_.:-]+)-->")
 _SEG_REF = re.compile(r"\[(seg-[A-Za-z0-9_-]+-\d{4,})\]")
+_SEG_QUOTE_REF = re.compile(
+    r"\[(?:SOURCE|INITIAL|TARGET)\s+(seg-[A-Za-z0-9_-]+-\d{4,})\]")
 _SYNTH_REF = re.compile(r"\b(SC-\d{4,})\b")
 _STAT_MARKER = re.compile(r"<!--stat:([A-Za-z0-9_.-]+)-->")
 _QUOTE_MARKER = re.compile(
@@ -294,6 +296,7 @@ def evidence_utilization(
     used_segments = set()
     for section in sections:
         used_segments.update(_SEG_REF.findall(section.get("content") or ""))
+        used_segments.update(_SEG_QUOTE_REF.findall(section.get("content") or ""))
         used_segments.update(_SYNTH_REF.findall(section.get("content") or ""))
     rows = []
     for case in selected_cases.get("cases", []):
@@ -337,7 +340,7 @@ def conclusion_traceability(
     conclusion_ids = [
         x["section_id"] for x in outline.get("sections", [])
         if re.search(r"结论|结语|conclusion", str(x.get("title") or ""), re.I)]
-    if not conclusion_ids and outline.get("sections"):
+    if not conclusion_ids and len(outline.get("sections", [])) > 1:
         conclusion_ids = [outline["sections"][-1]["section_id"]]
     out: List[Dict[str, Any]] = []
     for section_id in conclusion_ids:
@@ -812,12 +815,12 @@ def evaluate_quality(
     depth_entries: Dict[str, Dict[str, Any]] = {}
     raw_depth = raw.get("case_analysis_depth") if raw else None
     if isinstance(raw_depth, dict):
-        for case_id, dimensions in raw_depth.items():
-            if case_id not in valid_cases or not isinstance(dimensions, dict):
+        for case_id, depth_dimensions in raw_depth.items():
+            if case_id not in valid_cases or not isinstance(depth_dimensions, dict):
                 continue
             entry = {}
             for dimension in case_analysis.DEPTH_DIMENSIONS:
-                value = dimensions.get(dimension)
+                value = depth_dimensions.get(dimension)
                 if not isinstance(value, dict):
                     entry[dimension] = {"status": "missing", "reason": ""}
                     continue

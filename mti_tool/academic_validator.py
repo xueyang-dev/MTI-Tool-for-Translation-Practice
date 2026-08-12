@@ -87,6 +87,19 @@ def _value_text(value: Any) -> str:
     return str(value)
 
 
+def _described_piece_in(text: Any, piece: Any) -> bool:
+    """Match an exact revision fragment or an ellipsis-abbreviated fragment."""
+    haystack = _norm(text)
+    parts = [x for x in re.split(r"(?:\.{3,}|…+)", _norm(piece)) if x]
+    cursor = 0
+    for part in parts:
+        found = haystack.find(part, cursor)
+        if found < 0:
+            return False
+        cursor = found + len(part)
+    return bool(parts)
+
+
 def expand_evidence_tokens(text: str, evidence: Dict[str, Any]) -> str:
     """Replace explicit metric/term tokens with values and provenance markers."""
     stats = _statistics(evidence)
@@ -138,8 +151,9 @@ def _section_map(report_md: str, outline: Dict[str, Any]) -> Dict[str, str]:
     wanted = [str(x.get("section_id")) for x in outline.get("sections", [])]
     positions = []
     for match in re.finditer(r"^##\s+([^\s]+)(?:\s+.*)?$", report_md, re.MULTILINE):
-        if match.group(1) in wanted:
-            positions.append((match.group(1), match.start(), match.end()))
+        section_id = match.group(1).rstrip(".．、")
+        if section_id in wanted:
+            positions.append((section_id, match.start(), match.end()))
     out = {}
     for i, (section_id, _start, body_start) in enumerate(positions):
         body_end = positions[i + 1][1] if i + 1 < len(positions) else len(report_md)
@@ -568,7 +582,7 @@ def validate_academic_report(
                     section_id=section_id, claim_id=claim_id,
                     suggested_action="围绕该 claim 与其证据补写或调整提纲。"))
         for case_id in plan_section.get("cases") or []:
-            if case_id not in segs:
+            if case_id not in segs and case_id not in selected_synthetic:
                 issues.append(_issue(
                     "outline_unknown_case", f"章节 {section_id} 引用未知案例 {case_id}。",
                     section_id=section_id, evidence_id=case_id))
@@ -815,6 +829,17 @@ def validate_academic_report(
         for claim in revision_claims:
             if not claim.get("old") or not claim.get("new"):
                 continue
+            matches_synthetic_delta = any(
+                _described_piece_in(
+                    selected_synthetic[case_id].get(
+                        "synthetic_baseline", {}).get("text"), claim["old"])
+                and _described_piece_in(
+                    selected_synthetic[case_id].get(
+                        "optimized_translation", {}).get("text"), claim["new"])
+                for case_id in plan_section.get("cases") or []
+                if case_id in selected_synthetic and case_id in body)
+            if matches_synthetic_delta:
+                continue
             matches_stored_delta = any(
                 claim["old"] in _norm(segs[case_id].get("initial_target"))
                 and claim["new"] in _norm(segs[case_id].get("final_target"))
@@ -842,7 +867,9 @@ def validate_academic_report(
         "summary": {
             "errors": counts.get("error", 0),
             "warnings": counts.get("warning", 0),
-            "segment_references": len(_SEGMENT_REF.findall(report_md)),
+            "segment_references": len(
+                set(_SEGMENT_REF.findall(report_md))
+                | {case_id for _kind, case_id, _quote in _QUOTE.findall(report_md)}),
             "statistics_markers": len(_STAT.findall(report_md)),
             "citation_markers": len(_CITATION.findall(report_md)),
             "literature_claim_markers": len(_LIT_CLAIM.findall(report_md)),

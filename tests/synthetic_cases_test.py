@@ -309,6 +309,56 @@ def test_validator_blocks_historical_language_and_requires_disclosure():
     print("  ✓ provenance laundering fails; methodology and limitation are mandatory")
 
 
+def test_outline_accepts_selected_synthetic_case():
+    _, evidence, synthetic = _validated_fixture()
+    selected = academic_writer.select_academic_cases(
+        {}, {"claims": []}, evidence, limit=3,
+        synthetic_artifact=synthetic, policy="mixed")
+    case = next(x for x in selected["cases"] if x["case_type"] == "synthetic_contrast")
+    result = academic_validator.validate_academic_report(
+        "## 3 案例分析\n\n" + _transparent_report(case), evidence,
+        {"research_questions": []}, {"claims": []}, selected,
+        {"sections": [{"section_id": "3", "title": "案例分析",
+                       "cases": [case["case_id"]], "minimum_chars": 100}]},
+        synthetic_artifact=synthetic)
+    assert "outline_unknown_case" not in {x["type"] for x in result["issues"]}
+    print("  ✓ outline validation recognizes selected synthetic cases")
+
+
+def test_outline_accepts_numbered_heading_with_period():
+    _, evidence, synthetic = _validated_fixture()
+    selected = academic_writer.select_academic_cases(
+        {}, {"claims": []}, evidence, limit=3,
+        synthetic_artifact=synthetic, policy="mixed")
+    case = next(x for x in selected["cases"] if x["case_type"] == "synthetic_contrast")
+    result = academic_validator.validate_academic_report(
+        "## 3. 案例分析\n\n" + _transparent_report(case), evidence,
+        {"research_questions": []}, {"claims": []}, selected,
+        {"sections": [{"section_id": "3", "title": "案例分析",
+                       "cases": [case["case_id"]], "minimum_chars": 100}]},
+        synthetic_artifact=synthetic)
+    assert "missing_required_section" not in {x["type"] for x in result["issues"]}
+    print("  ✓ numbered heading with a period maps to the planned section")
+
+
+def test_synthetic_delta_is_not_checked_as_authentic_history():
+    _, evidence, synthetic = _validated_fixture()
+    selected = academic_writer.select_academic_cases(
+        {}, {"claims": []}, evidence, limit=3,
+        synthetic_artifact=synthetic, policy="mixed")
+    case = next(x for x in selected["cases"] if x["case_type"] == "synthetic_contrast")
+    report = "## 3 案例分析\n\n" + _transparent_report(case) + \
+        "\n\n将“你为什么需要”改为“你要……干什么”。"
+    result = academic_validator.validate_academic_report(
+        report, evidence, {"research_questions": []}, {"claims": []}, selected,
+        {"sections": [{"section_id": "3", "title": "案例分析",
+                       "cases": [x["case_id"] for x in selected["cases"]],
+                       "minimum_chars": 100}]}, synthetic_artifact=synthetic)
+    assert "described_revision_not_in_stored_delta" not in {
+        x["type"] for x in result["issues"]}
+    print("  ✓ synthetic delta is validated in its own provenance pool")
+
+
 def test_docx_labels_and_tm_isolation():
     _, _, synthetic = _validated_fixture()
     case = synthetic["items"][0]
@@ -546,6 +596,9 @@ if __name__ == "__main__":
     test_rejection_gates()
     test_mixed_selection_and_human_evidence_never_promote_synthetic()
     test_validator_blocks_historical_language_and_requires_disclosure()
+    test_outline_accepts_selected_synthetic_case()
+    test_outline_accepts_numbered_heading_with_period()
+    test_synthetic_delta_is_not_checked_as_authentic_history()
     test_docx_labels_and_tm_isolation()
     test_synthetic_stage_staleness_is_local()
     test_section_dependencies_only_follow_relevant_synthetic_cases()
