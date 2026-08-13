@@ -1,0 +1,109 @@
+{
+  "schema_version": "case-selector-v4",
+  "selection_policy": "mixed",
+  "preference_order": "verified authentic revision > eligible synthetic contrast > weak authentic evidence > unsupported reconstructed history",
+  "eligibility_rule": "case_type_specific_gate",
+  "requested_case_count": 5,
+  "preferred_core_case_count": 3,
+  "minimum_core_case_count": 2,
+  "case_count_policy": "authentic_and_synthetic_pools_remain_distinct",
+  "eligible_case_count": 2,
+  "revision_candidate_pool_count": 3,
+  "eligible_synthetic_case_count": 0,
+  "selected_case_count": 2,
+  "authentic_revision_cases": 2,
+  "synthetic_contrast_cases": 0,
+  "authentic_selection_status": "two_case_fallback",
+  "selection_status": "two_case_fallback",
+  "scarcity_disclosure_required": true,
+  "synthetic_methodology_disclosure_required": false,
+  "synthetic_limitation_disclosure_required": false,
+  "scarcity_disclosure": "现有项目证据仅支持 2 个通过修订资格门禁的真实修订案例；未用弱证据或无真实修订的片段补足第三个案例。",
+  "scarcity_recommendations": [
+    "retain_verified_authentic_cases",
+    "disclose_revision_evidence_scarcity",
+    "do_not_backfill_with_ineligible_cases",
+    "use_only_explicitly_labeled_eligible_synthetic_contrasts"
+  ],
+  "cases": [
+    {
+      "case_id": "seg-ec100d8686d3891e-0209",
+      "segment_id": "seg-ec100d8686d3891e-0209",
+      "segment_index": 209,
+      "coverage_zone": "end",
+      "case_type": "authentic_revision",
+      "provenance": {
+        "historical": true,
+        "generated_for_analysis": false
+      },
+      "case_role": "revision_case",
+      "score": 30.0,
+      "reasons": [
+        "revision_with_repair_link",
+        "meaningful_initial_final_revision"
+      ],
+      "academic_candidate_status": "eligible",
+      "features": {
+        "source_chars": 21,
+        "clause_markers": 0,
+        "punctuation_count": 0,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": true,
+        "has_repair_history": false,
+        "has_human_revision_action": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": []
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "revision_with_repair_link；meaningful_initial_final_revision"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0272",
+      "segment_id": "seg-ec100d8686d3891e-0272",
+      "segment_index": 272,
+      "coverage_zone": "end",
+      "case_type": "authentic_revision",
+      "provenance": {
+        "historical": true,
+        "generated_for_analysis": false
+      },
+      "case_role": "revision_case",
+      "score": 13.0,
+      "reasons": [
+        "meaningful_initial_final_revision",
+        "quotation_or_dash_complexity"
+      ],
+      "academic_candidate_status": "eligible",
+      "features": {
+        "source_chars": 103,
+        "clause_markers": 0,
+        "punctuation_count": 3,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": false,
+        "has_repair_history": false,
+        "has_human_revision_action": false,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": []
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "meaningful_initial_final_revision；quotation_or_dash_complexity"
+    }
+  ],
+  "content_hash": "0b2800efd3c182864457dd69626e2df8eb9a7099eade14c948363c99d1b4b48b"
+}

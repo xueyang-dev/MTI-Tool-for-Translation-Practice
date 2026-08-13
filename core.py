@@ -7,7 +7,9 @@ import io
 import json
 import re
 import shutil
+import threading
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,13 +27,88 @@ from mti_tool import state_migration as _state_migration
 # 任务进度与过程文件的本地存储目录（已加入 .gitignore）
 OUTPUT_DIR = Path("outputs")
 
-# 各家模型可选列表（UI 中可切换；如模型下线，在这里更换即可）
-MODELS = {
-    "OpenCode Go": ["glm-5.2", "deepseek-v4-flash", "kimi-k3"],
-    "DeepSeek": ["deepseek-chat", "deepseek-reasoner"],
-    "OpenAI": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"],
-    "Gemini": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+# 提供商注册表：kind=openai_compat 走 OpenAI SDK 兼容接口（官方与中转站通用）。
+# base_url 为 None 表示使用官方 SDK 默认路由；custom_base_url 表示地址由用户在
+# UI 中填写（通用中转站）。OpenCode Go 模型列表来自官方 /v1/models 目录。
+PROVIDERS = {
+    "OpenCode Go": {
+        "kind": "openai_compat",
+        "base_url": "https://opencode.ai/zen/go/v1",
+        "proxy_bypass": True,
+        "models": [
+            "glm-5.2", "glm-5.1", "glm-5",
+            "deepseek-v4-pro", "deepseek-v4-flash",
+            "kimi-k3", "kimi-k2.7-code", "kimi-k2.6", "kimi-k2.5",
+            "qwen3.8-max", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-plus",
+            "qwen3.5-plus",
+            "minimax-m3", "minimax-m2.7", "minimax-m2.5",
+            "mimo-v2-pro", "mimo-v2-omni", "mimo-v2.5-pro", "mimo-v2.5",
+            "hy3", "hy3-preview", "gpt-5.6-luna", "grok-4.5",
+        ],
+    },
+    "DeepSeek": {
+        "kind": "openai_compat",
+        "base_url": "https://api.deepseek.com",
+        "models": ["deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"],
+    },
+    "OpenAI": {
+        "kind": "openai",
+        "models": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"],
+    },
+    "Gemini": {
+        "kind": "gemini",
+        "models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+    },
+    "OpenRouter": {
+        "kind": "openai_compat",
+        "base_url": "https://openrouter.ai/api/v1",
+        "models": [],
+        "model_hint": "如 anthropic/claude-sonnet-4、openai/gpt-5、google/gemini-3-flash",
+    },
+    "SiliconFlow": {
+        "kind": "openai_compat",
+        "base_url": "https://api.siliconflow.cn/v1",
+        "models": [],
+        "model_hint": "如 Qwen/Qwen3-235B-A22B、deepseek-ai/DeepSeek-V3.2",
+    },
+    "Moonshot (Kimi)": {
+        "kind": "openai_compat",
+        "base_url": "https://api.moonshot.cn/v1",
+        "models": [],
+        "model_hint": "如 kimi-k2.5、moonshot-v1-8k",
+    },
+    "Zhipu (GLM)": {
+        "kind": "openai_compat",
+        "base_url": "https://open.bigmodel.cn/api/paas/v4",
+        "models": [],
+        "model_hint": "如 glm-4.5、glm-5",
+    },
+    "Qwen (DashScope)": {
+        "kind": "openai_compat",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "models": [],
+        "model_hint": "如 qwen-max、qwen3-235b-a22b",
+    },
+    "自定义中转站": {
+        "kind": "openai_compat",
+        "base_url": None,
+        "custom_base_url": True,
+        "models": [],
+        "model_hint": "填写中转站提供的模型名（OpenAI /chat/completions 兼容）",
+    },
 }
+
+# 兼容旧引用：仅保留 模型名 -> 列表 的视图
+MODELS = {name: cfg["models"] for name, cfg in PROVIDERS.items()}
+
+# 会话线程级中转地址：自定义中转站的 base_url 由 UI 写入，call_llm 自动优先使用。
+# 每个 Streamlit 会话线程独立，多设备同时使用不会互相串扰。
+_LLM_CTX = threading.local()
+
+
+def set_llm_base_url(base_url):
+    """为当前线程设置 OpenAI 兼容中转站地址（空值清除）。"""
+    _LLM_CTX.base_url = (base_url or "").strip() or None
 
 
 # ================= 基础工具函数 =================
@@ -244,43 +321,17 @@ def extract_pdf_paragraphs(file_bytes):
     return [p for p in merged if not _ORNAMENT_RE.match(p)]
 
 
-def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
-    """底层大模型统一路由（超时 150 秒，模型可配置）。"""
-    if provider in {"DeepSeek", "OpenCode Go"}:
-        base_url = ("https://api.deepseek.com" if provider == "DeepSeek"
-                    else "https://opencode.ai/zen/go/v1")
-        client_kwargs = {
-            "api_key": api_key, "base_url": base_url,
-            "timeout": (15.0, 180.0), "max_retries": 1,
-        }
-        http_client = None
-        if provider == "OpenCode Go":
-            # ponytail: this endpoint fails TLS through the user's local proxy.
-            http_client = httpx.Client(
-                trust_env=False, timeout=(15.0, 180.0))
-            client_kwargs["http_client"] = http_client
-        try:
-            client = OpenAI(**client_kwargs)
-            res = client.chat.completions.create(
-                model=model,
-                messages=[{"role": "system", "content": system_prompt},
-                          {"role": "user", "content": user_prompt}],
-                temperature=temperature,
-            )
-            return (res.choices[0].message.content or "").strip()
-        finally:
-            if http_client:
-                http_client.close()
-    if provider == "OpenAI":
-        client = OpenAI(api_key=api_key, timeout=(15.0, 180.0), max_retries=1)
-        res = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "system", "content": system_prompt},
-                      {"role": "user", "content": user_prompt}],
-            temperature=temperature,
-        )
-        return (res.choices[0].message.content or "").strip()
-    if provider == "Gemini":
+def call_llm(provider, api_key, model, system_prompt, user_prompt,
+             temperature=0.1, base_url=None):
+    """底层大模型统一路由（超时 150 秒，模型可配置）。
+
+    支持官方接口与 OpenAI /chat/completions 兼容中转站：
+    base_url 显式传入 > 提供商默认 base_url > 会话线程级自定义中转地址。
+    """
+    cfg = PROVIDERS.get(provider)
+    if not cfg:
+        return ""
+    if cfg["kind"] == "gemini":
         try:
             client = genai.Client(api_key=api_key,
                                   http_options=genai.types.HttpOptions(timeout=150_000))
@@ -293,7 +344,46 @@ def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0
             config=genai.types.GenerateContentConfig(temperature=temperature),
         )
         return (res.text or "").strip()
-    return ""
+
+    # OpenAI 官方与所有 OpenAI 兼容接口共用 SDK 路由
+    kwargs = {"api_key": api_key, "timeout": (15.0, 180.0), "max_retries": 1}
+    resolved_base = base_url or cfg.get("base_url")
+    if cfg.get("custom_base_url") and not resolved_base:
+        resolved_base = getattr(_LLM_CTX, "base_url", None)
+    if resolved_base:
+        kwargs["base_url"] = resolved_base
+    http_client = None
+    if cfg.get("proxy_bypass"):
+        # 该接口经用户本地代理时 TLS 失败：显式关闭环境代理。
+        http_client = httpx.Client(trust_env=False, timeout=(15.0, 180.0))
+        kwargs["http_client"] = http_client
+    try:
+        client = OpenAI(**kwargs)
+        res = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "system", "content": system_prompt},
+                      {"role": "user", "content": user_prompt}],
+            temperature=temperature,
+        )
+        return (res.choices[0].message.content or "").strip()
+    finally:
+        if http_client:
+            http_client.close()
+
+
+def test_provider(provider, api_key, model, base_url=None):
+    """连通性测试：发送一个最小请求，返回 (ok, message)。"""
+    t0 = time.time()
+    try:
+        out = call_llm(provider, api_key, model,
+                       "你是连接测试助手。", "请只回复两个字：OK",
+                       temperature=0.0, base_url=base_url)
+    except Exception as exc:
+        return False, f"请求失败：{exc}"[:320]
+    elapsed = time.time() - t0
+    if not (out or "").strip():
+        return False, "返回内容为空（请检查 API Key / 模型名 / 余额）"
+    return True, f"响应「{(out or '').strip()[:24]}」· 耗时 {elapsed:.1f}s"
 
 
 def parse_termbase(file_stream):
@@ -308,6 +398,10 @@ def parse_termbase(file_stream):
     except Exception as e:
         raise ValueError(f"无法读取 Excel 文件：{e}") from e
     df.columns = [str(c).strip() for c in df.columns]
+    return _termbase_df_to_entries(df)
+
+
+def _termbase_df_to_entries(df):
     if "Source" not in df.columns or "Target" not in df.columns:
         raise ValueError("术语库缺少 Source / Target 列，请检查表头")
     df = df.dropna(subset=["Source", "Target"])
@@ -325,6 +419,98 @@ def parse_termbase(file_stream):
                                   re.split(r"[;；,，]", str(row["Forbidden"])) if x.strip()]
         entries.append(entry)
     return entries
+
+
+def parse_termbase_csv(file_stream):
+    """CSV 术语库：列约定与 Excel 一致（Source/Target 必选）。"""
+    try:
+        df = pd.read_csv(file_stream)
+    except Exception as e:
+        raise ValueError(f"无法读取 CSV 文件：{e}") from e
+    df.columns = [str(c).strip() for c in df.columns]
+    return _termbase_df_to_entries(df)
+
+
+def _local_name(tag):
+    return str(tag).rsplit("}", 1)[-1]
+
+
+def parse_termbase_tbx(file_stream):
+    """解析 TBX 术语库（Trados MultiTerm 等标准格式）。
+
+    每个 termEntry 取前两种语言的第一个 term，作为 source/target；
+    导入条目默认 status=locked（导入即视为已固定译名）。
+    """
+    try:
+        root = ET.fromstring(file_stream.read())
+    except Exception as e:
+        raise ValueError(f"无法解析 TBX 文件：{e}") from e
+    entries = []
+    for te in root.iter():
+        if _local_name(te.tag) != "termEntry":
+            continue
+        langs = []
+        for ls in te.iter():
+            if _local_name(ls.tag) != "langSet":
+                continue
+            # ElementTree 会把 xml: 前缀自动展开为命名空间键
+            lang = ls.get("{http://www.w3.org/XML/1998/namespace}lang") \
+                or ls.get("xml:lang") or ls.get("lang") or ""
+            term = None
+            for node in ls.iter():
+                if _local_name(node.tag) == "term" and (node.text or "").strip():
+                    term = node.text.strip()
+                    break
+            if term and lang and lang not in [x[0] for x in langs]:
+                langs.append((lang, term))
+            if len(langs) >= 2:
+                break
+        if len(langs) >= 2:
+            entries.append({"source": langs[0][1], "target": langs[1][1],
+                            "behavior": "translate", "status": "locked"})
+    if not entries:
+        raise ValueError("TBX 中未找到可导入的术语（需要至少两种语言的 langSet）")
+    return entries
+
+
+def import_tmx(file_stream):
+    """导入 TMX 翻译记忆（Trados / memoQ 等导出的标准格式）。
+
+    按 <tu> 的 <tuv><seg> 文本对入库：仅接受源文含字母/数字且译文非空的
+    单元；与现有翻译记忆冲突的源文跳过（不覆盖项目内已审校条目）。
+    返回 {"added": n, "skipped": m}。
+    """
+    try:
+        root = ET.fromstring(file_stream.read())
+    except Exception as e:
+        raise ValueError(f"无法解析 TMX 文件：{e}") from e
+    existing = load_tm()
+    added = skipped = 0
+    for tu in root.iter():
+        if _local_name(tu.tag) != "tu":
+            continue
+        texts = []
+        for tuv in tu:
+            if _local_name(tuv.tag) != "tuv":
+                continue
+            seg = next((c for c in tuv if _local_name(c.tag) == "seg"), None)
+            if seg is not None and (seg.text or "").strip():
+                texts.append(seg.text.strip())
+            if len(texts) >= 2:
+                break
+        if len(texts) >= 2:
+            src, tgt = texts[0], texts[-1]
+            if _tm_eligible(src, tgt):
+                if src not in existing:
+                    existing[src] = {"target": tgt, "reviewed": True,
+                                     "source": "tmx_import"}
+                    added += 1
+                else:
+                    skipped += 1
+    if not added:
+        raise ValueError("TMX 中未找到可导入的新翻译单元（源文需含字母/数字，且不与现有记忆冲突）")
+    save_tm(existing)
+    return {"added": added, "skipped": skipped}
 
 
 def extract_auto_terms(paragraphs, target_lang, provider, api_key, model):
@@ -982,7 +1168,7 @@ def annotate_stage(state, job_id, glossary, provider, api_key, model, target_lan
 
 
 def translate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
-                    style_rules, enable_review, document_profile=None,
+                    style_rules, enable_review, use_tm=True, document_profile=None,
                     on_status=None, on_caption=None):
     """阶段二：语义批次翻译 + 确定性检查/修复 + 独立审校 + 翻译记忆。
 
@@ -993,12 +1179,17 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
     - 独立审校：actionable 建议经确定性复验后应用，blocking 记录给用户确认；
     - 翻译记忆：仅审校通过的段落入库，精确命中直接复用。
     """
-    # 高质量模式后端门禁：术语未冻结（且未显式跳过）时，任何入口都禁止开始翻译。
-    if state.get("quality_mode") and not state.get("glossary_frozen") \
+    # 高质量模式后端门禁：存在待审核候选术语且未冻结（且未显式跳过）时，
+    # 任何入口都禁止开始翻译。导入的锁定术语视为已固定，不构成阻塞。
+    pending = [e for e in (glossary or [])
+               if (e.get("status") or "").lower() == "candidate"]
+    if state.get("quality_mode") and pending \
+            and not state.get("glossary_frozen") \
             and not state.get("quality_bypass"):
         raise RuntimeError(
-            "高质量模式：术语尚未冻结，禁止开始翻译（请在术语审核面板冻结后继续）")
-    tm = load_tm()
+            "高质量模式：仍有候选术语未审核（术语表尚未冻结），"
+            "禁止开始翻译（请在术语审核面板冻结后继续）")
+    tm = load_tm() if use_tm else {}
     paras = state["paras"]
     pairs = state["pairs"]
     batches = make_batches(paras)
@@ -1187,9 +1378,11 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                 if not seg_findings and not p["from_tm"] \
                         and _tm_eligible(p["source"], p["target"]):
                     p["reviewed"] = True
-                    tm[p["source"]] = {"target": p["target"], "reviewed": True}
+                    if use_tm:
+                        tm[p["source"]] = {"target": p["target"], "reviewed": True}
                     stats["reviewed_segments"] += 1
-            save_tm(tm)
+            if use_tm:
+                save_tm(tm)
 
         pairs.extend(batch_pairs)
         save_job_state(job_id, state)  # 每批落盘，断点粒度 = 一个批次
@@ -1337,9 +1530,10 @@ def _find_span(text, needle):
     return start, end
 
 
-def _colored_cell(cell, text, spans):
+def _colored_cell(cell, text, spans, colors=None):
     """把一个单元格按 spans（(start,end,type) 已排序不重叠）拆成带色 run。"""
     from docx.shared import RGBColor
+    palette = colors or ANNOTATION_COLORS
     cursor = 0
     first = True
     for start, end, atype in spans:
@@ -1348,7 +1542,8 @@ def _colored_cell(cell, text, spans):
             _apply_run_fonts(run)
         run = cell.paragraphs[0].add_run(text[start:end])
         _apply_run_fonts(run)
-        run.font.color.rgb = RGBColor.from_string(ANNOTATION_COLORS[atype])
+        run.font.color.rgb = RGBColor.from_string(
+            str(palette.get(atype, ANNOTATION_COLORS[atype])).lstrip("#"))
         if atype in ("rare", "domain"):
             run.bold = True
         cursor = end
@@ -1360,12 +1555,16 @@ def _colored_cell(cell, text, spans):
         cell.paragraphs[0].add_run("")
 
 
-def pairs_to_word(pairs, annotations=None):
+def pairs_to_word(pairs, annotations=None, colors=None):
     """双语对照表 -> Word 表格。
 
     annotations: {seg: [{"type": "rare|domain|hard", "src_span": [s,e]|None,
                          "tgt_span": [s,e]|None, "note": str}]}
+    colors: {"rare"|"domain"|"hard": "RRGGBB"}，可自定义三类标注颜色。
     """
+    palette = dict(ANNOTATION_COLORS)
+    if colors:
+        palette.update({k: str(v).lstrip("#") for k, v in colors.items()})
     doc = Document()
     _apply_doc_fonts(doc)
     table = doc.add_table(rows=1, cols=2)
@@ -1382,12 +1581,14 @@ def pairs_to_word(pairs, annotations=None):
         tgt_spans = _compose_spans(
             [(it["tgt_span"][0], it["tgt_span"][1], it["type"])
              for it in seg_annot if it.get("tgt_span")], len(pair['target']))
-        _colored_cell(row[0], pair['source'], src_spans)
-        _colored_cell(row[1], pair['target'], tgt_spans)
+        _colored_cell(row[0], pair['source'], src_spans, palette)
+        _colored_cell(row[1], pair['target'], tgt_spans, palette)
     # 图例（放表格后，避免挤占首行）
     p_legend = doc.add_paragraph()
-    run = p_legend.add_run("图例：红色 = 生僻词/难词；黄色 = 专业名词（特殊译法）；"
-                           "青绿色 = 翻译难点句（特别译法）。")
+    legend_parts = [
+        f"{ANNOTATION_LABELS[k]}（#{palette.get(k, ANNOTATION_COLORS[k])}）"
+        for k in ("rare", "domain", "hard")]
+    run = p_legend.add_run("图例：" + "；".join(legend_parts) + "。")
     _apply_run_fonts(run)
     out = io.BytesIO()
     doc.save(out)
@@ -1881,14 +2082,17 @@ def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_ke
 def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                      target_lang, auto_term, enable_report, translation_theory,
                      user_glossary=None, style_rules="", enable_review=True,
-                     enable_annotate=True, mode="quick",
+                     enable_annotate=True, use_tm=True, mode="quick",
                      research_settings=None, literature_sources=None,
                      on_status=None, on_caption=None):
     """执行单个文档的完整流程；每个里程碑实时落盘，刷新/重启后均可继续。
 
-    mode="quick"：自动术语作为 provisional，直接翻译（原行为）。
-    mode="quality"：术语冻结（glossary_frozen）后才能开始翻译；
-    未冻结时在 TERMS_PREPARED 阶段返回，由 UI 呈现术语审核面板。
+    mode="quick"：省 token 的快速策略——跳过文档画像，术语只作建议，
+    默认不跑独立审校（由 UI 控制）。
+    mode="quality"：全流程——文档画像 → 术语抽取 → 人工审核候选 → 冻结 →
+    相关术语注入 → 翻译 + 独立审校 → 标注 → 报告。仅当存在待审核的
+    candidate 术语且未冻结时在 TERMS_PREPARED 返回；导入的锁定术语视为
+    已固定，不会阻塞翻译。
     """
     _ensure_output_dir()
     base = new_job_state(filename)
@@ -1939,12 +2143,15 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         if not paragraphs:
             raise ValueError("未提取到有效文本（若为扫描版 PDF，请先做 OCR 生成文本层）")
         state["paras"] = paragraphs
+        if filename.lower().endswith(".pdf"):
+            with fitz.open(stream=file_bytes, filetype="pdf") as source_pdf:
+                state["source_page_count"] = source_pdf.page_count
         state["p1_done"] = True
         save_source(job_id, file_bytes)  # 留存源文件，刷新后无需重新上传
         save_job_state(job_id, state)
 
-    # ---------------- 阶段 1.2：文档画像（分布式采样；失败仅警告，不阻断） ----------------
-    if not state.get("profile_done"):
+    # ---------------- 阶段 1.2：文档画像（仅高质量模式；失败仅警告，不阻断） ----------------
+    if mode == "quality" and not state.get("profile_done"):
         if on_status:
             on_status("【阶段1.2】文档画像（分布式采样 + 结构化校验）...")
         from mti_tool.document_profile import profile_document
@@ -2007,14 +2214,19 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     glossary = working
     final_termbase = glossary_to_terms(glossary)
 
-    # ---------------- 高质量模式门禁：术语冻结后才能开始翻译 ----------------
+    # ---------------- 高质量模式门禁：候选术语需人工审核/冻结后才能翻译 ----------------
     if mode == "quality":
         state["quality_mode"] = True
-        if not state.get("glossary_frozen") and not state.get("quality_bypass"):
+        pending = [e for e in working
+                   if (e.get("status") or "").lower() == "candidate"]
+        if not state.get("glossary_frozen") and not state.get("quality_bypass") \
+                and pending:
             if on_status:
-                on_status("⏸ 高质量模式：等待人工术语审核与冻结（术语面板）...")
-            msg = ("高质量模式：术语尚未冻结，翻译未开始。"
-                   "请在“术语准备与审核”面板完成冻结后继续。")
+                on_status(f"⏸ 高质量模式：{len(pending)} 条候选术语等待人工审核与冻结...")
+            msg = (f"高质量模式：术语表尚未冻结（{len(pending)} 条自动抽取的"
+                   "候选术语待审核），翻译未开始。请在“术语准备与审核”面板"
+                   "完成审核并冻结后继续；导入术语库中的锁定术语已视为固定，"
+                   "无需再次审核。")
             if msg not in warnings:
                 warnings.append(msg)
             state["stage"] = _state_migration.derive_stage(state)
@@ -2026,7 +2238,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         if on_status:
             on_status("【阶段二】双语翻译与术语严格注入（批次翻译 + 确定性检查 + 独立审校）...")
         translate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
-                        style_rules, enable_review,
+                        style_rules, enable_review, use_tm=use_tm,
                         document_profile=state.get("document_profile"),
                         on_status=on_status, on_caption=on_caption)
         state["p2_done"] = True

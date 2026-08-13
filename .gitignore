@@ -19,6 +19,9 @@ eval/approved_glossary.json
 # Streamlit
 .streamlit/
 
+# 本地界面截图、渲染探针与临时文档
+tmp/
+
 # 系统与编辑器
 .DS_Store
 .env

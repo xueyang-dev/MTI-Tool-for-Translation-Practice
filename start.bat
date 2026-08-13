@@ -34,9 +34,9 @@ if not exist "venv\Scripts\activate.bat" (
     call venv\Scripts\activate.bat
 )
 
-:: 3. 启动 Streamlit 应用
-echo [系统] 正在启动服务，请稍候...浏览器即将自动打开。
-streamlit run app.py
+:: 3. 启动 HTML GUI 包装器（自动打开浏览器；安装 pywebview 后为原生窗口）
+echo [系统] 正在启动服务，请稍候...界面即将自动打开。
+python gui.py
 
 :: 4. 如果 Streamlit 意外退出，暂停窗口以便查看报错信息
 pause

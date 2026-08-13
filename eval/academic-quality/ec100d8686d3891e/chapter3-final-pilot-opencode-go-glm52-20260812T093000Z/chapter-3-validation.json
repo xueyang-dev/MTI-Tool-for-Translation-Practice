@@ -1,0 +1,40 @@
+{
+  "schema_version": "academic-validation-v2",
+  "validator_version": "validator-v5",
+  "status": "fail",
+  "issues": [
+    {
+      "issue_id": "AV-001",
+      "type": "missing_required_section",
+      "severity": "error",
+      "section_id": "3",
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "缺少提纲要求的章节 3。",
+      "suggested_action": "按 academic-outline 重写该节。"
+    },
+    {
+      "issue_id": "AV-002",
+      "type": "mixed_case_groups_not_visible",
+      "severity": "error",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "混合案例章节没有用可见小标题区分真实修订与合成对比。",
+      "suggested_action": "分别使用‘真实修订案例’和‘合成对比案例’小标题。"
+    }
+  ],
+  "summary": {
+    "errors": 2,
+    "warnings": 0,
+    "segment_references": 0,
+    "statistics_markers": 0,
+    "citation_markers": 0,
+    "literature_claim_markers": 0,
+    "literature_evidence_markers": 0,
+    "literature_quote_markers": 0,
+    "claim_markers": 4,
+    "research_question_markers": 2
+  },
+  "content_hash": "a43fe981ca4103054f96f20d51369b2e9c03b230c48e78682305a313b9c7b314"
+}

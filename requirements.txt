@@ -1,5 +1,7 @@
 # 直接依赖（版本下限，安装时自动解析兼容版本）
+# Streamlit 1.61.x 的压缩中间件尚未适配 Starlette 1.x 的新构造参数。
 streamlit>=1.40
+starlette>=0.46,<1
 PyMuPDF>=1.24
 python-docx>=1.1
 openai>=1.40

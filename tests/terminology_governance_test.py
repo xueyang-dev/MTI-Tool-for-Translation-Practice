@@ -468,6 +468,8 @@ def test_apptest_term_review_panel():
         start_btns = [b for b in at.button if "开始翻译" in b.label]
         assert start_btns, "应存在「开始翻译」按钮"
         assert start_btns[0].disabled is True, "未冻结时「开始翻译」按钮必须不可执行"
+        assert any("只看冲突项" in c.label for c in at.checkbox), "应存在冲突筛选开关"
+        assert any("候选 1" in m.value for m in at.markdown), "术语状态总览 chips 应渲染"
         print("  ✓ AppTest：术语审核面板显示 + 冻结门（翻译按钮禁用）")
     finally:
         core.OUTPUT_DIR = old_dir

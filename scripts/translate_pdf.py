@@ -85,7 +85,8 @@ def main():
     ap.add_argument("--no-annotate", action="store_true",
                     help="关闭三色自动标注（生僻词/专业名词/难点句高亮，默认开启）")
     ap.add_argument("--quality", action="store_true",
-                    help="高质量模式：术语审核冻结后才能开始翻译（默认快速模式）")
+                    help="高质量模式：全流程（画像→术语审核冻结→审校→标注→报告）；"
+                         "默认快速模式（跳过画像/审校，省 token）")
     ap.add_argument("--job-id", default=None, help="续跑指定任务 ID（跳过自动计算）")
     args = ap.parse_args()
 

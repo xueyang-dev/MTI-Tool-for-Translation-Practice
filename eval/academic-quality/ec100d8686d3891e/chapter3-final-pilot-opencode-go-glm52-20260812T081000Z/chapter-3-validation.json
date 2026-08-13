@@ -1,0 +1,30 @@
+{
+  "schema_version": "academic-validation-v2",
+  "validator_version": "validator-v5",
+  "status": "fail",
+  "issues": [
+    {
+      "issue_id": "AV-001",
+      "type": "described_revision_not_in_stored_delta",
+      "severity": "error",
+      "section_id": "3",
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "章节 3 描述的“你为什么需要→你要……干什么”与所引案例保存的初译/终译差异不一致。",
+      "suggested_action": "逐字依据 INITIAL/TARGET 记录描述实际变化。"
+    }
+  ],
+  "summary": {
+    "errors": 1,
+    "warnings": 0,
+    "segment_references": 0,
+    "statistics_markers": 0,
+    "citation_markers": 0,
+    "literature_claim_markers": 0,
+    "literature_evidence_markers": 0,
+    "literature_quote_markers": 0,
+    "claim_markers": 4,
+    "research_question_markers": 2
+  },
+  "content_hash": "8ed0870ace7aff0d37fcc3eb69827dd66eee10c8485c5f7e096646f24d05eec8"
+}

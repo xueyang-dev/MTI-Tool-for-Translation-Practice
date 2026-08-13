@@ -1,0 +1,113 @@
+{
+  "schema_version": "portfolio-argument-blueprint-v1",
+  "central_thesis": "The memoir translation presents interdependent problems from segment alignment through discourse pragmatics; a tiered portfolio can explain these mechanisms only when historical revision, review judgment, evidence boundary, and synthetic contrast are kept methodologically distinct.",
+  "research_questions": [
+    "RQ1",
+    "RQ2",
+    "RQ3",
+    "RQ4"
+  ],
+  "subarguments": [
+    {
+      "argument_id": "ARG-1",
+      "major_problem": "textual_integrity",
+      "claim": "长篇翻译首先要求段落对应、信息完整和语义角色不被破坏。",
+      "core_cases": [
+        "seg-ec100d8686d3891e-0209"
+      ],
+      "supporting_cases": [
+        "seg-ec100d8686d3891e-0239"
+      ],
+      "contrast_boundary_cases": [
+        "seg-ec100d8686d3891e-0142",
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0152"
+      ],
+      "reasoning": "Core cases establish the mechanism; supporting cases test its recurrence in another passage; contrast/boundary cases limit the inference.",
+      "counterargument": "A recorded review finding is a reviewer judgment, not proof that a repair was implemented or that the translator intended a particular strategy.",
+      "bounded_response": "The chapter separates observed textual problems from historical revision claims and reports implementation only for authentic revisions."
+    },
+    {
+      "argument_id": "ARG-2",
+      "major_problem": "lexical_semantic",
+      "claim": "词义选择、搭配和比喻处理共同决定叙事细节是否准确。",
+      "core_cases": [
+        "seg-ec100d8686d3891e-0139"
+      ],
+      "supporting_cases": [
+        "seg-ec100d8686d3891e-0056",
+        "seg-ec100d8686d3891e-0057",
+        "seg-ec100d8686d3891e-0080",
+        "seg-ec100d8686d3891e-0081",
+        "seg-ec100d8686d3891e-0119"
+      ],
+      "contrast_boundary_cases": [],
+      "reasoning": "Core cases establish the mechanism; supporting cases test its recurrence in another passage; contrast/boundary cases limit the inference.",
+      "counterargument": "A recorded review finding is a reviewer judgment, not proof that a repair was implemented or that the translator intended a particular strategy.",
+      "bounded_response": "The chapter separates observed textual problems from historical revision claims and reports implementation only for authentic revisions."
+    },
+    {
+      "argument_id": "ARG-3",
+      "major_problem": "syntax_logic",
+      "claim": "修饰范围、论元关系和显隐逻辑需要按目标语重新组织。",
+      "core_cases": [
+        "seg-ec100d8686d3891e-0170",
+        "seg-ec100d8686d3891e-0171",
+        "seg-ec100d8686d3891e-0234"
+      ],
+      "supporting_cases": [],
+      "contrast_boundary_cases": [],
+      "reasoning": "Core cases establish the mechanism; supporting cases test its recurrence in another passage; contrast/boundary cases limit the inference.",
+      "counterargument": "A recorded review finding is a reviewer judgment, not proof that a repair was implemented or that the translator intended a particular strategy.",
+      "bounded_response": "The chapter separates observed textual problems from historical revision claims and reports implementation only for authentic revisions."
+    },
+    {
+      "argument_id": "ARG-4",
+      "major_problem": "terminology_culture",
+      "claim": "专业术语与专名处理必须同时满足领域准确性和全篇一致性。",
+      "core_cases": [
+        "seg-ec100d8686d3891e-0215",
+        "seg-ec100d8686d3891e-0233"
+      ],
+      "supporting_cases": [
+        "seg-ec100d8686d3891e-0059",
+        "seg-ec100d8686d3891e-0082",
+        "seg-ec100d8686d3891e-0140",
+        "seg-ec100d8686d3891e-0141",
+        "seg-ec100d8686d3891e-0156",
+        "seg-ec100d8686d3891e-0216",
+        "seg-ec100d8686d3891e-0235"
+      ],
+      "contrast_boundary_cases": [],
+      "reasoning": "Core cases establish the mechanism; supporting cases test its recurrence in another passage; contrast/boundary cases limit the inference.",
+      "counterargument": "A recorded review finding is a reviewer judgment, not proof that a repair was implemented or that the translator intended a particular strategy.",
+      "bounded_response": "The chapter separates observed textual problems from historical revision claims and reports implementation only for authentic revisions."
+    },
+    {
+      "argument_id": "ARG-5",
+      "major_problem": "discourse_pragmatics",
+      "claim": "篇章回指、人物声音和言语行为需要超越逐词对应进行判断。",
+      "core_cases": [
+        "seg-ec100d8686d3891e-0272"
+      ],
+      "supporting_cases": [
+        "seg-ec100d8686d3891e-0083"
+      ],
+      "contrast_boundary_cases": [
+        "SC-0141"
+      ],
+      "reasoning": "Core cases establish the mechanism; supporting cases test its recurrence in another passage; contrast/boundary cases limit the inference.",
+      "counterargument": "A recorded review finding is a reviewer judgment, not proof that a repair was implemented or that the translator intended a particular strategy.",
+      "bounded_response": "The chapter separates observed textual problems from historical revision claims and reports implementation only for authentic revisions."
+    }
+  ],
+  "logical_progression": [
+    "textual_integrity",
+    "lexical_semantic",
+    "syntax_logic",
+    "terminology_culture",
+    "discourse_pragmatics"
+  ],
+  "synthesis": "Local choices accumulate into sentence-, discourse-, and workflow-level effects; the strength of each conclusion follows the provenance tier rather than case count.",
+  "content_hash": "8bf853a3e90277102a87f3601dae24f0fc4bc45ba7cb6ac8b1bcc239737f0fcf"
+}

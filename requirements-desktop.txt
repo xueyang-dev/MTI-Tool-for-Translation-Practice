@@ -1,0 +1,4 @@
+# 可选：原生桌面窗口（HTML GUI 包装）。安装后 gui.py 自动使用窗口，
+# 未安装则回退为默认浏览器打开。
+# Linux 额外需要系统依赖：sudo apt install python3-gi gir1.2-webkit2-4.1
+pywebview>=5.0
