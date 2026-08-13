@@ -7,11 +7,14 @@ import io
 import json
 import re
 import shutil
+import threading
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
 import fitz  # PyMuPDF
+import httpx
 import pandas as pd
 from docx import Document
 from google import genai
@@ -24,12 +27,88 @@ from mti_tool import state_migration as _state_migration
 # 任务进度与过程文件的本地存储目录（已加入 .gitignore）
 OUTPUT_DIR = Path("outputs")
 
-# 各家模型可选列表（UI 中可切换；如模型下线，在这里更换即可）
-MODELS = {
-    "DeepSeek": ["deepseek-chat", "deepseek-reasoner"],
-    "OpenAI": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"],
-    "Gemini": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+# 提供商注册表：kind=openai_compat 走 OpenAI SDK 兼容接口（官方与中转站通用）。
+# base_url 为 None 表示使用官方 SDK 默认路由；custom_base_url 表示地址由用户在
+# UI 中填写（通用中转站）。OpenCode Go 模型列表来自官方 /v1/models 目录。
+PROVIDERS = {
+    "OpenCode Go": {
+        "kind": "openai_compat",
+        "base_url": "https://opencode.ai/zen/go/v1",
+        "proxy_bypass": True,
+        "models": [
+            "glm-5.2", "glm-5.1", "glm-5",
+            "deepseek-v4-pro", "deepseek-v4-flash",
+            "kimi-k3", "kimi-k2.7-code", "kimi-k2.6", "kimi-k2.5",
+            "qwen3.8-max", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-plus",
+            "qwen3.5-plus",
+            "minimax-m3", "minimax-m2.7", "minimax-m2.5",
+            "mimo-v2-pro", "mimo-v2-omni", "mimo-v2.5-pro", "mimo-v2.5",
+            "hy3", "hy3-preview", "gpt-5.6-luna", "grok-4.5",
+        ],
+    },
+    "DeepSeek": {
+        "kind": "openai_compat",
+        "base_url": "https://api.deepseek.com",
+        "models": ["deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"],
+    },
+    "OpenAI": {
+        "kind": "openai",
+        "models": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"],
+    },
+    "Gemini": {
+        "kind": "gemini",
+        "models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+    },
+    "OpenRouter": {
+        "kind": "openai_compat",
+        "base_url": "https://openrouter.ai/api/v1",
+        "models": [],
+        "model_hint": "如 anthropic/claude-sonnet-4、openai/gpt-5、google/gemini-3-flash",
+    },
+    "SiliconFlow": {
+        "kind": "openai_compat",
+        "base_url": "https://api.siliconflow.cn/v1",
+        "models": [],
+        "model_hint": "如 Qwen/Qwen3-235B-A22B、deepseek-ai/DeepSeek-V3.2",
+    },
+    "Moonshot (Kimi)": {
+        "kind": "openai_compat",
+        "base_url": "https://api.moonshot.cn/v1",
+        "models": [],
+        "model_hint": "如 kimi-k2.5、moonshot-v1-8k",
+    },
+    "Zhipu (GLM)": {
+        "kind": "openai_compat",
+        "base_url": "https://open.bigmodel.cn/api/paas/v4",
+        "models": [],
+        "model_hint": "如 glm-4.5、glm-5",
+    },
+    "Qwen (DashScope)": {
+        "kind": "openai_compat",
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "models": [],
+        "model_hint": "如 qwen-max、qwen3-235b-a22b",
+    },
+    "自定义中转站": {
+        "kind": "openai_compat",
+        "base_url": None,
+        "custom_base_url": True,
+        "models": [],
+        "model_hint": "填写中转站提供的模型名（OpenAI /chat/completions 兼容）",
+    },
 }
+
+# 兼容旧引用：仅保留 模型名 -> 列表 的视图
+MODELS = {name: cfg["models"] for name, cfg in PROVIDERS.items()}
+
+# 会话线程级中转地址：自定义中转站的 base_url 由 UI 写入，call_llm 自动优先使用。
+# 每个 Streamlit 会话线程独立，多设备同时使用不会互相串扰。
+_LLM_CTX = threading.local()
+
+
+def set_llm_base_url(base_url):
+    """为当前线程设置 OpenAI 兼容中转站地址（空值清除）。"""
+    _LLM_CTX.base_url = (base_url or "").strip() or None
 
 
 # ================= 基础工具函数 =================
@@ -242,27 +321,17 @@ def extract_pdf_paragraphs(file_bytes):
     return [p for p in merged if not _ORNAMENT_RE.match(p)]
 
 
-def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
-    """底层大模型统一路由（超时 150 秒，模型可配置）。"""
-    if provider == "DeepSeek":
-        client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com", timeout=150.0)
-        res = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "system", "content": system_prompt},
-                      {"role": "user", "content": user_prompt}],
-            temperature=temperature,
-        )
-        return (res.choices[0].message.content or "").strip()
-    if provider == "OpenAI":
-        client = OpenAI(api_key=api_key, timeout=150.0)
-        res = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "system", "content": system_prompt},
-                      {"role": "user", "content": user_prompt}],
-            temperature=temperature,
-        )
-        return (res.choices[0].message.content or "").strip()
-    if provider == "Gemini":
+def call_llm(provider, api_key, model, system_prompt, user_prompt,
+             temperature=0.1, base_url=None):
+    """底层大模型统一路由（超时 150 秒，模型可配置）。
+
+    支持官方接口与 OpenAI /chat/completions 兼容中转站：
+    base_url 显式传入 > 提供商默认 base_url > 会话线程级自定义中转地址。
+    """
+    cfg = PROVIDERS.get(provider)
+    if not cfg:
+        return ""
+    if cfg["kind"] == "gemini":
         try:
             client = genai.Client(api_key=api_key,
                                   http_options=genai.types.HttpOptions(timeout=150_000))
@@ -275,7 +344,46 @@ def call_llm(provider, api_key, model, system_prompt, user_prompt, temperature=0
             config=genai.types.GenerateContentConfig(temperature=temperature),
         )
         return (res.text or "").strip()
-    return ""
+
+    # OpenAI 官方与所有 OpenAI 兼容接口共用 SDK 路由
+    kwargs = {"api_key": api_key, "timeout": (15.0, 180.0), "max_retries": 1}
+    resolved_base = base_url or cfg.get("base_url")
+    if cfg.get("custom_base_url") and not resolved_base:
+        resolved_base = getattr(_LLM_CTX, "base_url", None)
+    if resolved_base:
+        kwargs["base_url"] = resolved_base
+    http_client = None
+    if cfg.get("proxy_bypass"):
+        # 该接口经用户本地代理时 TLS 失败：显式关闭环境代理。
+        http_client = httpx.Client(trust_env=False, timeout=(15.0, 180.0))
+        kwargs["http_client"] = http_client
+    try:
+        client = OpenAI(**kwargs)
+        res = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "system", "content": system_prompt},
+                      {"role": "user", "content": user_prompt}],
+            temperature=temperature,
+        )
+        return (res.choices[0].message.content or "").strip()
+    finally:
+        if http_client:
+            http_client.close()
+
+
+def test_provider(provider, api_key, model, base_url=None):
+    """连通性测试：发送一个最小请求，返回 (ok, message)。"""
+    t0 = time.time()
+    try:
+        out = call_llm(provider, api_key, model,
+                       "你是连接测试助手。", "请只回复两个字：OK",
+                       temperature=0.0, base_url=base_url)
+    except Exception as exc:
+        return False, f"请求失败：{exc}"[:320]
+    elapsed = time.time() - t0
+    if not (out or "").strip():
+        return False, "返回内容为空（请检查 API Key / 模型名 / 余额）"
+    return True, f"响应「{(out or '').strip()[:24]}」· 耗时 {elapsed:.1f}s"
 
 
 def parse_termbase(file_stream):
@@ -290,6 +398,10 @@ def parse_termbase(file_stream):
     except Exception as e:
         raise ValueError(f"无法读取 Excel 文件：{e}") from e
     df.columns = [str(c).strip() for c in df.columns]
+    return _termbase_df_to_entries(df)
+
+
+def _termbase_df_to_entries(df):
     if "Source" not in df.columns or "Target" not in df.columns:
         raise ValueError("术语库缺少 Source / Target 列，请检查表头")
     df = df.dropna(subset=["Source", "Target"])
@@ -307,6 +419,98 @@ def parse_termbase(file_stream):
                                   re.split(r"[;；,，]", str(row["Forbidden"])) if x.strip()]
         entries.append(entry)
     return entries
+
+
+def parse_termbase_csv(file_stream):
+    """CSV 术语库：列约定与 Excel 一致（Source/Target 必选）。"""
+    try:
+        df = pd.read_csv(file_stream)
+    except Exception as e:
+        raise ValueError(f"无法读取 CSV 文件：{e}") from e
+    df.columns = [str(c).strip() for c in df.columns]
+    return _termbase_df_to_entries(df)
+
+
+def _local_name(tag):
+    return str(tag).rsplit("}", 1)[-1]
+
+
+def parse_termbase_tbx(file_stream):
+    """解析 TBX 术语库（Trados MultiTerm 等标准格式）。
+
+    每个 termEntry 取前两种语言的第一个 term，作为 source/target；
+    导入条目默认 status=locked（导入即视为已固定译名）。
+    """
+    try:
+        root = ET.fromstring(file_stream.read())
+    except Exception as e:
+        raise ValueError(f"无法解析 TBX 文件：{e}") from e
+    entries = []
+    for te in root.iter():
+        if _local_name(te.tag) != "termEntry":
+            continue
+        langs = []
+        for ls in te.iter():
+            if _local_name(ls.tag) != "langSet":
+                continue
+            # ElementTree 会把 xml: 前缀自动展开为命名空间键
+            lang = ls.get("{http://www.w3.org/XML/1998/namespace}lang") \
+                or ls.get("xml:lang") or ls.get("lang") or ""
+            term = None
+            for node in ls.iter():
+                if _local_name(node.tag) == "term" and (node.text or "").strip():
+                    term = node.text.strip()
+                    break
+            if term and lang and lang not in [x[0] for x in langs]:
+                langs.append((lang, term))
+            if len(langs) >= 2:
+                break
+        if len(langs) >= 2:
+            entries.append({"source": langs[0][1], "target": langs[1][1],
+                            "behavior": "translate", "status": "locked"})
+    if not entries:
+        raise ValueError("TBX 中未找到可导入的术语（需要至少两种语言的 langSet）")
+    return entries
+
+
+def import_tmx(file_stream):
+    """导入 TMX 翻译记忆（Trados / memoQ 等导出的标准格式）。
+
+    按 <tu> 的 <tuv><seg> 文本对入库：仅接受源文含字母/数字且译文非空的
+    单元；与现有翻译记忆冲突的源文跳过（不覆盖项目内已审校条目）。
+    返回 {"added": n, "skipped": m}。
+    """
+    try:
+        root = ET.fromstring(file_stream.read())
+    except Exception as e:
+        raise ValueError(f"无法解析 TMX 文件：{e}") from e
+    existing = load_tm()
+    added = skipped = 0
+    for tu in root.iter():
+        if _local_name(tu.tag) != "tu":
+            continue
+        texts = []
+        for tuv in tu:
+            if _local_name(tuv.tag) != "tuv":
+                continue
+            seg = next((c for c in tuv if _local_name(c.tag) == "seg"), None)
+            if seg is not None and (seg.text or "").strip():
+                texts.append(seg.text.strip())
+            if len(texts) >= 2:
+                break
+        if len(texts) >= 2:
+            src, tgt = texts[0], texts[-1]
+            if _tm_eligible(src, tgt):
+                if src not in existing:
+                    existing[src] = {"target": tgt, "reviewed": True,
+                                     "source": "tmx_import"}
+                    added += 1
+                else:
+                    skipped += 1
+    if not added:
+        raise ValueError("TMX 中未找到可导入的新翻译单元（源文需含字母/数字，且不与现有记忆冲突）")
+    save_tm(existing)
+    return {"added": added, "skipped": skipped}
 
 
 def extract_auto_terms(paragraphs, target_lang, provider, api_key, model):
@@ -460,6 +664,20 @@ def check_translation_batch(sources, targets, glossary, target_lang,
                              "reason": f"疑似漏译/截断：原文 {len(src)} 字符"
                                        f"/{_count_sentences(src)} 句，译文仅 {len(tgt.strip())} 字符"
                                        f"/{_count_sentences(tgt)} 句"})
+        source_words = re.findall(r"[A-Za-z]+", src or "")
+        whole_source_preserved = any(
+            str(entry.get("behavior") or "") == "preserve"
+            and str(entry.get("status") or "") == "locked"
+            and re.sub(r"\s+", " ", str(entry.get("source") or "")).strip().casefold()
+            == re.sub(r"\s+", " ", src or "").strip().casefold()
+            for entry in glossary or [])
+        if target_lang != "English" and len(source_words) >= 2 \
+                and re.sub(r"\s+", " ", src or "").strip().casefold() \
+                == re.sub(r"\s+", " ", tgt or "").strip().casefold() \
+                and not whole_source_preserved:
+            findings.append({
+                "segment_index": i, "type": "check", "severity": "actionable",
+                "reason": "译文与英文源段完全相同，疑似整段未翻译"})
         for token, kind in extract_preserved_tokens(src).items():
             if token not in tgt:
                 findings.append({"segment_index": i, "type": "check",
@@ -950,7 +1168,7 @@ def annotate_stage(state, job_id, glossary, provider, api_key, model, target_lan
 
 
 def translate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
-                    style_rules, enable_review, document_profile=None,
+                    style_rules, enable_review, use_tm=True, document_profile=None,
                     on_status=None, on_caption=None):
     """阶段二：语义批次翻译 + 确定性检查/修复 + 独立审校 + 翻译记忆。
 
@@ -961,12 +1179,17 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
     - 独立审校：actionable 建议经确定性复验后应用，blocking 记录给用户确认；
     - 翻译记忆：仅审校通过的段落入库，精确命中直接复用。
     """
-    # 高质量模式后端门禁：术语未冻结（且未显式跳过）时，任何入口都禁止开始翻译。
-    if state.get("quality_mode") and not state.get("glossary_frozen") \
+    # 高质量模式后端门禁：存在待审核候选术语且未冻结（且未显式跳过）时，
+    # 任何入口都禁止开始翻译。导入的锁定术语视为已固定，不构成阻塞。
+    pending = [e for e in (glossary or [])
+               if (e.get("status") or "").lower() == "candidate"]
+    if state.get("quality_mode") and pending \
+            and not state.get("glossary_frozen") \
             and not state.get("quality_bypass"):
         raise RuntimeError(
-            "高质量模式：术语尚未冻结，禁止开始翻译（请在术语审核面板冻结后继续）")
-    tm = load_tm()
+            "高质量模式：仍有候选术语未审核（术语表尚未冻结），"
+            "禁止开始翻译（请在术语审核面板冻结后继续）")
+    tm = load_tm() if use_tm else {}
     paras = state["paras"]
     pairs = state["pairs"]
     batches = make_batches(paras)
@@ -1155,9 +1378,11 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                 if not seg_findings and not p["from_tm"] \
                         and _tm_eligible(p["source"], p["target"]):
                     p["reviewed"] = True
-                    tm[p["source"]] = {"target": p["target"], "reviewed": True}
+                    if use_tm:
+                        tm[p["source"]] = {"target": p["target"], "reviewed": True}
                     stats["reviewed_segments"] += 1
-            save_tm(tm)
+            if use_tm:
+                save_tm(tm)
 
         pairs.extend(batch_pairs)
         save_job_state(job_id, state)  # 每批落盘，断点粒度 = 一个批次
@@ -1305,9 +1530,10 @@ def _find_span(text, needle):
     return start, end
 
 
-def _colored_cell(cell, text, spans):
+def _colored_cell(cell, text, spans, colors=None):
     """把一个单元格按 spans（(start,end,type) 已排序不重叠）拆成带色 run。"""
     from docx.shared import RGBColor
+    palette = colors or ANNOTATION_COLORS
     cursor = 0
     first = True
     for start, end, atype in spans:
@@ -1316,7 +1542,8 @@ def _colored_cell(cell, text, spans):
             _apply_run_fonts(run)
         run = cell.paragraphs[0].add_run(text[start:end])
         _apply_run_fonts(run)
-        run.font.color.rgb = RGBColor.from_string(ANNOTATION_COLORS[atype])
+        run.font.color.rgb = RGBColor.from_string(
+            str(palette.get(atype, ANNOTATION_COLORS[atype])).lstrip("#"))
         if atype in ("rare", "domain"):
             run.bold = True
         cursor = end
@@ -1328,12 +1555,16 @@ def _colored_cell(cell, text, spans):
         cell.paragraphs[0].add_run("")
 
 
-def pairs_to_word(pairs, annotations=None):
+def pairs_to_word(pairs, annotations=None, colors=None):
     """双语对照表 -> Word 表格。
 
     annotations: {seg: [{"type": "rare|domain|hard", "src_span": [s,e]|None,
                          "tgt_span": [s,e]|None, "note": str}]}
+    colors: {"rare"|"domain"|"hard": "RRGGBB"}，可自定义三类标注颜色。
     """
+    palette = dict(ANNOTATION_COLORS)
+    if colors:
+        palette.update({k: str(v).lstrip("#") for k, v in colors.items()})
     doc = Document()
     _apply_doc_fonts(doc)
     table = doc.add_table(rows=1, cols=2)
@@ -1350,12 +1581,14 @@ def pairs_to_word(pairs, annotations=None):
         tgt_spans = _compose_spans(
             [(it["tgt_span"][0], it["tgt_span"][1], it["type"])
              for it in seg_annot if it.get("tgt_span")], len(pair['target']))
-        _colored_cell(row[0], pair['source'], src_spans)
-        _colored_cell(row[1], pair['target'], tgt_spans)
+        _colored_cell(row[0], pair['source'], src_spans, palette)
+        _colored_cell(row[1], pair['target'], tgt_spans, palette)
     # 图例（放表格后，避免挤占首行）
     p_legend = doc.add_paragraph()
-    run = p_legend.add_run("图例：红色 = 生僻词/难词；黄色 = 专业名词（特殊译法）；"
-                           "青绿色 = 翻译难点句（特别译法）。")
+    legend_parts = [
+        f"{ANNOTATION_LABELS[k]}（#{palette.get(k, ANNOTATION_COLORS[k])}）"
+        for k in ("rare", "domain", "hard")]
+    run = p_legend.add_run("图例：" + "；".join(legend_parts) + "。")
     _apply_run_fonts(run)
     out = io.BytesIO()
     doc.save(out)
@@ -1375,16 +1608,28 @@ def markdown_to_word(md_text, theory):
     doc = Document()
     _apply_doc_fonts(doc)
     md_text = re.sub(r'```markdown|```', '', md_text).strip()
+    md_text = re.sub(r'<!--.*?-->', '', md_text, flags=re.DOTALL)
+    quote_labels = {
+        "SYNTHETIC_SOURCE": "真实源文",
+        "SIMULATED": "模拟初译",
+        "OPTIMIZED": "优化译文",
+    }
+    md_text = re.sub(
+        r'(?m)^>\s*\[(SYNTHETIC_SOURCE|SIMULATED|OPTIMIZED)\s+(SC-\d{4,})\]:\s*',
+        lambda match: f"> {quote_labels[match.group(1)]}（{match.group(2)}）：",
+        md_text)
     title = doc.add_heading(f'翻译实践报告：基于{theory}', 0)
     title.alignment = 1
     for line in md_text.split('\n'):
         line = line.strip()
         if not line:
             continue
-        if line.startswith('### '):
-            doc.add_heading(line[4:], level=3)
+        if line.startswith('#### '):
+            doc.add_heading(line[5:], level=3)
+        elif line.startswith('### '):
+            doc.add_heading(line[4:], level=2)
         elif line.startswith('## '):
-            doc.add_heading(line[3:], level=2)
+            doc.add_heading(line[3:], level=1)
         elif line.startswith('# '):
             doc.add_heading(line[2:], level=1)
         elif line.startswith(('- ', '* ')):
@@ -1503,6 +1748,15 @@ def load_source(job_id):
 
 
 def progress_label(state):
+    academic = state.get("academic_state") or {}
+    if academic.get("status") == "failed":
+        return "翻译完成 · 学术写作失败"
+    if academic.get("status") in ("in_progress", "stale"):
+        return "翻译完成 · 学术写作中"
+    if academic.get("quality_status") == "review_required":
+        return "翻译完成 · 报告待学术复核"
+    if academic.get("quality_status") == "fail":
+        return "翻译完成 · 报告验证失败"
     if state.get("p1_done") and state.get("p2_done") and \
             (state.get("p3_done") or not state.get("report_enabled", True)):
         return "已完成"
@@ -1716,12 +1970,12 @@ def approve_delivery(job_id, note="", accept_blocking=False, actor="user"):
 
 def retranslate_segments(job_id, indexes, provider, api_key, model, target_lang,
                          style_rules="", glossary=None, on_status=None,
-                         on_caption=None):
+                         on_caption=None, actor="user"):
     """定点重译（抽取自 scripts/fix_segments.py 的能力）。"""
     from mti_tool import delivery as _delivery
     return _delivery.retranslate_segments(
         job_id, indexes, provider, api_key, model, target_lang,
-        style_rules, glossary, on_status, on_caption)
+        style_rules, glossary, on_status, on_caption, actor)
 
 
 def delivery_status_label(state):
@@ -1730,109 +1984,115 @@ def delivery_status_label(state):
     return labels.get(state.get("delivery_status"), str(state.get("delivery_status")))
 
 
-# ================= 阶段三：报告生成（Map-Reduce + 章节级断点）=================
-def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_key,
-                        model, state, job_id, on_status=None):
-    """四段式报告生成（证据化）；每个章节完成后立即落盘，中途失败可续写。
+def academic_status_label(state):
+    status = (state.get("academic_state") or {}).get("quality_status") or \
+        (state.get("academic_state") or {}).get("status") or "not_started"
+    labels = {
+        "not_started": "尚未开始", "stale": "需要重新生成",
+        "in_progress": "学术写作中", "failed": "学术写作失败",
+        "pass": "验证通过", "pass_with_warnings": "通过（有警告）",
+        "review_required": "需要人工学术复核", "fail": "验证失败",
+    }
+    return labels.get(status, status)
 
-    语料证据来自任务状态（含真实 segment_id 与逐字原文/译文），
-    prompt 规约禁止模型改写原文冒充、禁止宣称译者真实意图。
+
+def invalidate_academic_report(job_id, scope="all", section_id=None):
+    """Invalidate academic artifacts only; translation stages remain intact."""
+    from mti_tool import academic_writer
+    state = load_job_state(job_id)
+    if state is None:
+        raise ValueError(f"找不到任务 {job_id}")
+    academic_writer.invalidate_academic_state(state, scope, section_id)
+    save_job_state(job_id, state)
+    return state
+
+
+def load_academic_artifact(job_id, name):
+    """Read a canonical academic JSON artifact for UI/CLI inspection."""
+    from mti_tool import academic_writer
+    ARTIFACT_FILES = academic_writer.ARTIFACT_FILES
+    if name not in ARTIFACT_FILES:
+        raise ValueError(f"未知学术 artifact：{name}")
+    path = job_dir(job_id) / ARTIFACT_FILES[name]
+    if not path.is_file():
+        return None
+    try:
+        return academic_writer._read_artifact(path)
+    except Exception:
+        return None
+
+
+def record_human_evidence(job_id, question_id, answer, interface="academic_workspace"):
+    """Record a human author answer for an open evidence question.
+
+    The answer is stored verbatim with provenance; the question is marked
+    answered; the case-analysis/section staleness is propagated through the
+    existing dependency-hash architecture (only affected sections rewrite).
     """
-    from mti_tool.report_evidence import evidence_text_block
-    sample_texts = evidence_text_block(state, job_id)
+    from mti_tool import academic_writer, human_evidence
+    state = load_job_state(job_id)
+    if state is None:
+        raise ValueError(f"找不到任务 {job_id}")
+    questions = academic_writer._read_artifact(
+        job_dir(job_id) / academic_writer.ARTIFACT_FILES["human_evidence_questions"])
+    if not questions:
+        raise ValueError("当前没有待回答的人类证据问题；请先生成学术报告。")
+    evidence = academic_writer._read_artifact(
+        job_dir(job_id) / academic_writer.ARTIFACT_FILES["evidence"])
+    entry, updated_questions = human_evidence.record_human_answer(
+        questions, question_id, answer, evidence or {}, interface,
+        existing=state.get("human_evidence") or [])
+    entries = list(state.get("human_evidence") or [])
+    entries = [x for x in entries if x.get("question_id") != question_id]
+    entries.append(entry)
+    state["human_evidence"] = entries
+    academic_writer._write_artifact(
+        job_dir(job_id) / academic_writer.ARTIFACT_FILES["human_evidence_questions"],
+        updated_questions)
+    record = state.get("academic_state", {}).get("artifacts", {}).get(
+        "human_evidence_questions")
+    if record:
+        record["content_hash"] = updated_questions["content_hash"]
+        record["updated_at"] = academic_writer._now()
+    save_job_state(job_id, state)
+    return entry
 
-    term_str = "\n".join(f"{k} -> {v}" for k, v in termbase_dict.items()) if termbase_dict else "无术语提取"
 
-    prompts = [
-        (
-            "一、 翻译项目概述与文本特征分析",
-            f"请基于以下双语语料样本，撰写翻译实践报告的【第一部分】。\n"
-            f"要求：详尽分析源文本的语言风格、专业领域、词法（如专有名词、长难句）与句法特点，"
-            f"以及由此带来的总体翻译难点。字数要求 800-1000 字。严禁输出其他章节的内容。\n\n"
-            f"语料样本：\n{sample_texts}"
-        ),
-        (
-            "二、 术语管理与验证",
-            f"请撰写翻译实践报告的【第二部分】。\n"
-            f"请基于以下核心术语表，详细评估本次翻译中术语库的执行情况。"
-            f"请至少选取 4 个核心术语，深度剖析其翻译策略（如直译、意译、增词、转换等）"
-            f"及其对提升文本专业性的贡献。字数要求 800-1000 字。\n\n术语表：\n{term_str}"
-        ),
-        (
-            f"三、 基于【{theory}】的案例分析",
-            f"这是本报告的最核心章节。请基于以下双语语料样本和【{theory}】的理论框架，撰写报告的【第三部分】。\n"
-            f"要求：精准抽取 4-5 个最具代表性的长难句或特殊表达案例。"
-            f"每个案例必须标注其真实 segment_id（形如 [seg-<job>-0000]，"
-            f"只准使用语料证据中出现的编号），并独立成段包含：\n"
-            f"1. 原译文对照\n2. 翻译难点深度剖析\n"
-            f"3. 严谨的学理分析（从结果看可解释为哪种翻译技巧，并用【{theory}】的"
-            f"核心概念论证“为何可以如此翻译”；不得宣称技巧是译者的真实意图）。\n"
-            f"本部分字数要求不少于 1500 字，必须极具学术深度。\n\n语料样本：\n{sample_texts}"
-        ),
-        (
-            "四、 翻译项目复盘与反思",
-            f"请结合上述关于【{theory}】的翻译实践，撰写报告的【第四部分】。\n"
-            f"要求：深刻总结机器翻译（MT）在此类文本中的局限性、本地化术语库强干预的实际效果，"
-            f"以及作为译后编辑（MTPE）在双语能力和理论运用层面的收获。字数要求 600-800 字。"
-        ),
-    ]
-    base_system_prompt = "你是一位拥有深厚学术背景的 MTI（翻译硕士）导师及资深学术期刊审稿人。" \
-                         "请严格使用学术书面语，逻辑严密，杜绝任何 AI 常见的口语化或套话表达。\n" \
-                         "【报告写作规约（必须遵守）】：\n" \
-                         "1. 案例分析必须引用真实 segment_id（如 [seg-xxx-0000]），不得编造编号；\n" \
-                         "2. 引用原文/译文必须逐字来自语料证据，不得改写后冒充原译文；\n" \
-                         "3. 讨论翻译技巧时不得宣称是译者（或模型）的真实意图，只能表述为" \
-                         "“从结果看，该译文可解释为……”；\n" \
-                         "4. 找不到足够证据时，明确写“证据不足”，不要编造细节；\n" \
-                         "5. 本报告是初稿，供人工核查后使用。"
+# ================= 阶段三：证据约束型学术写作 =================
+def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_key,
+                        model, state, job_id, on_status=None,
+                        research_settings=None, literature_sources=None):
+    """Compatibility wrapper for the evidence-grounded academic pipeline.
 
-    valid_titles = {title for title, _ in prompts}
-    sections = [s for s in state.get("p3_sections", []) if s and s[0] in valid_titles]
-    state["p3_sections"] = sections
-
-    for idx, (section_title, user_prompt) in enumerate(prompts):
-        if any(s[0] == section_title for s in sections):
-            continue
-        if on_status:
-            on_status(f"【阶段三】正在深度撰写：{section_title} ({idx + 1}/4)...")
-        last_err, success = None, False
-        for _attempt in range(3):
-            try:
-                section_content = call_llm(provider, api_key, model, base_system_prompt,
-                                           user_prompt, temperature=0.5)
-                section_content = re.sub(r'^```markdown|```$', '',
-                                         section_content.strip(), flags=re.MULTILINE)
-                if not section_content.strip():
-                    raise RuntimeError("模型返回空内容")
-                sections.append([section_title, section_content.strip()])
-                state["p3_sections"] = sections
-                save_job_state(job_id, state)  # 章节级断点
-                time.sleep(2)
-                success = True
-                break
-            except Exception as e:
-                last_err = e
-                if is_rate_limited(e):
-                    time.sleep(20)
-                else:
-                    break
-        if not success:
-            raise RuntimeError(f"报告章节「{section_title}」生成失败：{last_err}")
-
-    return "".join(f"## {t}\n\n{c}\n\n---\n\n" for t, c in sections)
+    ``bilingual_pairs`` and ``termbase_dict`` remain in the signature for old
+    callers; the canonical inputs are now the saved translation state and the
+    durable academic artifacts beside ``state.json``.
+    """
+    from mti_tool import academic_writer
+    return academic_writer.run_academic_pipeline(
+        state, job_id, theory, provider, api_key, model,
+        artifact_dir=job_dir(job_id), call_llm=call_llm,
+        save_state=lambda current: save_job_state(job_id, current),
+        research_settings=research_settings, literature_sources=literature_sources,
+        on_status=on_status,
+    )
 
 
 # ================= 主流程：单文档完整流水线 =================
 def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                      target_lang, auto_term, enable_report, translation_theory,
                      user_glossary=None, style_rules="", enable_review=True,
-                     enable_annotate=True, mode="quick",
+                     enable_annotate=True, use_tm=True, mode="quick",
+                     research_settings=None, literature_sources=None,
                      on_status=None, on_caption=None):
     """执行单个文档的完整流程；每个里程碑实时落盘，刷新/重启后均可继续。
 
-    mode="quick"：自动术语作为 provisional，直接翻译（原行为）。
-    mode="quality"：术语冻结（glossary_frozen）后才能开始翻译；
-    未冻结时在 TERMS_PREPARED 阶段返回，由 UI 呈现术语审核面板。
+    mode="quick"：省 token 的快速策略——跳过文档画像，术语只作建议，
+    默认不跑独立审校（由 UI 控制）。
+    mode="quality"：全流程——文档画像 → 术语抽取 → 人工审核候选 → 冻结 →
+    相关术语注入 → 翻译 + 独立审校 → 标注 → 报告。仅当存在待审核的
+    candidate 术语且未冻结时在 TERMS_PREPARED 返回；导入的锁定术语视为
+    已固定，不会阻塞翻译。
     """
     _ensure_output_dir()
     base = new_job_state(filename)
@@ -1841,6 +2101,12 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     state = _state_migration.migrate_state(state)
     state["report_enabled"] = bool(enable_report)
     warnings = state.setdefault("warnings", [])
+
+    if enable_report:
+        from mti_tool import academic_writer
+        academic_writer.prepare_academic_inputs(
+            state, translation_theory, research_settings, literature_sources)
+        academic_writer.sync_versions(state)
 
     # 术语依赖失效：必须在“全部完成”早退之前执行，
     # 否则冻结术语表变更后的旧译文会继续以 reviewed/final/TM 状态存在。
@@ -1877,12 +2143,15 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         if not paragraphs:
             raise ValueError("未提取到有效文本（若为扫描版 PDF，请先做 OCR 生成文本层）")
         state["paras"] = paragraphs
+        if filename.lower().endswith(".pdf"):
+            with fitz.open(stream=file_bytes, filetype="pdf") as source_pdf:
+                state["source_page_count"] = source_pdf.page_count
         state["p1_done"] = True
         save_source(job_id, file_bytes)  # 留存源文件，刷新后无需重新上传
         save_job_state(job_id, state)
 
-    # ---------------- 阶段 1.2：文档画像（分布式采样；失败仅警告，不阻断） ----------------
-    if not state.get("profile_done"):
+    # ---------------- 阶段 1.2：文档画像（仅高质量模式；失败仅警告，不阻断） ----------------
+    if mode == "quality" and not state.get("profile_done"):
         if on_status:
             on_status("【阶段1.2】文档画像（分布式采样 + 结构化校验）...")
         from mti_tool.document_profile import profile_document
@@ -1945,14 +2214,19 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     glossary = working
     final_termbase = glossary_to_terms(glossary)
 
-    # ---------------- 高质量模式门禁：术语冻结后才能开始翻译 ----------------
+    # ---------------- 高质量模式门禁：候选术语需人工审核/冻结后才能翻译 ----------------
     if mode == "quality":
         state["quality_mode"] = True
-        if not state.get("glossary_frozen") and not state.get("quality_bypass"):
+        pending = [e for e in working
+                   if (e.get("status") or "").lower() == "candidate"]
+        if not state.get("glossary_frozen") and not state.get("quality_bypass") \
+                and pending:
             if on_status:
-                on_status("⏸ 高质量模式：等待人工术语审核与冻结（术语面板）...")
-            msg = ("高质量模式：术语尚未冻结，翻译未开始。"
-                   "请在“术语准备与审核”面板完成冻结后继续。")
+                on_status(f"⏸ 高质量模式：{len(pending)} 条候选术语等待人工审核与冻结...")
+            msg = (f"高质量模式：术语表尚未冻结（{len(pending)} 条自动抽取的"
+                   "候选术语待审核），翻译未开始。请在“术语准备与审核”面板"
+                   "完成审核并冻结后继续；导入术语库中的锁定术语已视为固定，"
+                   "无需再次审核。")
             if msg not in warnings:
                 warnings.append(msg)
             state["stage"] = _state_migration.derive_stage(state)
@@ -1964,7 +2238,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         if on_status:
             on_status("【阶段二】双语翻译与术语严格注入（批次翻译 + 确定性检查 + 独立审校）...")
         translate_stage(state, job_id, glossary, provider, api_key, model, target_lang,
-                        style_rules, enable_review,
+                        style_rules, enable_review, use_tm=use_tm,
                         document_profile=state.get("document_profile"),
                         on_status=on_status, on_caption=on_caption)
         state["p2_done"] = True
@@ -1985,7 +2259,9 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
             on_status(f"【阶段三】基于《{translation_theory}》生成报告...")
         report_md = generate_mti_report(state["pairs"], final_termbase, translation_theory,
                                         provider, api_key, model, state, job_id,
-                                        on_status=on_status)
+                                        on_status=on_status,
+                                        research_settings=research_settings,
+                                        literature_sources=literature_sources)
         if not report_md.strip():
             raise RuntimeError("报告内容为空，请点击“继续处理”重试")
         state["p3_md"] = report_md
@@ -1994,4 +2270,5 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         save_job_state(job_id, state)
 
     state["stage"] = _state_migration.derive_stage(state)
+    save_job_state(job_id, state)
     return state

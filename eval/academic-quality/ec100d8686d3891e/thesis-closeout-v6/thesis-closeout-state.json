@@ -1,0 +1,215 @@
+{
+  "schema_version": "thesis-closeout-state-v1",
+  "job_id": "ec100d8686d3891e",
+  "pipeline_version": "academic-pipeline-v6",
+  "constraint_commit": "7c7babc",
+  "supersedes_case_baseline_commit": "e1661ac",
+  "status": "review_package_assembled_supervisor_review_pending",
+  "formal_case_baseline": {
+    "status": "sufficient_revision_cases",
+    "core_authentic_revision_cases": [
+      {
+        "case_id": "seg-ec100d8686d3891e-0139",
+        "role": "core_authentic_revision",
+        "eligibility": "eligible"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0233",
+        "role": "core_authentic_revision",
+        "eligibility": "eligible"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0272",
+        "role": "core_authentic_revision",
+        "eligibility": "eligible"
+      }
+    ],
+    "optional_supplement": {
+      "case_id": "SC-0141",
+      "case_type": "synthetic_contrast",
+      "included_by_default": false,
+      "counts_toward_authentic_core": false,
+      "required_disclosure": "分析阶段生成的受控合成对比，不代表作者历史初译，也不支持错误发生频率结论。"
+    },
+    "excluded_system_repairs": [
+      {
+        "case_id": "seg-ec100d8686d3891e-0001",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0014",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0093",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0101",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0142",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0144",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0145",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0201",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0209",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0236",
+        "decision": "excluded_system_repair"
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0239",
+        "decision": "excluded_system_repair"
+      }
+    ],
+    "usage_rules": [
+      "只把0139、0233、0272作为正式核心真实修订案例。",
+      "SC-0141仅在需要方法对照时使用，并明确标注为合成案例。",
+      "Human Author Evidence可以丰富分析，但不能改变案例资格。",
+      "不得把system_actions表述为作者本人意图或人工修订。"
+    ],
+    "canonical_sources": {
+      "revision_audit": "revision-case-audit-final.json",
+      "revision_selection": "selected-cases-final.json",
+      "academic_evidence": "academic-evidence-final.json",
+      "translation_review": "translation-review-audit.json"
+    }
+  },
+  "human_evidence": {
+    "status": "not_required_system_analysis_substituted",
+    "question_count": 0,
+    "withdrawn_question_count": 4,
+    "answers_recorded": 0,
+    "phase_b_started": true,
+    "author_intention_inference_allowed": false
+  },
+  "stages": [
+    {
+      "stage": 1,
+      "name": "2026中文论文约束",
+      "status": "completed"
+    },
+    {
+      "stage": 2,
+      "name": "正式案例基线",
+      "status": "completed"
+    },
+    {
+      "stage": 3,
+      "name": "真实作者问题",
+      "status": "not_required"
+    },
+    {
+      "stage": 4,
+      "name": "可核验文献证据",
+      "status": "completed"
+    },
+    {
+      "stage": 5,
+      "name": "翻译审校收口",
+      "status": "completed"
+    },
+    {
+      "stage": 6,
+      "name": "Phase B与v6四章正文",
+      "status": "completed"
+    },
+    {
+      "stage": 7,
+      "name": "验证、质量比较与导师复核",
+      "status": "supervisor_review_pending"
+    },
+    {
+      "stage": 8,
+      "name": "完整论文装配",
+      "status": "review_draft_assembled"
+    }
+  ],
+  "literature_evidence": {
+    "status": "grounded_phase2_ready",
+    "source_count": 6,
+    "peer_reviewed_source_count": 5,
+    "grounded_claim_count": 9,
+    "all_originals_acquired": true,
+    "phase_b_started": false,
+    "artifacts": {
+      "registry": "literature-registry.json",
+      "sources": "literature-sources.json",
+      "evidence": "literature-evidence.jsonl",
+      "claims": "literature-claims.jsonl",
+      "verification": "literature-source-verification.json",
+      "report": "literature-evidence-report.md"
+    }
+  },
+  "translation_review": {
+    "status": "completed",
+    "original_actionable_findings_resolved": 32,
+    "unreviewed_segments_after": 0,
+    "open_blocking_after": 0,
+    "open_actionable_after": 0,
+    "historical_initial_targets_modified": false,
+    "system_actions_separated_from_human_actions": true,
+    "artifacts": {
+      "audit": "translation-review-audit.json",
+      "report": "translation-review-report.md",
+      "pre_review_backup": "translation-state-before-review.json",
+      "post_review_snapshot": "translation-state-after-review.json"
+    }
+  },
+  "phase_b": {
+    "status": "completed",
+    "external_model_used": false,
+    "human_author_evidence_entries_used": 0,
+    "system_actions_presented_as_author_intention": false,
+    "body_language": "zh-CN",
+    "chapter_count": 4,
+    "core_case_ids": [
+      "seg-ec100d8686d3891e-0139",
+      "seg-ec100d8686d3891e-0233",
+      "seg-ec100d8686d3891e-0272"
+    ],
+    "validation_status": "pass",
+    "deterministic_quality_status": "pass",
+    "semantic_review_status": "pending_supervisor_review",
+    "artifacts": [
+      "academic-outline-v6.json",
+      "academic-quality-v6.json",
+      "academic-sections-v6.json",
+      "academic-validation-v6.json",
+      "argument-plan-v6.json",
+      "research-model-v6.json",
+      "selected-cases-v6.json",
+      "thesis-body-v6.md"
+    ]
+  },
+  "document_assembly": {
+    "status": "review_draft_assembled",
+    "format": "docx",
+    "body_language": "zh-CN",
+    "output": "thesis-review-v6.docx",
+    "template": "1-MTI翻译实践报告模板（也适用于翻译项目报告）-20251121.docx",
+    "template_sha256": "c5d08420eb8371d4a7d53b423b53104d838c437c0e331a5374d303eaeef1bbc3",
+    "toc_page_map_applied": true,
+    "pending_before_submission": [
+      "supervisor_semantic_review",
+      "author_and_supervisor_metadata",
+      "personal_acknowledgements",
+      "signature_and_submission_dates"
+    ]
+  }
+}

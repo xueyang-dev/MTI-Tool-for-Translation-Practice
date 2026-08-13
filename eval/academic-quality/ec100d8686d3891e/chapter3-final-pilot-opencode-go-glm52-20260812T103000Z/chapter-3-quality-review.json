@@ -1,0 +1,491 @@
+{
+  "schema_version": "chapter3-quality-review-v1",
+  "existing_academic_quality": {
+    "schema_version": "academic-quality-v4",
+    "dimensions": {
+      "research_alignment": "pass",
+      "argument_quality": "pass",
+      "case_quality": "pass",
+      "analysis_depth": "pass_with_warnings",
+      "theory_case_fit": "not_applicable",
+      "evidence_utilization": "pass",
+      "literature_support": "not_applicable",
+      "cross_section_coherence": "pass",
+      "academic_specificity": "pass",
+      "redundancy": "pass",
+      "conclusion_discipline": "pass",
+      "writing_quality": "pass"
+    },
+    "metrics": {
+      "research_questions": 2,
+      "answered_rqs": 2,
+      "unanswered_rqs": 0,
+      "global_claims": 4,
+      "orphan_claims": 0,
+      "selected_cases": 3,
+      "case_selection_status": "mixed_case_selection",
+      "authentic_revision_cases": 2,
+      "synthetic_contrast_cases": 1,
+      "non_revision_cases": 0,
+      "strong_cases": 1,
+      "usable_cases": 2,
+      "weak_cases": 0,
+      "redundant_cases": 0,
+      "misaligned_cases": 0,
+      "paragraph_roles": {
+        "filler": 4,
+        "claim": 5,
+        "background": 4,
+        "analysis": 1
+      },
+      "generic_paragraph_rate": 0.0,
+      "evidence_utilization": {
+        "selected_case_count": 3,
+        "cases_used": 3,
+        "high_value_unused_cases": [],
+        "rows": [
+          {
+            "case_id": "seg-ec100d8686d3891e-0209",
+            "used_in_report": true,
+            "evidence_richness": 2,
+            "case_type": "authentic_revision",
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0272",
+            "used_in_report": true,
+            "evidence_richness": 2,
+            "case_type": "authentic_revision",
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "SC-0141",
+            "used_in_report": true,
+            "evidence_richness": null,
+            "case_type": "synthetic_contrast",
+            "high_value_unused": false,
+            "unused_dimensions": []
+          }
+        ]
+      },
+      "literature_grounding_status": "evidence_missing",
+      "citation_validation_status": "pass",
+      "cross_section_issue_count": 0,
+      "conclusion_support_issues": 0,
+      "finding_counts": {},
+      "strategy_label_only_count": 0,
+      "unsupported_quality_effect_count": 0,
+      "unsupported_process_claim_count": 0,
+      "overgeneralized_case_conclusion_count": 0,
+      "theory_name_dropping_count": 0,
+      "case_analysis_depth_summary": {
+        "problem_definition": {
+          "adequate": 1,
+          "strong": 2
+        },
+        "evidence_use": {
+          "weak": 2,
+          "adequate": 1
+        },
+        "initial_failure_or_alternative": {
+          "adequate": 2,
+          "strong": 1
+        },
+        "decision_rationale": {
+          "adequate": 2,
+          "strong": 1
+        },
+        "translation_effect": {
+          "adequate": 2,
+          "strong": 1
+        },
+        "theory_mapping": {
+          "not_applicable": 3
+        },
+        "bounded_conclusion": {
+          "strong": 3
+        }
+      }
+    },
+    "findings": [],
+    "diagnostics": {
+      "paragraph_statistics": {
+        "total_paragraphs": 14,
+        "paragraph_roles": {
+          "filler": 4,
+          "claim": 5,
+          "background": 4,
+          "analysis": 1
+        },
+        "per_section_roles": {
+          "3": {
+            "filler": 4,
+            "claim": 5,
+            "background": 4,
+            "analysis": 1
+          }
+        },
+        "claim_bearing_paragraphs": 5,
+        "evidence_bearing_paragraphs": 0,
+        "analysis_bearing_paragraphs": 1,
+        "generic_paragraphs": 0,
+        "generic_rate": 0.0
+      },
+      "case_quality": [
+        {
+          "case_id": "seg-ec100d8686d3891e-0209",
+          "case_type": "authentic_revision",
+          "class": "usable_case",
+          "reasons": [
+            "证据丰富度 2/7"
+          ],
+          "supports_claims": [
+            "C1",
+            "C4"
+          ],
+          "evidence_richness": 2,
+          "case_role": "revision_case",
+          "synthetic_dimensions": {}
+        },
+        {
+          "case_id": "seg-ec100d8686d3891e-0272",
+          "case_type": "authentic_revision",
+          "class": "usable_case",
+          "reasons": [
+            "证据丰富度 2/7"
+          ],
+          "supports_claims": [
+            "C2",
+            "C4"
+          ],
+          "evidence_richness": 2,
+          "case_role": "revision_case",
+          "synthetic_dimensions": {}
+        },
+        {
+          "case_id": "SC-0141",
+          "case_type": "synthetic_contrast",
+          "class": "strong_case",
+          "reasons": [
+            "The source 'What do you need that Ben-Gurion for?' is a colloquial, dismissive rhetorical question. The baseline '你为什么需要那个本-古里安？' is syntactically faithful but reads as a neutral information-seeking inquiry, flattening the contemptuous pragmatic force. The optimized '你要那个本-古里安干什么？' uses the colloquial '要……干什么' rhetorical structure, restoring the dismissive, confrontational register without altering the propositional content. The repair is well-grounded and adds meaningful pragmatic value."
+          ],
+          "supports_claims": [
+            "C3",
+            "C4"
+          ],
+          "evidence_richness": null,
+          "case_role": "synthetic_contrast_case",
+          "synthetic_dimensions": {
+            "difficulty_validity": "confirmed",
+            "baseline_plausibility": "plausible",
+            "error_materiality": "confirmed",
+            "diagnosis_depth": "confirmed",
+            "repair_validity": "confirmed",
+            "analysis_depth": "pending_semantic_review",
+            "theory_case_fit": "pending_literature_grounding",
+            "bounded_conclusion": "pending_semantic_review",
+            "provenance_correctness": "confirmed"
+          }
+        }
+      ],
+      "rq_matrix": {
+        "matrix": {
+          "RQ1": {
+            "claims": [
+              "C1",
+              "C2"
+            ],
+            "cases": [
+              "seg-ec100d8686d3891e-0209",
+              "seg-ec100d8686d3891e-0272"
+            ],
+            "sections": [
+              "3"
+            ],
+            "answered": true,
+            "unanswered_reason": ""
+          },
+          "RQ2": {
+            "claims": [
+              "C3",
+              "C4"
+            ],
+            "cases": [
+              "seg-ec100d8686d3891e-0209",
+              "seg-ec100d8686d3891e-0272"
+            ],
+            "sections": [
+              "3"
+            ],
+            "answered": true,
+            "unanswered_reason": ""
+          }
+        },
+        "answered_rqs": 2,
+        "unanswered_rqs": [],
+        "orphan_claims": [],
+        "sections_without_rq": []
+      },
+      "evidence_utilization": {
+        "selected_case_count": 3,
+        "cases_used": 3,
+        "high_value_unused_cases": [],
+        "rows": [
+          {
+            "case_id": "seg-ec100d8686d3891e-0209",
+            "used_in_report": true,
+            "evidence_richness": 2,
+            "case_type": "authentic_revision",
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0272",
+            "used_in_report": true,
+            "evidence_richness": 2,
+            "case_type": "authentic_revision",
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "SC-0141",
+            "used_in_report": true,
+            "evidence_richness": null,
+            "case_type": "synthetic_contrast",
+            "high_value_unused": false,
+            "unused_dimensions": []
+          }
+        ]
+      },
+      "conclusion_traceability": [],
+      "cross_section_checks": [],
+      "case_count_policy": {
+        "status": "two_case_fallback",
+        "preferred": 3,
+        "minimum": 2,
+        "selected": 3
+      },
+      "case_analysis_depth": {
+        "seg-ec100d8686d3891e-0209": {
+          "problem_definition": {
+            "status": "adequate",
+            "reason": "问题定义准确——初译与本段源文在语言和内容上完全无对应关系，信息结构断裂。但该问题本质上是生产/工作流错误而非翻译决策问题，报告未在问题定义中明确区分二者，仅在'需要人工证据'中间接提及工作流记录。"
+          },
+          "evidence_use": {
+            "status": "weak",
+            "reason": "证据丰富度2/7，无finding、无repair history、无terminology decision。仅依赖源文、初译、终译三版文本比对，过程证据缺失。报告已诚实披露此局限。"
+          },
+          "initial_failure_or_alternative": {
+            "status": "adequate",
+            "reason": "提供了反事实渲染（若保留初译则对应关系持续错配）与分析性对比（终译保留英文题名但无法证明为有意策略），超出单纯文本罗列。"
+          },
+          "decision_rationale": {
+            "status": "adequate",
+            "reason": "诚实陈述可观察修订为整体替换，恢复源译对应；明确标注保留英文题名的原因未记录，不推断译者意图。在证据约束下已做到最大克制。"
+          },
+          "translation_effect": {
+            "status": "adequate",
+            "reason": "效果描述为information_structure恢复，附有具体文本依据。但该效果近乎同义反复——'正确文本替换错误文本后对应关系恢复'，分析增量有限。"
+          },
+          "theory_mapping": {
+            "status": "not_applicable",
+            "reason": "无理论框架，报告正确标注not_applicable，未强行套用理论名称。"
+          },
+          "bounded_conclusion": {
+            "status": "strong",
+            "reason": "结论严格限定于源译对应关系的客观修复，明确排除翻译策略定性与最终翻译质量判断，边界清晰。"
+          }
+        },
+        "seg-ec100d8686d3891e-0272": {
+          "problem_definition": {
+            "status": "strong",
+            "reason": "精准识别源文'Those five words'的数字回指与七字中文引语之间的目标语表层计数不一致，并明确约束'不得据此声称可见英文引语恰好五词'。问题定义具体且有学术价值。"
+          },
+          "evidence_use": {
+            "status": "weak",
+            "reason": "证据丰富度2/7，无finding、无repair history。仅依赖三版文本比对。报告已诚实披露。"
+          },
+          "initial_failure_or_alternative": {
+            "status": "adequate",
+            "reason": "反事实渲染（若保留'五个字'则计数不一致持续）与分析性对比（'这句话'以整句指称替代数字指称，同时丢失源文精确数字回指的修辞效果）均提供，展示了替换的得失。"
+          },
+          "decision_rationale": {
+            "status": "adequate",
+            "reason": "描述可观察的'五个字'至'这句话'替换及其消除表层计数不一致的效果，明确标注历史动机未记录。在无过程证据条件下保持了克制。"
+          },
+          "translation_effect": {
+            "status": "adequate",
+            "reason": "reference_clarity效果有具体依据——回指不再依赖与七字引语不符的目标语计数，改为指向整句言语。同时指出丢失源文数字回指的修辞效果，体现了得失分析。"
+          },
+          "theory_mapping": {
+            "status": "not_applicable",
+            "reason": "无理论框架，正确标注not_applicable。"
+          },
+          "bounded_conclusion": {
+            "status": "strong",
+            "reason": "结论限定于实际词语替换及其可观察的指称效果，明确排除源文用词原因推断与修订者动机推断。"
+          }
+        },
+        "SC-0141": {
+          "problem_definition": {
+            "status": "strong",
+            "reason": "难点识别准确——'What do you need that Ben-Gurion for?'为口语化轻蔑反问句，模拟初译将其译为中性信息寻求疑问句，丢失对抗性语用力度。问题具有实质性翻译学术价值。"
+          },
+          "evidence_use": {
+            "status": "adequate",
+            "reason": "合成证据构造完整：真实源文、模拟初译、错误诊断、优化译文、修复机制均有记录且通过验证门禁。provenance明确标注为非历史证据。"
+          },
+          "initial_failure_or_alternative": {
+            "status": "strong",
+            "reason": "同时提供分析性对比（'要……干什么'恢复轻蔑语调）与反事实渲染（'那个本-古里安有什么用？'同样传达轻蔑但语体略偏评价），展示了多种修复路径的权衡。"
+          },
+          "decision_rationale": {
+            "status": "strong",
+            "reason": "修复决策有清晰机制解释：'你为什么需要'的正式书面语体压过'那个'的轻微贬义色彩，而'要……干什么'口语反问结构在命题内容不变前提下恢复轻蔑、对抗性语调。机制分析超越策略标签。"
+          },
+          "translation_effect": {
+            "status": "strong",
+            "reason": "pragmatic_force效果有具体依据：对比'你为什么需要'（中性信息寻求）与'要……干什么'（口语反问），明确指出语用力度恢复且命题内容近似不变。分析深入到语体与人际语力层面。"
+          },
+          "theory_mapping": {
+            "status": "not_applicable",
+            "reason": "无理论框架，正确标注not_applicable。"
+          },
+          "bounded_conclusion": {
+            "status": "strong",
+            "reason": "结论明确限定为展示一种合理失败模式，不代表作者历史初译，不证明此类错误在实际翻译中的发生频率。provenance与结论边界均清晰。"
+          }
+        }
+      }
+    },
+    "content_hash": "7ffe3a8e5581fda49e99842b85bf8498a12cee1cbb7235e2470f4104657be457"
+  },
+  "existing_semantic_review": {
+    "schema_version": "academic-reviewer-v1",
+    "status": "pass",
+    "issues": [],
+    "content_hash": "4ef3620030b1b0e958e617127d0d4dee7e9b4aa5cbb0e470b210abba968766d4"
+  },
+  "chapter_composition_review": {
+    "schema_version": "chapter3-supervisor-review-v1",
+    "dimensions": {
+      "argument_coherence": {
+        "status": "pass",
+        "reason": "从源译对应、话语指称到语用力度的递进主线清晰，证据边界与方法论约束在3.1和3.4中明确界定，整体论证逻辑连贯。"
+      },
+      "case_analytical_depth": {
+        "status": "pass_with_warnings",
+        "reason": "真实案例0209分析增量有限，近乎同义反复；0272与SC-0141分析深入，但受限于真实案例证据丰富度低（2/7），整体深度存在不均衡。"
+      },
+      "case_complementarity": {
+        "status": "pass",
+        "reason": "三个案例分别覆盖信息结构、指称清晰度与语用力度，维度互补性强，有效回应了RQ1与RQ2。"
+      },
+      "theory_case_fit": {
+        "status": "not_applicable",
+        "reason": "依据composition_plan，无理论框架，正文正确标注not_applicable，未强行套用理论名称。"
+      },
+      "evidence_utilization": {
+        "status": "pass",
+        "reason": "充分利用现有文本证据，诚实披露过程证据缺失，未越界推断译者意图或审校过程。"
+      },
+      "synthetic_methodology_clarity": {
+        "status": "pass",
+        "reason": "3.1与3.3明确标注SC-0141为受控生成的分析材料，不代表历史翻译，合成方法与局限性说明清晰。"
+      },
+      "cross_case_progression": {
+        "status": "pass",
+        "reason": "3.4有效综合了三项材料的递进关系，并严格区分历史证据与合成证据支持的结论强度。"
+      },
+      "academic_specificity": {
+        "status": "pass",
+        "reason": "问题定义具体（如0272的数字回指与字数不一致），分析具有翻译学术价值，避免了泛泛而谈。"
+      },
+      "redundancy": {
+        "status": "pass",
+        "reason": "各案例分析与综合部分无冗余表述，信息密度适中。"
+      },
+      "conclusion_discipline": {
+        "status": "pass",
+        "reason": "结论严格限定于可观察事实，明确排除动机推断与频率证明，边界清晰。"
+      },
+      "provenance_correctness": {
+        "status": "pass",
+        "reason": "历史修订与合成对比的来源区分明确，未混淆证据层级。"
+      }
+    },
+    "supervisor_review": "本章在证据约束下展现了较高的方法论自觉，尤其是对合成案例的边界界定和局限性说明非常到位。真实案例虽然证据丰富度有限，但分析做到了最大克制。建议在后续修订中进一步挖掘0209案例的工作流错误性质，以提升其分析增量。",
+    "sc0141_adversarial_review": {
+      "合理性": "合理。模拟初译语法正确但语用力度被削弱，符合常见翻译失败模式。",
+      "合格译者是否可能受诱": "可能。直译句法结构容易导致语用力度流失，尤其是口语化反问句。",
+      "错误实质性": "实质性。中性疑问句改变了说话者的态度和情感色彩，影响人物塑造。",
+      "优化是否因诊断理由而更好": "是。使用口语反问结构“要……干什么”恢复了轻蔑语调，诊断与修复机制匹配。",
+      "是在展示翻译现象还是模型自导自演": "展示翻译现象。基于真实源文构造的合理失败模式，非模型自导自演。",
+      "学术增量": "展示了语用力度失真与修复的机制分析，补充了真实案例未覆盖的维度。",
+      "contribution": "unique",
+      "retain": "retain",
+      "role": "supplement"
+    },
+    "configuration_comparison": {
+      "A": {
+        "coherence": "pass",
+        "depth": "weak",
+        "methodological_clarity": "pass",
+        "diversity": "low",
+        "provenance_risk": "low",
+        "reader_burden": "low",
+        "naturalness": "high"
+      },
+      "B": {
+        "coherence": "pass_with_warnings",
+        "depth": "moderate",
+        "methodological_clarity": "pass_with_warnings",
+        "diversity": "moderate",
+        "provenance_risk": "high",
+        "reader_burden": "moderate",
+        "naturalness": "moderate"
+      },
+      "C": {
+        "coherence": "pass",
+        "depth": "moderate",
+        "methodological_clarity": "pass",
+        "diversity": "moderate",
+        "provenance_risk": "low",
+        "reader_burden": "low",
+        "naturalness": "high"
+      }
+    },
+    "recommended_configuration": "C",
+    "passage_inspection": {
+      "strongest_analytical_passage": {
+        "excerpt": "源文显式使用 “Those five words” 回指前文引语，但不得据此声称可见英文引语恰好五词；在汉译中，“你不会经历战争”为七个汉字，初译“这五个字”因此在目标语表层产生可直接核对的不一致。",
+        "observation": "精准识别数字回指与字数不一致，问题定义具体且有学术价值。"
+      },
+      "weakest_analytical_passage": {
+        "excerpt": "可观察到的修订是将无对应关系的中文片段整体替换为源文题名，客观上恢复了当前段的源译对应；但保留英文题名的原因未记录。",
+        "observation": "分析增量有限，近乎同义反复，未深入探讨工作流错误的性质。"
+      },
+      "best_authentic_reasoning_chain": {
+        "excerpt": "终译“这句话”以整句指称替代数字指称，避免了“五个字”与七字引语的表层矛盾，但同时也丢失了源文以精确数字回指所带来的修辞效果。",
+        "observation": "展示了替换的得失，分析深入到指称与修辞效果的权衡。"
+      },
+      "best_synthetic_reasoning_chain": {
+        "excerpt": "优化译文“你要那个本-古里安干什么？”使用口语反问结构“要……干什么”，在命题内容不变的前提下恢复了原文轻蔑、质问的语用力度，体现了说话者对本-古里安存在必要性的不屑。",
+        "observation": "机制分析超越策略标签，深入语体与人际语力层面。"
+      },
+      "most_awkward_transition": {
+        "excerpt": "三项材料形成从段落对应、话语指称到语用力度的递进，但历史证据与合成证据支持的结论强度必须分开。",
+        "observation": "跨案例综合处略显突兀，但逻辑上合理，通过转折强调了证据层级。"
+      },
+      "most_generic_paragraph": {
+        "excerpt": "在分析路径上，本章严格区分历史修订事实与作者分析。对于真实修订案例，仅依据项目记录中留存的源文、历史初译与历史终译进行文本层面的差异比对，不推断未记录的译者意图或审校过程。对于合成对比案例，则明确界定其为受控生成的分析材料，旨在补充真实修订证据中缺失的语用力度维度分析。通过这种层级化的证据约束设计，本章试图在不越界的前提下，揭示翻译问题在不同维度上的表现与修复机制。",
+        "observation": "方法论说明段落，较为通用，但必要且清晰。"
+      }
+    },
+    "readiness": "academically_reviewable",
+    "content_hash": "a57c46a883ad75cd430171873407dadacd965fbddde4744985bb9103d2a3ba5d"
+  },
+  "content_hash": "2f32dda91308660f834eb7e0c4dfa44c903435212f45807ed2b0b2bc90c9cba0"
+}

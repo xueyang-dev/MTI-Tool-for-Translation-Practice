@@ -1,0 +1,128 @@
+{
+  "schema_version": "academic-repair-v1",
+  "rounds": [
+    {
+      "round": 1,
+      "section_id": "1",
+      "issue_ids": [
+        "LR-001"
+      ],
+      "global_claim_ids": [
+        "C1"
+      ],
+      "literature_claim_ids": [
+        "LC-003"
+      ],
+      "repair_actions": [
+        "mark_author_interpretation"
+      ],
+      "before_hash": "3eaf535d4e2b855c7655782bb158a411de33df11bea76eb71337f3474cbaa0c8",
+      "after_hash": "bbd0d4854395da7d1ebd420f0bff2aae882bd59ac3d14cd21b2e3b64bc4337a4",
+      "repaired_at": "2026-08-10T07:00:44+00:00"
+    },
+    {
+      "round": 1,
+      "section_id": "2",
+      "issue_ids": [
+        "LR-007"
+      ],
+      "global_claim_ids": [
+        "C2"
+      ],
+      "literature_claim_ids": [
+        "LC-002"
+      ],
+      "repair_actions": [
+        "downgrade"
+      ],
+      "before_hash": "a788bd92feaba3cbff905c6a712d575bd33d500a0c89c4fe3235ae8ea684dc20",
+      "after_hash": "4115e5ad18bd5b6ea5f116ea2608e57053b2bad42f57ce4b8f4301d28781f368",
+      "repaired_at": "2026-08-10T07:00:54+00:00"
+    },
+    {
+      "round": 1,
+      "section_id": "3",
+      "issue_ids": [
+        "AV-007",
+        "AV-008",
+        "AV-009",
+        "AR-001",
+        "LR-002"
+      ],
+      "global_claim_ids": [
+        "C1",
+        "C3"
+      ],
+      "literature_claim_ids": [
+        "LC-003"
+      ],
+      "repair_actions": [
+        "mark_author_interpretation"
+      ],
+      "before_hash": "b7c3e1a3386c10e07a7f89cb9d893c141e3dc88f3bb9002dce36c854508b1bba",
+      "after_hash": "f810bcecbd9c0b2ce095827e2358518fe65b39c48d8c15ad720922b81b470508",
+      "repaired_at": "2026-08-10T07:01:07+00:00"
+    },
+    {
+      "round": 1,
+      "section_id": "4",
+      "issue_ids": [
+        "AV-010",
+        "AV-011",
+        "AV-012",
+        "AR-002",
+        "AR-003",
+        "AR-004",
+        "LR-003",
+        "LR-004",
+        "LR-005",
+        "LR-008",
+        "LR-009"
+      ],
+      "global_claim_ids": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "literature_claim_ids": [
+        "LC-001",
+        "LC-002",
+        "LC-003"
+      ],
+      "repair_actions": [
+        "downgrade",
+        "mark_author_interpretation"
+      ],
+      "before_hash": "7603c465558204b6a585048727d87239708bce1f6c4efccf4069a0cbeb8ba42e",
+      "after_hash": "4c26f246a54f450655f78ad06755aa54cb61959d688752ce260a737d0f50b9aa",
+      "repaired_at": "2026-08-10T07:01:25+00:00"
+    },
+    {
+      "round": 1,
+      "section_id": "5",
+      "issue_ids": [
+        "AV-013",
+        "AV-014",
+        "AR-005",
+        "LR-006",
+        "LR-010"
+      ],
+      "global_claim_ids": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "literature_claim_ids": [
+        "LC-001",
+        "LC-002"
+      ],
+      "repair_actions": [
+        "downgrade"
+      ],
+      "before_hash": "5e8f5debb48524e50becbc69b2882d529fc6a17ccf057cb6e17a77bfeb555b57",
+      "after_hash": "7567deb5242dec2f03a685a1796314a44b61942ae59f11c5945de2b00b333019",
+      "repaired_at": "2026-08-10T07:01:33+00:00"
+    }
+  ],
+  "content_hash": "1d516db0e63e4c0bbefd070b17750923e8f24177ba46c36ab32b76f4b158b108"
+}

@@ -1,0 +1,213 @@
+{
+  "schema_version": "case-selector-v4",
+  "selection_policy": "mixed",
+  "preference_order": "verified authentic revision > eligible synthetic contrast > weak authentic evidence > unsupported reconstructed history",
+  "eligibility_rule": "case_type_specific_gate",
+  "requested_case_count": 5,
+  "preferred_core_case_count": 3,
+  "minimum_core_case_count": 2,
+  "case_count_policy": "authentic_and_synthetic_pools_remain_distinct",
+  "eligible_case_count": 2,
+  "revision_candidate_pool_count": 3,
+  "eligible_synthetic_case_count": 1,
+  "synthetic_pipeline_status": "complete",
+  "selected_case_count": 3,
+  "authentic_revision_cases": 2,
+  "synthetic_contrast_cases": 1,
+  "authentic_selection_status": "two_case_fallback",
+  "selection_status": "mixed_case_selection",
+  "scarcity_disclosure_required": true,
+  "synthetic_methodology_disclosure_required": true,
+  "synthetic_limitation_disclosure_required": true,
+  "scarcity_disclosure": "现有项目证据仅支持 2 个通过修订资格门禁的真实修订案例；未用弱证据或无真实修订的片段补足第三个案例。",
+  "scarcity_recommendations": [
+    "retain_verified_authentic_cases",
+    "disclose_revision_evidence_scarcity",
+    "do_not_backfill_with_ineligible_cases",
+    "use_only_explicitly_labeled_eligible_synthetic_contrasts"
+  ],
+  "cases": [
+    {
+      "case_id": "seg-ec100d8686d3891e-0209",
+      "segment_id": "seg-ec100d8686d3891e-0209",
+      "segment_index": 209,
+      "coverage_zone": "end",
+      "case_type": "authentic_revision",
+      "provenance": {
+        "historical": true,
+        "generated_for_analysis": false
+      },
+      "case_role": "revision_case",
+      "score": 30.0,
+      "reasons": [
+        "revision_with_repair_link",
+        "meaningful_initial_final_revision"
+      ],
+      "academic_candidate_status": "eligible",
+      "features": {
+        "source_chars": 21,
+        "clause_markers": 0,
+        "punctuation_count": 0,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": true,
+        "has_repair_history": false,
+        "has_human_revision_action": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": []
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "revision_with_repair_link；meaningful_initial_final_revision"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0272",
+      "segment_id": "seg-ec100d8686d3891e-0272",
+      "segment_index": 272,
+      "coverage_zone": "end",
+      "case_type": "authentic_revision",
+      "provenance": {
+        "historical": true,
+        "generated_for_analysis": false
+      },
+      "case_role": "revision_case",
+      "score": 13.0,
+      "reasons": [
+        "meaningful_initial_final_revision",
+        "quotation_or_dash_complexity"
+      ],
+      "academic_candidate_status": "eligible",
+      "features": {
+        "source_chars": 103,
+        "clause_markers": 0,
+        "punctuation_count": 3,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": false,
+        "has_repair_history": false,
+        "has_human_revision_action": false,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": []
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "meaningful_initial_final_revision；quotation_or_dash_complexity"
+    },
+    {
+      "case_id": "SC-0141",
+      "case_type": "synthetic_contrast",
+      "opportunity_id": "EO-0141",
+      "source_segment_id": "seg-ec100d8686d3891e-0141",
+      "source_text": "After Israel’s tenth anniversary celebrations, in the spring of 1958, he told me how he once said to Berl Katznelson, a founder of Labor Zionism: “What do you need that Ben-Gurion for?”",
+      "context_before": "Ruth served coffee and asked me, three and a half years old, how things were in Geva. Someone walked in, patted Azariah on the shoulder, and asked, “Why did they dismantle the Palmach unit, anyway?” “Ask Ben-Gurion, or Tabenkin,” Azariah replied without a smile. For a moment, there was a sense of sorrow in that small room in Beit HaShita, which held a painting by Gutman of a few white anemones, but no radio or telephone, and, like everywhere else, there was no reason to lock the door.",
+      "context_after": "Before Dad started the jeep, Mom said to him, “Now you’ll appreciate my coffee.” Dad laughed and replied, “That was chicory.” “What’s chicory?” I asked. Mom explained about the austerity period and Dov Yosef, who was the Minister of Rationing. On the short drive back westward, I saw Mom place her left hand on the",
+      "difficulty": {
+        "category": "pragmatic_implication",
+        "trigger": "What do you need that Ben-Gurion for?",
+        "reason": "This rhetorical question conveys dismissiveness toward Ben-Gurion, implying he is unnecessary or problematic. The pragmatics are confrontational and colloquial. A translator may render it as a genuine information-seeking question or soften the dismissive edge, losing the political tension.",
+        "likely_failure_mode": "Translating as a neutral inquiry ('Why do you need Ben-Gurion?') rather than capturing the contemptuous, rhetorical force of the original, which implies Ben-Gurion is superfluous or meddlesome.",
+        "academic_value": "medium",
+        "confidence": "medium"
+      },
+      "error_pattern_grounding": {
+        "type": "model_inference",
+        "empirical_frequency_supported": false
+      },
+      "synthetic_baseline": {
+        "text": "在1958年春天以色列建国十周年庆典之后，他告诉我有一次他对劳工锡安主义的创始人贝尔·卡茨内尔森说：“你为什么需要那个本-古里安？”",
+        "provenance": "model_generated_for_analysis",
+        "why_tempting": "将反问句译为中性疑问句“你为什么需要那个本-古里安”，语法正确且看似忠实，但丢失了原话中轻蔑、质疑本-古里安存在必要性的语用力度。",
+        "generation_status": "generated"
+      },
+      "provenance": {
+        "historical": false,
+        "generated_for_analysis": true
+      },
+      "baseline_plausibility": {
+        "status": "plausible",
+        "reason": "The translation '你为什么需要那个本-古里安？' is grammatically correct and faithful to the literal meaning. The use of '那个' (that) even carries a faintly dismissive tone. A competent translator could plausibly produce this neutral-sounding rendering without fully capturing the rhetorical force of the original."
+      },
+      "error": {
+        "error_id": "ERR-0141",
+        "category": "pragmatic_implication",
+        "diagnosis": "The baseline renders 'What do you need that Ben-Gurion for?' as '你为什么需要那个本-古里安？', which is grammatically correct but pragmatically flattened. The original is a colloquial, dismissive rhetorical question—roughly 'What's the point of that Ben-Gurion?'—implying Ben-Gurion is superfluous or meddlesome. The Chinese '你为什么需要…' reads as a neutral, information-seeking inquiry ('Why do you need…?'), draining the contemptuous, confrontational force. The demonstrative '那个' (that) does carry a faint dismissive coloring, but the formal, written register of '你为什么需要' overwhelms it. A more faithful rendering would use colloquial phrasing such as '你要那个本-古里安干什么？' or '那个本-古里安有什么用？', which preserves the rhetoric",
+        "why_tempting": "The translation is syntactically faithful—'What do you need X for?' → '你为什么需要X'—and '那个' even echoes the English 'that Ben-Gurion.' It looks correct on the surface, making it easy to accept as adequate without examining the pragmatic register.",
+        "meaning_or_function_distortion": "The original line functions as a politically charged, dismissive quip that conveys the speaker's low opinion of Ben-Gurion. By rendering it as a neutral question, the baseline softens the interpersonal and political tension, making the speaker sound genuinely curious rather than contemptuous. This shifts the characterization of the speaker and the emotional texture of the anecdote.",
+        "materiality": "moderate",
+        "baseline_already_adequate": false,
+        "source_evidence_span": "What do you need that Ben-Gurion for?",
+        "source_evidence": "The rhetorical-question structure 'What do you need that X for?' is colloquially dismissive in English, implying X is unnecessary or troublesome. The baseline's '你为什么需要那个本-古里安？' loses this pragmatic force, reading as a sincere question."
+      },
+      "optimized_translation": {
+        "text": "在1958年春天以色列建国十周年庆典之后，他告诉我有一次他对劳工锡安主义的创始人贝尔·卡茨内尔森说：“你要那个本-古里安干什么？”",
+        "provenance": "ai_optimized_for_analysis",
+        "repairs_error_id": "ERR-0141",
+        "repair_decision": "将中性疑问句“你为什么需要那个本-古里安？”改为口语化反问句“你要那个本-古里安干什么？”，以还原原文轻蔑、质问的语用力度，体现说话者对本-古里安存在必要性的不屑。",
+        "addresses_error": "ERR-0141：原译文将口语化、带有轻蔑色彩的反问句译为正式的中性疑问句，丢失了原文的政治张力与人际对抗语气；优化后用“你要……干什么？”这一口语反问结构，保留了原文的修辞力度与轻蔑语调。",
+        "generation_status": "generated"
+      },
+      "actual_delta": {
+        "changed": true,
+        "changes": [
+          {
+            "operation": "delete",
+            "baseline": "为什么需",
+            "optimized": ""
+          },
+          {
+            "operation": "insert",
+            "baseline": "",
+            "optimized": "干什么"
+          }
+        ]
+      },
+      "validation": {
+        "diagnosis_grounding": "confirmed",
+        "error_materiality": "confirmed",
+        "repair_correctness": "confirmed",
+        "repair_value": "confirmed",
+        "baseline_already_correct": false,
+        "unrelated_meaning_change": false,
+        "reason": "The source 'What do you need that Ben-Gurion for?' is a colloquial, dismissive rhetorical question. The baseline '你为什么需要那个本-古里安？' is syntactically faithful but reads as a neutral information-seeking inquiry, flattening the contemptuous pragmatic force. The optimized '你要那个本-古里安干什么？' uses the colloquial '要……干什么' rhetorical structure, restoring the dismissive, confrontational register without altering the propositional content. The repair is well-grounded and adds meaningful pragmatic value.",
+        "requirements": {
+          "real_source_exists": true,
+          "opportunity_grounded": true,
+          "baseline_plausible": true,
+          "diagnosis_evidence_backed": true,
+          "error_confirmed": true,
+          "repair_confirmed": true,
+          "repair_value_confirmed": true,
+          "repair_traceable": true,
+          "meaningful_contrast": true,
+          "baseline_not_already_correct": true,
+          "no_unrelated_meaning_change": true
+        },
+        "academic_case_eligible": true,
+        "rejected_reasons": []
+      },
+      "theory_potential": "可用于解释该错误机制与修复关系；连接具体理论前仍需 Literature Evidence。",
+      "limitations": [
+        "模拟初译不代表作者的历史译文。",
+        "该案例只展示一种合理的失败模式，不证明其在人类译者中的发生频率。"
+      ],
+      "coverage_zone": "middle",
+      "academic_candidate_status": "eligible",
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "eligible synthetic contrast with independently confirmed repair"
+    }
+  ],
+  "content_hash": "099789a661c39bc1a598d58c1ca0579e1501aefc67ae8370f736f3e6c1a4eb63"
+}

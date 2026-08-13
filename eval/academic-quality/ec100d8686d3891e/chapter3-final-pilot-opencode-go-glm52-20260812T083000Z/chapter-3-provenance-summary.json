@@ -1,0 +1,77 @@
+{
+  "schema_version": "chapter3-provenance-summary-v1",
+  "generated_at": "2026-08-12T03:49:03+00:00",
+  "job_id": "ec100d8686d3891e",
+  "baseline_commit": "5649b080fad50b912ea4c5b0c56fbd4da7105717",
+  "historical_state": {
+    "path": "outputs/ec100d8686d3891e/state.json",
+    "sha256_before": "9ff6cd1fac9663af394a772cc99842be789c8e20085fb1fdba184db81bae2e1f",
+    "sha256_after": "9ff6cd1fac9663af394a772cc99842be789c8e20085fb1fdba184db81bae2e1f",
+    "unchanged": true
+  },
+  "canonical_sources": {
+    "authentic_revision_audit": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/revision-case-audit.json",
+    "human_evidence_state": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/human-evidence-pilot-state.json",
+    "synthetic_selection": "eval/academic-quality/ec100d8686d3891e/synthetic-contrast-opencode-go-glm52-20260812T022000Z/selected-cases.json",
+    "synthetic_validation": "eval/academic-quality/ec100d8686d3891e/synthetic-contrast-opencode-go-glm52-20260812T022000Z/synthetic-case-validation.jsonl"
+  },
+  "case_verification": {
+    "0209": {
+      "case_type": "authentic_revision",
+      "eligibility": "eligible",
+      "finding": "not_recorded",
+      "repair_history": "not_recorded",
+      "human_action": "retranslated",
+      "human_rationale": "awaiting_author_input",
+      "analytical_boundary": "alignment repair only; title retention intent unknown"
+    },
+    "0272": {
+      "case_type": "authentic_revision",
+      "eligibility": "eligible",
+      "finding": "not_recorded",
+      "repair_history": "not_recorded",
+      "human_action": "not_recorded",
+      "human_rationale": "awaiting_author_input",
+      "analytical_boundary": "observable lexical and referential effect only"
+    },
+    "SC-0141": {
+      "case_type": "synthetic_contrast",
+      "eligibility": "eligible",
+      "historical": false,
+      "generated_for_analysis": true,
+      "baseline_plausibility": "plausible",
+      "repair_correctness": "confirmed"
+    }
+  },
+  "evidence_boundaries": {
+    "human_evidence_status": "awaiting_author_input",
+    "human_evidence_entries_used": 0,
+    "literature_sources_used": 0,
+    "theory_connections": "not_applicable"
+  },
+  "provider": "OpenCode Go",
+  "model": "glm-5.2",
+  "endpoint_class": "OpenAI-compatible chat completions",
+  "versions": {
+    "prompt": "chapter3-composition-pilot-v1",
+    "writer": "academic-writer-v5",
+    "reviewer": "chapter3-supervisor-review-v1",
+    "semantic_reviewer": "academic-reviewer-v1",
+    "quality_reviewer": "academic-quality-v4",
+    "validator": "validator-v5",
+    "case_analysis": "case-analysis-v3"
+  },
+  "recommended_configuration": "C",
+  "readiness": "supervisor_review_required",
+  "docx_design": {
+    "preset": "narrative_proposal",
+    "header_pattern": "editorial_cover_restrained",
+    "named_overrides": {
+      "east_asia_body_font": "宋体",
+      "east_asia_heading_font": "黑体",
+      "title": "22pt #203748 centered",
+      "quote": "10.5pt indented"
+    }
+  },
+  "content_hash": "55c3eb9797b38eff56c7ea25dec933796031ac2bea9d9b72792e99ede804107c"
+}

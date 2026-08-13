@@ -1,0 +1,19 @@
+{
+  "schema_version": "chapter3-pilot-run-v1",
+  "status": "failed",
+  "provider": "OpenCode Go",
+  "model": "glm-5.2",
+  "validation_status": "fail",
+  "quality_readiness": "supervisor_review_required",
+  "historical_state_unchanged": true,
+  "artifact_files": [
+    "chapter-3-composition-plan.json",
+    "chapter-3-final-pilot.docx",
+    "chapter-3-final-pilot.md",
+    "chapter-3-provenance-summary.json",
+    "chapter-3-quality-review.json",
+    "chapter-3-supervisor-review-brief.md",
+    "chapter-3-validation.json"
+  ],
+  "content_hash": "71d168f13fa2f1eae268ad15c6efd6ecdd57434d8ccea13a8e125590668f24ff"
+}

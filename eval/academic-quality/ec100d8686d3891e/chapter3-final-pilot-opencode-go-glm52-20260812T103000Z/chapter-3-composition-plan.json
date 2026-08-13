@@ -1,0 +1,528 @@
+{
+  "schema_version": "chapter3-composition-pilot-v1",
+  "chapter_argument": "翻译修订首先依赖可靠的源译对应，其次处理跨语言的话语指称；当历史修订不足以覆盖语用层问题时，明确标注的受控合成对比可作为补充，但不能与历史证据等量齐观。",
+  "case_contributions": {
+    "0209": "显示源译段错配的实际纠正，并暴露最终译文质量仍不可判定的边界。",
+    "0272": "显示源语词数回指转为目标语整句指称的实际修订。",
+    "SC-0141": "补充真实案例未覆盖的疑问句语用力度对比。"
+  },
+  "configuration_intent": "C: 两项真实修订为核心，SC-0141 置于补充性方法演示小节。",
+  "human_evidence_boundary": "awaiting_author_input; no answers used",
+  "literature_evidence_boundary": "no grounded literature evidence; no theory names allowed",
+  "research_model": {
+    "schema_version": "research-model-v1",
+    "research_topic": "真实修订证据与受控合成对比在翻译案例分析中的互补作用",
+    "research_questions": [
+      {
+        "rq_id": "RQ1",
+        "question": "两项真实初译至终译记录分别揭示了哪些可观察的修订问题与文本变化？",
+        "provenance": "pilot_inferred"
+      },
+      {
+        "rq_id": "RQ2",
+        "question": "在不补造第三项历史修订的前提下，受控合成对比能否补充一种独特且边界清楚的翻译问题分析？",
+        "provenance": "pilot_inferred"
+      }
+    ],
+    "theoretical_framework": [],
+    "method": "两项历史修订的证据约束分析，加一项补充性受控合成对比",
+    "analysis_dimensions": [
+      "源译对应关系",
+      "话语指称",
+      "语用力度",
+      "证据边界"
+    ],
+    "expected_contribution": [
+      "区分历史修订事实、作者分析与合成对比证据",
+      "检验合成案例能否在不冒充翻译历史的条件下补足机制层分析"
+    ],
+    "writing_style": "规范、克制的中文 MTI 学术书面语",
+    "report_requirements": "翻译实践报告第三章",
+    "target_words": 2600,
+    "settings_provenance": {
+      "research_topic": "pilot_inferred",
+      "method": "pilot_inferred"
+    },
+    "content_hash": "11ca16dc70f54e21cee4846e5f6e9496e033ac3488e1f016c6acb5eb5e4e68ea"
+  },
+  "argument_plan": {
+    "schema_version": "argument-planner-v2",
+    "claims": [
+      {
+        "claim_id": "C1",
+        "claim": "0209 的可证实修订是把与源文无对应关系的中文片段替换为题名文本，从而恢复源译段对应关系；现有记录不能证明保留英文题名是有意的最终翻译策略。",
+        "research_question": "RQ1",
+        "project_evidence": [
+          "seg-ec100d8686d3891e-0209"
+        ],
+        "synthetic_contrast_evidence": [],
+        "literature_claims": [],
+        "literature_evidence": [],
+        "human_author_evidence": [],
+        "support_category": "project_evidence_only",
+        "analysis_type": "AUTHOR_ANALYSIS",
+        "confidence": "medium",
+        "planned_sections": [
+          "3"
+        ],
+        "reasoning": "源文、历史初译、历史终译与用户重译动作均有记录，但 finding、repair rationale 与作者说明缺失。",
+        "counterargument": "终译仍为英文题名，因此该案例证明的是对应关系修复，不足以单独证明翻译成品质量。"
+      },
+      {
+        "claim_id": "C2",
+        "claim": "0272 将‘五个字’改为‘这句话’，把源文显式的数字回指转换为对整句言语的指称，避免‘五个字’与七字中文引语在目标语表层不一致。",
+        "research_question": "RQ1",
+        "project_evidence": [
+          "seg-ec100d8686d3891e-0272"
+        ],
+        "synthetic_contrast_evidence": [],
+        "literature_claims": [],
+        "literature_evidence": [],
+        "human_author_evidence": [],
+        "support_category": "project_evidence_only",
+        "analysis_type": "AUTHOR_ANALYSIS",
+        "confidence": "medium",
+        "planned_sections": [
+          "3"
+        ],
+        "reasoning": "实际差异只涉及‘五个字’至‘这句话’，修订效果可由源文与两版译文直接比较；修订动机仍未知。",
+        "counterargument": "没有同期 finding 或作者解释，不能把文本效果写成已记录的主观意图。"
+      },
+      {
+        "claim_id": "C3",
+        "claim": "SC-0141 的受控对比显示，中性疑问结构与口语反问结构可以在命题内容近似不变时改变语用力度，但该对比不代表作者历史初译。",
+        "research_question": "RQ2",
+        "project_evidence": [],
+        "synthetic_contrast_evidence": [
+          "SC-0141"
+        ],
+        "literature_claims": [],
+        "literature_evidence": [],
+        "human_author_evidence": [],
+        "support_category": "author_analysis",
+        "analysis_type": "AUTHOR_ANALYSIS",
+        "confidence": "medium",
+        "planned_sections": [
+          "3"
+        ],
+        "reasoning": "模拟初译合理性、错误实质性与优化有效性均通过既有 synthetic gate。",
+        "counterargument": "案例可能被读成模型制造并修复自身错误，因此只能作为补充性受控对比。"
+      },
+      {
+        "claim_id": "C4",
+        "claim": "三项材料形成从段落对应、话语指称到语用力度的递进，但历史证据与合成证据支持的结论强度必须分开。",
+        "research_question": "RQ2",
+        "project_evidence": [
+          "seg-ec100d8686d3891e-0209",
+          "seg-ec100d8686d3891e-0272"
+        ],
+        "synthetic_contrast_evidence": [
+          "SC-0141"
+        ],
+        "literature_claims": [],
+        "literature_evidence": [],
+        "human_author_evidence": [],
+        "support_category": "project_evidence_only",
+        "analysis_type": "AUTHOR_ANALYSIS",
+        "confidence": "medium",
+        "planned_sections": [
+          "3"
+        ],
+        "reasoning": "真实案例支持实际修订事实，合成案例只支持一种经验证的可能失败机制。",
+        "counterargument": "若两类证据并列为同等案例，章节会产生方法突变感。"
+      }
+    ],
+    "planner_fallback": false,
+    "rejected_source_only_support": 0,
+    "content_hash": "c8a575dec992838df7c0b3508f7ae2ab36b6ef0dafcc70c75a66a74d8172f645"
+  },
+  "outline": {
+    "schema_version": "academic-outline-v4",
+    "sections": [
+      {
+        "section_id": "3",
+        "title": "翻译问题的层级化修订与受控对比",
+        "purpose": "以源译对应、话语指称和语用力度为递进主线，先分析两项真实修订，再以 SC-0141 作为补充性受控对比；须在本章内同时披露合成方法和局限。",
+        "research_questions": [
+          "RQ1",
+          "RQ2"
+        ],
+        "claims": [
+          "C1",
+          "C2",
+          "C3",
+          "C4"
+        ],
+        "cases": [
+          "seg-ec100d8686d3891e-0209",
+          "seg-ec100d8686d3891e-0272",
+          "SC-0141"
+        ],
+        "case_groups": {
+          "authentic_revision": [
+            "seg-ec100d8686d3891e-0209",
+            "seg-ec100d8686d3891e-0272"
+          ],
+          "synthetic_contrast": [
+            "SC-0141"
+          ]
+        },
+        "literature_claims": [],
+        "literature_evidence": [],
+        "literature_sources": [],
+        "required_statistics": [],
+        "target_words": 2600,
+        "minimum_chars": 1800,
+        "allowed_conclusions": [
+          "0209 只证明源译对应关系修复，不得将其归类为指称清晰度；不证明题名保留策略或最终翻译质量",
+          "0272 只证明实际词语替换及其可观察的指称效果，不声称历史动机；源文写 Those five words，但不得声称可见英文引语恰好五词；中文引语为七个汉字",
+          "SC-0141 只展示一种合理失败模式，不证明人类错误频率",
+          "没有 Literature Evidence 时不得提及具体理论名称"
+        ],
+        "mandatory_structure": [
+          "3.1 证据边界与分析路径",
+          "3.2 真实修订案例：对应关系与话语指称",
+          "3.3 合成对比案例：语用力度的补充性受控检验",
+          "3.4 跨案例综合与局限"
+        ]
+      }
+    ],
+    "planner_fallback": false,
+    "case_count_policy": {
+      "status": "two_case_fallback",
+      "preferred": 3,
+      "minimum": 2,
+      "selected": 3,
+      "scarcity_disclosure": "现有项目证据仅支持两个合格真实修订案例；未用弱证据补足第三个历史案例。"
+    },
+    "case_groups": {
+      "authentic_revision": [
+        "seg-ec100d8686d3891e-0209",
+        "seg-ec100d8686d3891e-0272"
+      ],
+      "synthetic_contrast": [
+        "SC-0141"
+      ]
+    },
+    "content_hash": "78fd068022eebc0d53c7656dff1e3dba6aef7e2df32aafd8e3fbc1ff0f4809d5"
+  },
+  "case_analysis_plans": {
+    "schema_version": "case-analysis-v3",
+    "plans": [
+      {
+        "case_id": "SC-0141",
+        "case_type": "synthetic_contrast",
+        "analysis_contract_type": "synthetic_contrast",
+        "case_role": "synthetic_contrast_case",
+        "capabilities": {
+          "has_meaningful_revision": false,
+          "has_validated_synthetic_contrast": true,
+          "has_review_finding": false,
+          "has_repair_history": false,
+          "has_revision_rationale": false,
+          "has_theory_support": false
+        },
+        "evidence_level": "validated_synthetic_contrast",
+        "can_support": [
+          "textual_analysis",
+          "plausible_error_analysis",
+          "contrastive_repair_analysis",
+          "theory_based_analysis"
+        ],
+        "cannot_support": [
+          "author_initial_translation_claim",
+          "empirical_human_error_frequency",
+          "historical_process_claims",
+          "historical_revision_reasoning"
+        ],
+        "translation_delta": {
+          "changed": true,
+          "changes": [
+            {
+              "operation": "delete",
+              "baseline": "为什么需",
+              "optimized": ""
+            },
+            {
+              "operation": "insert",
+              "baseline": "",
+              "optimized": "干什么"
+            }
+          ]
+        },
+        "source_segment_id": "seg-ec100d8686d3891e-0141",
+        "source_text": "After Israel’s tenth anniversary celebrations, in the spring of 1958, he told me how he once said to Berl Katznelson, a founder of Labor Zionism: “What do you need that Ben-Gurion for?”",
+        "synthetic_baseline": {
+          "text": "在1958年春天以色列建国十周年庆典之后，他告诉我有一次他对劳工锡安主义的创始人贝尔·卡茨内尔森说：“你为什么需要那个本-古里安？”",
+          "provenance": "model_generated_for_analysis",
+          "why_tempting": "将反问句译为中性疑问句“你为什么需要那个本-古里安”，语法正确且看似忠实，但丢失了原话中轻蔑、质疑本-古里安存在必要性的语用力度。",
+          "generation_status": "generated"
+        },
+        "error_manifest": {
+          "error_id": "ERR-0141",
+          "category": "pragmatic_implication",
+          "diagnosis": "The baseline renders 'What do you need that Ben-Gurion for?' as '你为什么需要那个本-古里安？', which is grammatically correct but pragmatically flattened. The original is a colloquial, dismissive rhetorical question—roughly 'What's the point of that Ben-Gurion?'—implying Ben-Gurion is superfluous or meddlesome. The Chinese '你为什么需要…' reads as a neutral, information-seeking inquiry ('Why do you need…?'), draining the contemptuous, confrontational force. The demonstrative '那个' (that) does carry a faint dismissive coloring, but the formal, written register of '你为什么需要' overwhelms it. A more faithful rendering would use colloquial phrasing such as '你要那个本-古里安干什么？' or '那个本-古里安有什么用？', which preserves the rhetoric",
+          "why_tempting": "The translation is syntactically faithful—'What do you need X for?' → '你为什么需要X'—and '那个' even echoes the English 'that Ben-Gurion.' It looks correct on the surface, making it easy to accept as adequate without examining the pragmatic register.",
+          "meaning_or_function_distortion": "The original line functions as a politically charged, dismissive quip that conveys the speaker's low opinion of Ben-Gurion. By rendering it as a neutral question, the baseline softens the interpersonal and political tension, making the speaker sound genuinely curious rather than contemptuous. This shifts the characterization of the speaker and the emotional texture of the anecdote.",
+          "materiality": "moderate",
+          "baseline_already_adequate": false,
+          "source_evidence_span": "What do you need that Ben-Gurion for?",
+          "source_evidence": "The rhetorical-question structure 'What do you need that X for?' is colloquially dismissive in English, implying X is unnecessary or troublesome. The baseline's '你为什么需要那个本-古里安？' loses this pragmatic force, reading as a sincere question."
+        },
+        "optimized_translation": {
+          "text": "在1958年春天以色列建国十周年庆典之后，他告诉我有一次他对劳工锡安主义的创始人贝尔·卡茨内尔森说：“你要那个本-古里安干什么？”",
+          "provenance": "ai_optimized_for_analysis",
+          "repairs_error_id": "ERR-0141",
+          "repair_decision": "将中性疑问句“你为什么需要那个本-古里安？”改为口语化反问句“你要那个本-古里安干什么？”，以还原原文轻蔑、质问的语用力度，体现说话者对本-古里安存在必要性的不屑。",
+          "addresses_error": "ERR-0141：原译文将口语化、带有轻蔑色彩的反问句译为正式的中性疑问句，丢失了原文的政治张力与人际对抗语气；优化后用“你要……干什么？”这一口语反问结构，保留了原文的修辞力度与轻蔑语调。",
+          "generation_status": "generated"
+        },
+        "synthetic_validation": {
+          "diagnosis_grounding": "confirmed",
+          "error_materiality": "confirmed",
+          "repair_correctness": "confirmed",
+          "repair_value": "confirmed",
+          "baseline_already_correct": false,
+          "unrelated_meaning_change": false,
+          "reason": "The source 'What do you need that Ben-Gurion for?' is a colloquial, dismissive rhetorical question. The baseline '你为什么需要那个本-古里安？' is syntactically faithful but reads as a neutral information-seeking inquiry, flattening the contemptuous pragmatic force. The optimized '你要那个本-古里安干什么？' uses the colloquial '要……干什么' rhetorical structure, restoring the dismissive, confrontational register without altering the propositional content. The repair is well-grounded and adds meaningful pragmatic value.",
+          "requirements": {
+            "real_source_exists": true,
+            "opportunity_grounded": true,
+            "baseline_plausible": true,
+            "diagnosis_evidence_backed": true,
+            "error_confirmed": true,
+            "repair_confirmed": true,
+            "repair_value_confirmed": true,
+            "repair_traceable": true,
+            "meaningful_contrast": true,
+            "baseline_not_already_correct": true,
+            "no_unrelated_meaning_change": true
+          },
+          "academic_case_eligible": true,
+          "rejected_reasons": []
+        },
+        "problem": {
+          "type": "pragmatic_implication",
+          "statement": "源文'What do you need that Ben-Gurion for?'是口语化、带有轻蔑色彩的反问句，暗示本-古里安多余或碍事；模拟初译'你为什么需要那个本-古里安？'将其译为中性信息寻求疑问句，丢失了原文的对抗性语用力度。",
+          "grounded": true
+        },
+        "initial_failure": {
+          "simulated": true,
+          "description": "模拟初译'你为什么需要那个本-古里安？'在语法上忠实于源文句法结构'What do you need X for?'，但将口语化反问句译为正式中性疑问句，'你为什么需要'读作真诚的信息寻求，削弱了原文轻蔑、质问的语用力度。指示词'那个'虽带有轻微贬义色彩，但'你为什么需要'的正式书面语体压过了它。"
+        },
+        "alternatives": [
+          {
+            "label": "analytical_comparison",
+            "text": "优化译文'你要那个本-古里安干什么？'使用口语反问结构'要……干什么'，在命题内容不变的前提下恢复了原文轻蔑、质问的语用力度，体现了说话者对本-古里安存在必要性的不屑。"
+          },
+          {
+            "label": "counterfactual_rendering",
+            "text": "另一可能译法'那个本-古里安有什么用？'同样以反问结构传达轻蔑语气，但语体略偏评价而非直接质问。"
+          }
+        ],
+        "decision_rationale": "该受控对比已通过验证：源文'What do you need that Ben-Gurion for?'在英语中为口语化、轻蔑的反问句，暗示本-古里安多余或碍事。模拟初译'你为什么需要那个本-古里安？'语法正确但语用力度被削弱，读作中性信息寻求。优化译文'你要那个本-古里安干什么？'以口语反问结构'要……干什么'恢复轻蔑、对抗性语调，且未改变命题内容。该对比为分析目的生成，不代表作者历史初译。",
+        "translation_effect": {
+          "dimension": "pragmatic_force",
+          "demonstrated_by": "模拟初译'你为什么需要那个本-古里安？'使用正式书面疑问结构'你为什么需要'，读作中性信息寻求；优化译文'你要那个本-古里安干什么？'使用口语反问结构'要……干什么'，恢复了原文轻蔑、质问的对抗性语用力度，命题内容近似不变。"
+        },
+        "theory_mapping": null,
+        "theory_connection_status": "not_applicable",
+        "bounded_conclusion": "本案例作为合成对比，展示了中性疑问结构与口语反问结构在命题内容近似不变时改变语用力度的合理失败模式：模拟初译将轻蔑反问句译为中性疑问句，削弱了原文的政治张力与人际对抗语气。该对比不代表作者历史初译，也不证明此类错误在实际翻译中的发生频率。",
+        "human_evidence_ids": [],
+        "human_evidence": [],
+        "recommended_human_evidence": [],
+        "analysis_contract": {
+          "translation_problem": "planned",
+          "difficulty_evidence": "planned",
+          "initial_solution_or_failure": "planned",
+          "alternative_interpretation_or_strategy": "planned",
+          "final_translation_decision": "planned",
+          "decision_rationale": "planned",
+          "translation_effect": "planned",
+          "theory_connection": "planned",
+          "evidence_boundary": "planned",
+          "case_level_conclusion": "planned"
+        }
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0209",
+        "case_type": "authentic_revision",
+        "analysis_contract_type": "authentic_revision",
+        "case_role": "revision_case",
+        "capabilities": {
+          "has_meaningful_revision": true,
+          "has_review_finding": false,
+          "has_repair_history": false,
+          "has_revision_rationale": false,
+          "has_theory_support": false
+        },
+        "evidence_level": "partial_process_evidence",
+        "can_support": [
+          "textual_analysis",
+          "translation_decision",
+          "limited_process_inference"
+        ],
+        "cannot_support": [
+          "historical_revision_reasoning"
+        ],
+        "translation_delta": {
+          "available": true,
+          "changed": true,
+          "meaningful": true,
+          "formatting_only": false,
+          "case_role": "revision_case",
+          "lexical_changes": [
+            {
+              "old": "那是夏天，或是夏末。那是午后。",
+              "new": "RIOT IN CELL BLOCK 11"
+            }
+          ],
+          "structural_changes": [],
+          "omission_addition": [],
+          "finding_link": [],
+          "repair_link": false,
+          "unchanged": false
+        },
+        "source_segment_id": null,
+        "source_text": null,
+        "synthetic_baseline": null,
+        "error_manifest": null,
+        "optimized_translation": null,
+        "synthetic_validation": null,
+        "problem": {
+          "type": "information_structure",
+          "statement": "历史初译文本与本段源文在语言和内容上都无对应关系。",
+          "grounded": true
+        },
+        "initial_failure": null,
+        "alternatives": [
+          {
+            "label": "counterfactual_rendering",
+            "text": "若保留初译'那是夏天，或是夏末。那是午后。'，则该段与源文题名'RIOT IN CELL BLOCK 11'仍无对应关系。"
+          },
+          {
+            "label": "analytical_comparison",
+            "text": "终译直接保留英文题名'RIOT IN CELL BLOCK 11'未作中文翻译，但现有记录不能证明保留英文是有意的最终翻译策略，也可能仅是临时占位。"
+          }
+        ],
+        "decision_rationale": "可观察到的修订是将无对应关系的中文片段整体替换为源文题名，客观上恢复了当前段的源译对应；但保留英文题名的原因未记录。",
+        "translation_effect": {
+          "dimension": "information_structure",
+          "demonstrated_by": "‘那是夏天，或是夏末。那是午后。’与题名源文无对应，终译‘RIOT IN CELL BLOCK 11’与本段源文一致。"
+        },
+        "theory_mapping": null,
+        "theory_connection_status": "not_applicable",
+        "bounded_conclusion": "该修订恢复了本段的源译对应，但现有证据既不说明初译错配的生成机制，也不证明保留英文题名是有意翻译策略。",
+        "human_evidence_ids": [],
+        "human_evidence": [],
+        "recommended_human_evidence": [
+          "保留英文题名而不译出的原因。",
+          "初译为何出现与本段无对应关系文本的工作流记录。"
+        ],
+        "analysis_contract": {
+          "translation_problem": "planned",
+          "difficulty_evidence": "planned",
+          "initial_solution_or_failure": "planned",
+          "alternative_interpretation_or_strategy": "planned",
+          "final_translation_decision": "planned",
+          "decision_rationale": "planned",
+          "translation_effect": "planned",
+          "theory_connection": "planned",
+          "evidence_boundary": "planned",
+          "case_level_conclusion": "planned"
+        }
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0272",
+        "case_type": "authentic_revision",
+        "analysis_contract_type": "authentic_revision",
+        "case_role": "revision_case",
+        "capabilities": {
+          "has_meaningful_revision": true,
+          "has_review_finding": false,
+          "has_repair_history": false,
+          "has_revision_rationale": false,
+          "has_theory_support": false
+        },
+        "evidence_level": "partial_process_evidence",
+        "can_support": [
+          "textual_analysis",
+          "translation_decision",
+          "limited_process_inference"
+        ],
+        "cannot_support": [
+          "historical_revision_reasoning"
+        ],
+        "translation_delta": {
+          "available": true,
+          "changed": true,
+          "meaningful": true,
+          "formatting_only": false,
+          "case_role": "revision_case",
+          "lexical_changes": [
+            {
+              "old": "五个字",
+              "new": "句话"
+            }
+          ],
+          "structural_changes": [],
+          "omission_addition": [],
+          "finding_link": [],
+          "repair_link": false,
+          "unchanged": false
+        },
+        "source_segment_id": null,
+        "source_text": null,
+        "synthetic_baseline": null,
+        "error_manifest": null,
+        "optimized_translation": null,
+        "synthetic_validation": null,
+        "problem": {
+          "type": "reference_resolution",
+          "statement": "源文显式使用 ‘Those five words’ 回指前文引语，但不得据此声称可见英文引语恰好五词；在汉译中，‘你不会经历战争’为七个汉字，初译‘这五个字’因此在目标语表层产生可直接核对的不一致。",
+          "grounded": true
+        },
+        "initial_failure": null,
+        "alternatives": [
+          {
+            "label": "counterfactual_rendering",
+            "text": "若将源文引语压缩为五字中文（如'你不会有战争'），则'这五个字'在表层可保持一致，但此类改写无历史证据支持。"
+          },
+          {
+            "label": "analytical_comparison",
+            "text": "终译'这句话'以整句指称替代数字指称，避免了'五个字'与七字引语的表层矛盾，但同时也丢失了源文以精确数字回指所带来的修辞效果。"
+          }
+        ],
+        "decision_rationale": "可观察到的‘五个字’至‘这句话’替换，客观上消除了‘五个字’与七字中文引语的表层不一致，使回指对象变为整句言语；历史动机未记录。",
+        "translation_effect": {
+          "dimension": "reference_clarity",
+          "demonstrated_by": "将‘五个字’替换为‘句话’，使回指不再依赖与七字中文引语不符的目标语计数，而改为指向整句言语。"
+        },
+        "theory_mapping": null,
+        "theory_connection_status": "not_applicable",
+        "bounded_conclusion": "本案例只证明‘五个字’至‘这句话’的实际替换及其消除目标语表层计数不一致的效果；不解释源文为何使用 five，也不推断修订者动机。",
+        "human_evidence_ids": [],
+        "human_evidence": [],
+        "recommended_human_evidence": [
+          "译者关于'五个字'改为'这句话'的修订动因说明",
+          "译者是否意识到英文词数与中文字数差异的说明",
+          "编辑审校记录中关于该处修改的批注"
+        ],
+        "analysis_contract": {
+          "translation_problem": "planned",
+          "difficulty_evidence": "planned",
+          "initial_solution_or_failure": "planned",
+          "alternative_interpretation_or_strategy": "planned",
+          "final_translation_decision": "planned",
+          "decision_rationale": "planned",
+          "translation_effect": "planned",
+          "theory_connection": "planned",
+          "evidence_boundary": "planned",
+          "case_level_conclusion": "planned"
+        }
+      }
+    ],
+    "content_hash": "877fd9b220d85887e1d879ef257b8689e88eef04f2cbed84bc2e71506c73eaf2"
+  },
+  "content_hash": "74e5a5973110e92d4720f47bea46ff883412d722b42de6b701233164edd4c8f1"
+}

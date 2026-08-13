@@ -1,0 +1,178 @@
+{
+  "schema_version": "argument-planner-v2",
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim": "源文本在语言层面呈现显著的口语化叙事、短句与并列结构、以及大量专有名词（人名、地名、机构名、影片名、歌曲名）密集出现等特征，这些特征共同构成了翻译中的可证实难点。",
+      "research_question": "RQ1",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0215",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0235",
+        "seg-ec100d8686d3891e-0141",
+        "seg-ec100d8686d3891e-0007",
+        "seg-ec100d8686d3891e-0059",
+        "seg-ec100d8686d3891e-0139",
+        "seg-ec100d8686d3891e-0124",
+        "seg-ec100d8686d3891e-0119"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "human_author_evidence": [],
+      "support_category": "project_evidence_only",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "high",
+      "planned_sections": [
+        "3"
+      ],
+      "reasoning": "多个候选案例的源文本特征字段显示，文本包含大量专有名词（如 seg-ec100d8686d3891e-0215 中的 'Atlit'、'Rabbits Hideaway'、'Chair Hill'；seg-ec100d8686d3891e-0233 中的影片名 'Some Like It Hot'、'Riot in Cell Block 11'；seg-ec100d8686d3891e-0235 中的多个人名），且长句、复杂从句、引号和破折号频繁出现（如 seg-ec100d8686d3891e-0144 源文本 3632 字符、14 个从句标记、85 个标点）。这些特征在审校环节被标记为 actionable findings，证实其构成实际翻译难点。",
+      "counterargument": "部分专有名词（如人名）在上下文中可能通过音译统一处理，其翻译难度可能被高估；但审校记录显示此类问题反复出现，说明其确实是实践中的难点。"
+    },
+    {
+      "claim_id": "C2",
+      "claim": "项目审校记录显示，专有名词（人名、地名、影片名、歌曲名）的处理策略不一致是主要的质量问题之一，具体表现为同一专名在不同段落中译名不统一、源语残留、以及应保留原文却进行了翻译等情况。",
+      "research_question": "RQ1",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0235",
+        "seg-ec100d8686d3891e-0215",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0141",
+        "seg-ec100d8686d3891e-0216",
+        "seg-ec100d8686d3891e-0007",
+        "seg-ec100d8686d3891e-0103"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "human_author_evidence": [],
+      "support_category": "project_evidence_only",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "high",
+      "planned_sections": [
+        "3",
+        "4"
+      ],
+      "reasoning": "审校发现中明确记录了多类专名问题：seg-ec100d8686d3891e-0235 指出人名 'Tzvika'、'Noam' 等未按前文统一译名；seg-ec100d8686d3891e-0215 指出地名 'Atlit' 应保留原文；seg-ec100d8686d3891e-0233 指出影片名 'Riot in Cell Block 11' 译名不准确；seg-ec100d8686d3891e-0216 指出歌曲名不应翻译；seg-ec100d8686d3891e-0007 指出人名 'Sarah'、'Yaakov' 疑似源语残留。这些发现共同指向专名处理策略缺乏一致性。",
+      "counterargument": "专名处理策略的不一致可能源于不同批次的翻译或审校标准执行不严，而非源文本特征本身导致；但无论原因如何，其作为可追溯的质量问题成立。"
+    },
+    {
+      "claim_id": "C3",
+      "claim": "在功能对等视角下，部分翻译决策可被有限解释为译者对源语隐喻或文化专有表达进行了归化处理，以追求目标语读者等效的阅读反应，但此类解释仅适用于具有完整证据链的案例。",
+      "research_question": "RQ2",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0139",
+        "seg-ec100d8686d3891e-0142",
+        "seg-ec100d8686d3891e-0143",
+        "seg-ec100d8686d3891e-0234"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "human_author_evidence": [],
+      "support_category": "project_evidence_only",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "4"
+      ],
+      "reasoning": "seg-ec100d8686d3891e-0139 中 'evading the outstretched hand' 被审校建议调整为 '回避了我的请求'，这体现了从字面直译向功能对等（传达比喻含义）的调整；seg-ec100d8686d3891e-0142 和 seg-ec100d8686d3891e-0143 中 'You don't argue with chicory' 被译为 '跟菊苣没什么好争辩的'，保留了源语意象但通过上下文使中文读者可理解；seg-ec100d8686d3891e-0234 中 'give me enough for the tickets' 被审校指出语义不完整，建议调整为更符合中文表达习惯的 '给我够买票的钱'。这些案例显示功能对等解释的适用性，但需限定在证据链完整的案例内。",
+      "counterargument": "功能对等理论解释存在循环论证风险——任何翻译决策都可被事后解释为追求对等；因此本报告仅对审校记录中明确标注了修改理由的案例进行有限解释，不扩展到未记录决策动机的案例。"
+    },
+    {
+      "claim_id": "C4",
+      "claim": "术语治理在本项目中发挥了基础性作用，术语库覆盖了文本中的关键文化负载词和专名，且未出现术语冲突，但术语库的覆盖范围有限，未能完全防止专名处理不一致问题的发生。",
+      "research_question": "RQ3",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0266",
+        "seg-ec100d8686d3891e-0124",
+        "seg-ec100d8686d3891e-0059",
+        "seg-ec100d8686d3891e-0139",
+        "seg-ec100d8686d3891e-0119",
+        "seg-ec100d8686d3891e-0235"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "human_author_evidence": [],
+      "support_category": "project_evidence_only",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "5"
+      ],
+      "reasoning": "项目统计显示 term_conflicts=0，说明术语库在已收录词条上未产生冲突。多个案例（seg-ec100d8686d3891e-0144、seg-ec100d8686d3891e-0266、seg-ec100d8686d3891e-0124 等）标记了 term_count>0，表明术语库在部分关键表达上生效。然而，seg-ec100d8686d3891e-0235 中的人名不一致问题表明，术语库可能未覆盖所有人名或未在翻译过程中被充分引用，说明术语治理的效果存在边界。",
+      "counterargument": "术语冲突为零可能仅反映术语库规模有限或冲突检测机制不完善，而非术语治理效果优异；专名不一致问题的存在也削弱了术语治理有效性的结论。"
+    },
+    {
+      "claim_id": "C5",
+      "claim": "机器翻译在长句、复杂从句和文化负载文本上的表现不稳定，产生了包括漏译、语义不完整、源语残留在内的多种错误类型，这些错误通过人工审校和译后编辑得到了部分修复，但修复效果因案例而异。",
+      "research_question": "RQ3",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0239",
+        "seg-ec100d8686d3891e-0234",
+        "seg-ec100d8686d3891e-0152",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0139"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "human_author_evidence": [],
+      "support_category": "project_evidence_only",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "high",
+      "planned_sections": [
+        "5"
+      ],
+      "reasoning": "多个案例的审校发现记录了机器翻译的典型错误：seg-ec100d8686d3891e-0144 中译文末尾内容缺失（漏译）；seg-ec100d8686d3891e-0239 中第二段原文完全漏译且内容被错误合并；seg-ec100d8686d3891e-0234 中 'give me enough for the tickets' 语义不完整；seg-ec100d8686d3891e-0152 中 'no longer the squills' 表述不完整；seg-ec100d8686d3891e-0233 中漏译主语 'he'。项目统计显示 32 个 actionable findings 和 8 个 repaired segments，证实了人工审校和译后编辑的介入效果。",
+      "counterargument": "部分错误（如 seg-ec100d8686d3891e-0239 的漏译）可能源于翻译流程中的分段或拼接问题，而非机器翻译本身的能力缺陷；但无论错误来源如何，审校环节的修复作用是可追溯的。"
+    },
+    {
+      "claim_id": "C6",
+      "claim": "人工审校在质量控制中发挥了关键作用，审校环节识别了机器翻译初稿中的大量可操作问题（32 项），其中部分问题通过修改初译或记录建议译文得到了修复，但审校覆盖率（264/273）未达 100%，存在少量未经审校的段落。",
+      "research_question": "RQ3",
+      "project_evidence": [
+        "metric:repair_category_distribution",
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0139",
+        "seg-ec100d8686d3891e-0233"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "human_author_evidence": [],
+      "support_category": "project_evidence_only",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "high",
+      "planned_sections": [
+        "5"
+      ],
+      "reasoning": "项目统计显示 264/273 段经过审校，审校产生了 32 个 actionable findings 和 35 个 informational findings。repair_category_distribution 显示 3 处初译终译有变化、5 处记录了建议译文、2 处记录了人工操作。seg-ec100d8686d3891e-0144 的审校发现直接导致了译文修复（补充缺失内容），seg-ec100d8686d3891e-0139 的审校建议调整了比喻表达。这些数据共同证实了人工审校的实际效果。",
+      "counterargument": "审校覆盖率未达 100% 意味着存在 9 个未经审校的段落，其质量无法保证；且 repaired_segments=8 相对于 32 个 actionable findings 的修复率（25%）偏低，说明部分问题可能未被实际修复。"
+    },
+    {
+      "claim_id": "C7",
+      "claim": "翻译记忆库复用率较高（213/273，约 78%），表明项目中存在大量重复或相似文本，翻译记忆库在提高效率方面发挥了作用，但复用段落的审校发现显示，翻译记忆库中的既有译文本身可能存在质量问题，需要审校环节的额外关注。",
+      "research_question": "RQ3",
+      "project_evidence": [
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0235",
+        "seg-ec100d8686d3891e-0141",
+        "seg-ec100d8686d3891e-0234",
+        "seg-ec100d8686d3891e-0103"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "human_author_evidence": [],
+      "support_category": "project_evidence_only",
+      "analysis_type": "AUTHOR_ANALYSIS",
+      "confidence": "medium",
+      "planned_sections": [
+        "5"
+      ],
+      "reasoning": "项目统计显示 tm_reuse_count=213，占总段数的 78%。多个 tm_reuse=true 的案例（seg-ec100d8686d3891e-0233、seg-ec100d8686d3891e-0235、seg-ec100d8686d3891e-0141 等）在审校中被标记了 actionable findings，说明翻译记忆库中的既有译文并非完全可靠，需要审校环节的额外关注。",
+      "counterargument": "翻译记忆库复用率高可能反映文本本身重复度高，而非翻译记忆库的贡献；且复用段落的错误可能源于初始翻译质量问题，而非翻译记忆库本身。"
+    }
+  ],
+  "planner_fallback": false,
+  "rejected_source_only_support": 0,
+  "content_hash": "b87230dffa3d1d7a3fe465cdf8bb7eb241039dde8533e947681df6b2bc222c27"
+}

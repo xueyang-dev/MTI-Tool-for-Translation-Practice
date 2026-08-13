@@ -1,0 +1,37 @@
+{
+  "schema_version": "portfolio-chapter-quality-review-v1",
+  "review_mode": "deterministic gates plus authoring-agent passage inspection",
+  "readiness": "academically_reviewable",
+  "judgment": "The chapter now has enough evidence-grounded breadth and hierarchy to sustain a substantial MTI case-analysis chapter. It is not submission-ready because most supporting cases document review findings rather than implemented repairs, and neither Human Author Evidence nor Literature Evidence is available.",
+  "case_balance": {
+    "core": 8,
+    "supporting": 13,
+    "contrast_boundary": 4,
+    "assessment": "core cases establish mechanisms; supporting cases are concise extensions"
+  },
+  "strongest_passage": {
+    "case_id": "seg-ec100d8686d3891e-0272",
+    "excerpt": "<!--portfolio-case:seg-ec100d8686d3891e-0272-->\n\n**回指与主语追踪（seg-ec100d8686d3891e-0272，核心案例）**\n\n> [SOURCE_EXCERPT seg-ec100d8686d3891e-0272]: “You will not have a war,” Matti suddenly said. Those five words have echoed within me for fifty years.\n\n> [TARGET_EXCERPT seg-ec100d8686d3891e-0272]: “你不会经历战争，”马蒂突然说道。这句话在我心中回响了五十年。\n\n> [INITIAL_EXCERPT seg-ec100d8686d3891e-0272]: “你不会经历战争，”马蒂突然说道。这五个字在我心中回响了五十年。\n\n**问题与证据**：保存记录证明这里存在真实初译至终译变化，实际差异为“这五个字”→“这句话”。源文后句明确写有 ‘Those five words’，但可见英文引语按空格分词为六词；中文引语‘你不会经历战争’为七个汉字，初译‘这五个字’因而在目标语表层产生可直接核对的计数不一致。\n\n**调整机制与效果**：终译把数字回指改为对整句话语的回指，消除了中文引语与‘五个字’之间的表层冲突。该效果可由两版译文直接比较，但历史动机未记录。\n\n**证据边界**：本例不解释源文为何使用 five，也不声称可见英文引语恰好五词；现有记录不支持推断修订者的心理意图。",
+    "reason": "It uses a genuine stored delta and limits the conclusion to an observable referential effect."
+  },
+  "weakest_pattern": {
+    "scope": "tier_2_supporting",
+    "excerpt": "该例作为 Supporting Example，补充说明同一机制：核对当前源段与目标段的语义覆盖，区分完整对应、跨段串入和整段漏译。它记录的是审校问题，而不是已经发生的修订；审校建议只能作为分析性备选。",
+    "reason": "Repeated evidence-boundary wording is necessary but still formulaic; these examples should remain concise in a supervisor revision."
+  },
+  "methodology_review": {
+    "status": "pass_with_warnings",
+    "strength": "Case types and inference permissions are explicit and machine-validated.",
+    "weakness": "Twenty selected cases are reviewer-identified problems rather than implemented historical repairs."
+  },
+  "devils_advocate_review": {
+    "strongest_counterargument": "The portfolio may look broader than the underlying practice evidence because most cases demonstrate review judgments, not actual revision decisions or effects.",
+    "response": "The architecture answers this only partially by assigning review-only examples to a separate provenance class and forbidding repair claims. Real author answers remain necessary to deepen the two historical cases.",
+    "severity": "major_but_non_blocking_for_pilot"
+  },
+  "methodological_risk": "Readers may still mistake review suggestions for completed revisions if the case-type methodology paragraph is removed during later editing.",
+  "highest_leverage_next_step": "real Human Author Evidence, followed by grounded literature/theory refinement",
+  "validation_status": "pass",
+  "chapter_characters": 22256,
+  "content_hash": "b342baae134441194ad6325083f0b050398e5c9c91e19e089ef8ca0548bec11f"
+}

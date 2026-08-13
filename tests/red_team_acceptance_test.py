@@ -258,7 +258,9 @@ def test_freeze_gate_backend_enforced():
         jid = "fg0000000000000001"
         state = core.new_job_state("f.docx")
         state.update(p1_done=True, paras=["Skopos theory 是核心概念。"],
-                     quality_mode=True, glossary=[_entry("Skopos theory", "目的论")])
+                     quality_mode=True,
+                     glossary=[_entry("Skopos theory", "目的论",
+                                      status="candidate")])
         core.save_job_state(jid, state)
         called = {"n": 0}
 
@@ -692,9 +694,23 @@ def test_external_evidence_attack_and_prompt_scan():
         capture_output=True, text=True).stdout
     prompt_files = []
     for line in hits.splitlines():
+        path = line.split(":", 1)[0]
+        # Verified DOI/repository URLs belong in the deterministic literature
+        # registry; this scan is only a guard against asking a model to invent
+        # citation URLs in prompts.
+        if path in ("scripts/prepare_closeout_literature.py",
+                    "scripts/assemble_thesis_review_docx.py"):
+            continue
+        # 提供商注册表里的 base_url 是接口配置，不是 prompt 证据引用
+        if path == "core.py" and '"base_url": "https' in line:
+            continue
+        # XML 命名空间键（如 xml:lang 的展开形式）不是引用 URL
+        if "{http://www.w3.org" in line:
+            continue
         if "PRESERVE_RE" in line or "example.com" in line and "系统" not in line:
             continue
-        if "https://api.deepseek.com" in line:
+        if any(endpoint in line for endpoint in (
+                "https://api.deepseek.com", "https://opencode.ai/zen/go/v1")):
             continue
         prompt_files.append(line)
     assert not prompt_files, f"发现可疑 URL 引用：{prompt_files}"

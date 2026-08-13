@@ -1,0 +1,179 @@
+{
+  "job_id": "ec100d8686d3891e",
+  "state_source": "outputs/ec100d8686d3891e/state.json",
+  "isolated_output": "eval/academic-quality/ec100d8686d3891e/track-a-20260810T054231Z",
+  "timestamp": "20260810T064742Z",
+  "segments": 273,
+  "provider": "DeepSeek",
+  "model": "deepseek-chat",
+  "theory": "功能对等理论",
+  "research_settings": {
+    "research_questions": [
+      "源文本（飞行员回忆录）的主要语言特征与可证实的翻译难点是什么？",
+      "代表性翻译决策从功能对等视角可作何种有限解释？",
+      "术语治理、机器翻译、审校与译后编辑在本项目中呈现了哪些可追溯效果与局限？"
+    ]
+  },
+  "pipeline_version": "academic-pipeline-v2",
+  "versions": {
+    "evidence_version": "academic-evidence-v2",
+    "research_model_version": "research-model-v1",
+    "literature_sources_version": "literature-sources-v1",
+    "literature_evidence_version": "literature-evidence-v1",
+    "literature_claims_version": "literature-claims-v1",
+    "argument_plan_version": "argument-planner-v2",
+    "case_selection_version": "case-selector-v1",
+    "outline_version": "academic-outline-v2",
+    "writer_version": "academic-writer-v2",
+    "validator_version": "validator-v2",
+    "reviewer_version": "academic-reviewer-v1",
+    "literature_reviewer_version": "literature-support-reviewer-v1",
+    "academic_quality_version": "academic-quality-v1"
+  },
+  "artifact_hashes": {
+    "evidence": "1084dff99e111984129d27cd96c29122751f2cd403207bff6d94c435664be82e",
+    "research_model": "775b98e02c5e2961beb04978a359d215cd526a8f7be1706ac2c201d8055a24b9",
+    "literature_sources": "be516e19ba14fd3d06242a4f59e1d0d4b32464e9a5133523a5663fe2cbe30347",
+    "literature_evidence": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "literature_claims": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "argument_plan": "df65ed30a7127f22fbbbce0192c5ce90da80640e4d07ba9fbda1e9d4c4ae69b0",
+    "selected_cases": "26132315e14560b365861b75a5067409785cb528f97a1414a619f53816689922",
+    "outline": "e570577fbcd81aac3780220085b65f630ace5e6655107d3b6a9e15e58b352485",
+    "sections": "8ec911a94348eb7cec24f895d97a8da6574617651be599e32a4fe704cdf938de",
+    "validation": "c4c96f67a0d7e59be13541a7531dcd1e362539a4cf3db125cf7661dd3006602d",
+    "review": "c0df849855dacd185f60db1b107e8e6ffeb8c4894790ddd2162114096000428a",
+    "literature_support_review": "3afe734cd611110d81e10c9a5c12f87ea537228bb4bc7ffbebf554367a86b769",
+    "academic_quality": "ad4eb6da1145190eb4c5708fb8f9bfb727eb15278a4b635815c2dd3d4718b116",
+    "quality_repair_history": "4d29643dde691000c6ef680bd96184103dd9aec4eda73cf02732a8e3c1c02260",
+    "repair_history": "78198ba315bbbb611fa932c4b0bbce57c0599ceaade6847439dbc90c6f17b53a"
+  },
+  "report_md_hash": "6b0673474510922a9598eaf0bbeb32874a9a3ad1fad42927dcef34b55320ce7f",
+  "quality_summary": {
+    "dimensions": {
+      "research_alignment": "pass_with_warnings",
+      "argument_quality": "pass",
+      "case_quality": "pass",
+      "analysis_depth": "pass",
+      "theory_case_fit": "not_applicable",
+      "evidence_utilization": "pass",
+      "literature_support": "not_applicable",
+      "cross_section_coherence": "pass",
+      "academic_specificity": "pass",
+      "redundancy": "pass",
+      "conclusion_discipline": "pass",
+      "writing_quality": "pass"
+    },
+    "metrics": {
+      "research_questions": 3,
+      "answered_rqs": 3,
+      "unanswered_rqs": 0,
+      "global_claims": 6,
+      "orphan_claims": 0,
+      "selected_cases": 8,
+      "strong_cases": 0,
+      "usable_cases": 5,
+      "weak_cases": 3,
+      "redundant_cases": 0,
+      "misaligned_cases": 0,
+      "paragraph_roles": {
+        "claim": 16,
+        "filler": 25,
+        "background": 50,
+        "evidence": 50,
+        "analysis": 31,
+        "transition": 4
+      },
+      "generic_paragraph_rate": 0.0,
+      "evidence_utilization": {
+        "selected_case_count": 8,
+        "cases_used": 0,
+        "high_value_unused_cases": [
+          "seg-ec100d8686d3891e-0144",
+          "seg-ec100d8686d3891e-0007",
+          "seg-ec100d8686d3891e-0139",
+          "seg-ec100d8686d3891e-0215",
+          "seg-ec100d8686d3891e-0152"
+        ],
+        "rows": [
+          {
+            "case_id": "seg-ec100d8686d3891e-0144",
+            "used_in_report": false,
+            "evidence_richness": 5,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0238",
+            "used_in_report": false,
+            "evidence_richness": 1,
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0007",
+            "used_in_report": false,
+            "evidence_richness": 3,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0233",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0140",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0139",
+            "used_in_report": false,
+            "evidence_richness": 4,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0215",
+            "used_in_report": false,
+            "evidence_richness": 4,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0152",
+            "used_in_report": false,
+            "evidence_richness": 4,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history"
+            ]
+          }
+        ]
+      },
+      "literature_grounding_status": "evidence_missing",
+      "citation_validation_status": "fail",
+      "cross_section_issue_count": 18,
+      "conclusion_support_issues": 72,
+      "finding_counts": {
+        "P1": 4,
+        "P2": 30,
+        "P3": 72
+      }
+    },
+    "finding_count": 106
+  }
+}

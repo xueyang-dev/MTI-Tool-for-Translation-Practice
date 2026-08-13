@@ -1,0 +1,236 @@
+{
+  "job_id": "ec100d8686d3891e",
+  "state_source": "outputs/ec100d8686d3891e/state.json",
+  "isolated_output": "eval/academic-quality/ec100d8686d3891e/track-a-humanevidence-20260810T093330Z",
+  "timestamp": "20260810T093330Z",
+  "segments": 273,
+  "provider": "DeepSeek",
+  "model": "deepseek-chat",
+  "theory": "功能对等理论",
+  "research_settings": {
+    "research_questions": [
+      "源文本（飞行员回忆录）的主要语言特征与可证实的翻译难点是什么？",
+      "代表性翻译决策从功能对等视角可作何种有限解释？",
+      "术语治理、机器翻译、审校与译后编辑在本项目中呈现了哪些可追溯效果与局限？"
+    ]
+  },
+  "pipeline_version": "academic-pipeline-v2",
+  "versions": {
+    "evidence_version": "academic-evidence-v2",
+    "research_model_version": "research-model-v1",
+    "literature_sources_version": "literature-sources-v1",
+    "literature_evidence_version": "literature-evidence-v1",
+    "literature_claims_version": "literature-claims-v1",
+    "argument_plan_version": "argument-planner-v2",
+    "case_selection_version": "case-selector-v1",
+    "outline_version": "academic-outline-v2",
+    "writer_version": "academic-writer-v2",
+    "validator_version": "validator-v2",
+    "reviewer_version": "academic-reviewer-v1",
+    "literature_reviewer_version": "literature-support-reviewer-v1",
+    "academic_quality_version": "academic-quality-v1",
+    "case_analysis_version": "case-analysis-v1",
+    "human_evidence_version": "human-evidence-v1"
+  },
+  "artifact_hashes": {
+    "evidence": "1084dff99e111984129d27cd96c29122751f2cd403207bff6d94c435664be82e",
+    "research_model": "775b98e02c5e2961beb04978a359d215cd526a8f7be1706ac2c201d8055a24b9",
+    "literature_sources": "be516e19ba14fd3d06242a4f59e1d0d4b32464e9a5133523a5663fe2cbe30347",
+    "literature_evidence": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "literature_claims": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "argument_plan": "b87230dffa3d1d7a3fe465cdf8bb7eb241039dde8533e947681df6b2bc222c27",
+    "selected_cases": "c2cd5cc26625c9a8ade072002bdc384a8899b6eb511504df229178bbbdeaa178",
+    "outline": "756723fb32937ae39991ac5dbb252df99ac9ecf9d984b6c6b232f368b22898a8",
+    "sections": "2e423c6965b7d0d1b285faf0466a32f9d8486361e772907552ccf1235436cebd",
+    "validation": "2405296fef77b8654cfd7d13ff0f5661d8787e16bdbb8da10ca90c5779f79b18",
+    "review": "c136a7bae8eeef47e765e27c5eac53bcfd3ff5a853f3bae5413c809dc10f6080",
+    "literature_support_review": "3afe734cd611110d81e10c9a5c12f87ea537228bb4bc7ffbebf554367a86b769",
+    "academic_quality": "6fdb64d199b9a08e80fb9b98fa749f2cd97c2b676280dd3b983235fcbb7f4eba",
+    "case_analysis_plans": "670117bdcc77653d45a19896daf0b9292c756f4f1aaa22b2973c1f8ce374ad6a",
+    "human_evidence": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "human_evidence_needs": "2f1058675e7cd66a71a3cd176c49b7b26a48fac5682fcef82b83a04a3d8765f5",
+    "human_evidence_questions": "6dc0d9a39f9b0f31169ae62dc3504c82e786aec6ead47d811cc3dbd8b8f542ab",
+    "quality_repair_history": "fb0120eaa46d23e3691270c6d38766aa73fd759354fd27212b8e9d0f6264ab23",
+    "repair_history": "ffe41e0b590db00b10d89170fd3249fc9b49f821899d707bbea2c6c29e13525b"
+  },
+  "report_md_hash": "a62decdbe4db82786e7cff68da97ba42ad3d541a3ce531c69a946d043d4da7e4",
+  "quality_summary": {
+    "dimensions": {
+      "problem_definition": {
+        "status": "strong",
+        "reason": "明确指出了隐喻表达'evading the outstretched hand'直译导致的生硬问题，且该问题在审校记录中有明确标注。"
+      },
+      "evidence_use": {
+        "status": "adequate",
+        "reason": "使用了审校发现，但未充分利用repair_history=true——报告未展示从初始译文到最终译文的完整修改链条。"
+      },
+      "initial_failure_or_alternative": {
+        "status": "strong",
+        "reason": "明确展示了初始译文的直译问题（'再次避开了我伸出的手'）和审校建议（'调整为更自然的表达'）。"
+      },
+      "decision_rationale": {
+        "status": "weak",
+        "reason": "报告在4.2节以'从功能视角看，这一调整可被解释为对源语隐喻的功能性归化'进行解释，但该解释是报告事后赋予的，而非审校记录中明确标注的理由。报告未区分'审校记录中标注的理由'与'报告事后解释'。"
+      },
+      "translation_effect": {
+        "status": "adequate",
+        "reason": "报告分析了'回避了我的请求'与'回避了伸出的手'在中文语境中的理解差异，但未提供读者反应的实证数据。"
+      },
+      "theory_mapping": {
+        "status": "adequate",
+        "reason": "报告将功能对等理论应用于该案例，解释了从字面直译向功能对等的调整，但存在循环论证风险——报告先设定功能对等框架，再选择性地解释符合该框架的案例。"
+      },
+      "bounded_conclusion": {
+        "status": "adequate",
+        "reason": "报告在4.5节明确承认'本报告无法证实译者在翻译时的真实意图，功能对等仅是一种事后分析框架'，边界清晰。"
+      }
+    },
+    "metrics": {
+      "research_questions": 3,
+      "answered_rqs": 3,
+      "unanswered_rqs": 0,
+      "global_claims": 7,
+      "orphan_claims": 0,
+      "selected_cases": 8,
+      "strong_cases": 0,
+      "usable_cases": 4,
+      "weak_cases": 4,
+      "redundant_cases": 0,
+      "misaligned_cases": 0,
+      "paragraph_roles": {
+        "filler": 28,
+        "background": 33,
+        "analysis": 12,
+        "evidence": 21,
+        "claim": 16,
+        "summary": 1,
+        "translation_description": 11,
+        "transition": 2
+      },
+      "generic_paragraph_rate": 0.0,
+      "evidence_utilization": {
+        "selected_case_count": 8,
+        "cases_used": 0,
+        "high_value_unused_cases": [
+          "seg-ec100d8686d3891e-0144",
+          "seg-ec100d8686d3891e-0215",
+          "seg-ec100d8686d3891e-0007",
+          "seg-ec100d8686d3891e-0139"
+        ],
+        "rows": [
+          {
+            "case_id": "seg-ec100d8686d3891e-0144",
+            "used_in_report": false,
+            "evidence_richness": 5,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0215",
+            "used_in_report": false,
+            "evidence_richness": 4,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0233",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0235",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0141",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0007",
+            "used_in_report": false,
+            "evidence_richness": 3,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0059",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "high_value_unused": false,
+            "unused_dimensions": []
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0139",
+            "used_in_report": false,
+            "evidence_richness": 4,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "repair_history"
+            ]
+          }
+        ]
+      },
+      "literature_grounding_status": "evidence_missing",
+      "citation_validation_status": "fail",
+      "cross_section_issue_count": 0,
+      "conclusion_support_issues": 33,
+      "finding_counts": {
+        "P1": 17,
+        "P2": 8,
+        "P3": 33
+      },
+      "strategy_label_only_count": 0,
+      "unsupported_quality_effect_count": 0,
+      "unsupported_process_claim_count": 0,
+      "overgeneralized_case_conclusion_count": 0,
+      "theory_name_dropping_count": 12,
+      "case_analysis_depth_summary": {
+        "problem_definition": {
+          "strong": 3,
+          "adequate": 4,
+          "weak": 1
+        },
+        "evidence_use": {
+          "adequate": 3,
+          "weak": 5
+        },
+        "initial_failure_or_alternative": {
+          "strong": 2,
+          "adequate": 1,
+          "weak": 5
+        },
+        "decision_rationale": {
+          "weak": 8
+        },
+        "translation_effect": {
+          "adequate": 2,
+          "weak": 6
+        },
+        "theory_mapping": {
+          "not_applicable": 7,
+          "adequate": 1
+        },
+        "bounded_conclusion": {
+          "adequate": 4,
+          "weak": 4
+        }
+      }
+    },
+    "finding_count": 58
+  }
+}

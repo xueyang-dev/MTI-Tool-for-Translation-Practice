@@ -1,0 +1,11 @@
+{
+  "schema_version": "portfolio-validator-v1",
+  "status": "pass",
+  "issues": [],
+  "summary": {
+    "errors": 0,
+    "selected_cases": 26,
+    "case_markers": 26
+  },
+  "content_hash": "d6cf23827ce0233e2b1c609942aac17ede04629ca136c7031bc34b474abd4ebe"
+}

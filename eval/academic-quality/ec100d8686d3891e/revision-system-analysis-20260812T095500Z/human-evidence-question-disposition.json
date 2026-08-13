@@ -1,0 +1,35 @@
+{
+  "schema_version": "human-evidence-question-disposition-v1",
+  "source_artifact": "eval/academic-quality/ec100d8686d3891e/revision-recovery-20260811T025108Z/human-evidence-questions-target-cases.json",
+  "active_question_count": 0,
+  "questions": [
+    {
+      "question_id": "HQ-001",
+      "case_id": "seg-ec100d8686d3891e-0209",
+      "prior_status": "open",
+      "status": "withdrawn_after_system_analysis",
+      "reason": "system_alignment_failure_not_author_intention"
+    },
+    {
+      "question_id": "HQ-002",
+      "case_id": "seg-ec100d8686d3891e-0209",
+      "prior_status": "open",
+      "status": "withdrawn_after_system_analysis",
+      "reason": "system_alignment_failure_not_author_intention"
+    },
+    {
+      "question_id": "HQ-003",
+      "case_id": "seg-ec100d8686d3891e-0272",
+      "prior_status": "open",
+      "status": "withdrawn_after_system_analysis",
+      "reason": "observable_textual_effect_can_be_analyzed_without_author_intention"
+    },
+    {
+      "question_id": "HQ-004",
+      "case_id": "seg-ec100d8686d3891e-0272",
+      "prior_status": "open",
+      "status": "withdrawn_after_system_analysis",
+      "reason": "observable_textual_effect_can_be_analyzed_without_author_intention"
+    }
+  ]
+}

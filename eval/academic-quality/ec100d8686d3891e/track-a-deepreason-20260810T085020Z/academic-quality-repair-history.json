@@ -1,0 +1,237 @@
+{
+  "schema_version": "academic-quality-repair-v1",
+  "rounds": [
+    {
+      "round": 1,
+      "case_replacements": [
+        {
+          "old_case_id": "seg-ec100d8686d3891e-0103",
+          "new_case_id": "seg-ec100d8686d3891e-0007",
+          "claim_ids": [
+            "C1",
+            "C2"
+          ],
+          "reason": "案例 seg-ec100d8686d3891e-0103 缺少真实翻译问题、决策差异或修复证据。",
+          "issue_id": "AQ-034"
+        },
+        {
+          "old_case_id": "seg-ec100d8686d3891e-0233",
+          "new_case_id": "seg-ec100d8686d3891e-0139",
+          "claim_ids": [
+            "C1",
+            "C2",
+            "C3",
+            "C4",
+            "C6"
+          ],
+          "reason": "案例 seg-ec100d8686d3891e-0233 缺少真实翻译问题、决策差异或修复证据。",
+          "issue_id": "AQ-040"
+        }
+      ],
+      "section_rewrites": [
+        {
+          "section_id": "1",
+          "issue_ids": [
+            "AQ-001",
+            "AQ-002",
+            "AQ-003",
+            "AQ-004",
+            "AQ-005"
+          ],
+          "before_hash": "2b58ccbf43373c618c566fbca85a0018bf33cb689b178efcf892172012f0c464",
+          "after_hash": "e42aad669ee5d3f795ffd7bc5c0490e40450184aca27ac7952a59ba434f14589",
+          "repaired_at": "2026-08-10T08:56:12+00:00"
+        },
+        {
+          "section_id": "3",
+          "issue_ids": [
+            "AQ-006",
+            "AQ-007",
+            "AQ-008",
+            "AQ-009",
+            "AQ-010",
+            "AQ-011",
+            "AQ-012",
+            "AQ-013",
+            "AQ-014",
+            "AQ-015",
+            "AQ-016",
+            "AQ-017",
+            "AQ-018",
+            "AQ-019",
+            "AQ-020",
+            "AQ-021",
+            "AV-008",
+            "AV-009",
+            "AV-010"
+          ],
+          "before_hash": "d1593624f8d9afea4b9ade36dd6bef1f07d579565227503291125c9892d63dea",
+          "after_hash": "50af322575ca4fd0f253fbcc076bde514bf9077018f4d4cd51605a7497eec05d",
+          "repaired_at": "2026-08-10T08:56:31+00:00"
+        },
+        {
+          "section_id": "4",
+          "issue_ids": [
+            "AV-011",
+            "AV-012",
+            "AV-013",
+            "AV-014"
+          ],
+          "before_hash": "7ec322ce7af2f366aa611087105c3f8d06dc1e10ad5ea8025af168c91a717a45",
+          "after_hash": "48aae6c8d0c825013710ca31f90ddfc9702799f08bd2f7944382187d2793c4f9",
+          "repaired_at": "2026-08-10T08:56:48+00:00"
+        },
+        {
+          "section_id": "5",
+          "issue_ids": [
+            "AQ-048",
+            "AQ-049",
+            "AV-015",
+            "AV-016",
+            "AV-017",
+            "AV-018"
+          ],
+          "before_hash": "babb8a4ec0ebc92320bda26134d708f062f1fdaa36d08243752f5ad35b4fe0c2",
+          "after_hash": "ea0c2bc16e9c280181bf66819e6a130b5258b25cf7abb9044b3315b59f5803ac",
+          "repaired_at": "2026-08-10T08:57:05+00:00"
+        },
+        {
+          "section_id": "6",
+          "issue_ids": [
+            "AQ-022",
+            "AQ-023",
+            "AQ-024",
+            "AQ-025",
+            "AQ-026",
+            "AQ-027",
+            "AQ-028",
+            "AQ-029",
+            "AQ-030",
+            "AQ-031",
+            "AQ-032",
+            "AQ-033",
+            "AV-019"
+          ],
+          "before_hash": "22e0b6b4231b90cb814f4bc8b99e1d03e1c836194bfe3e25220a4983715546ef",
+          "after_hash": "b9106539236c4694779cddf3408883f3a06d776fd941e07cfbf769800853f733",
+          "repaired_at": "2026-08-10T08:57:16+00:00"
+        }
+      ],
+      "issue_ids": [
+        "AQ-034",
+        "AQ-035",
+        "AQ-036",
+        "AQ-037",
+        "AQ-040",
+        "AQ-041",
+        "AQ-001",
+        "AQ-002",
+        "AQ-003",
+        "AQ-004",
+        "AQ-005",
+        "AQ-006",
+        "AQ-007",
+        "AQ-008",
+        "AQ-009",
+        "AQ-010",
+        "AQ-011",
+        "AQ-012",
+        "AQ-013",
+        "AQ-014",
+        "AQ-015",
+        "AQ-016",
+        "AQ-017",
+        "AQ-018",
+        "AQ-019",
+        "AQ-020",
+        "AQ-021",
+        "AQ-022",
+        "AQ-023",
+        "AQ-024",
+        "AQ-025",
+        "AQ-026",
+        "AQ-027",
+        "AQ-028",
+        "AQ-029",
+        "AQ-030",
+        "AQ-031",
+        "AQ-032",
+        "AQ-033",
+        "AQ-048",
+        "AQ-049"
+      ],
+      "completed_at": "2026-08-10T08:58:06+00:00"
+    },
+    {
+      "round": 2,
+      "case_replacements": [
+        {
+          "old_case_id": "seg-ec100d8686d3891e-0238",
+          "new_case_id": "seg-ec100d8686d3891e-0152",
+          "claim_ids": [
+            "C1",
+            "C6"
+          ],
+          "reason": "案例 seg-ec100d8686d3891e-0238 缺少真实翻译问题、决策差异或修复证据。",
+          "issue_id": "AQ-008"
+        }
+      ],
+      "section_rewrites": [
+        {
+          "section_id": "2",
+          "issue_ids": [
+            "AQ-015",
+            "AQ-016",
+            "AV-004",
+            "AV-005",
+            "AV-006",
+            "AV-007"
+          ],
+          "before_hash": "6f8542255bc146962eb8db5988261cce590198ce03beed4c765d0f1aef31b7a3",
+          "after_hash": "0d1249d68683a5fe7f0adfb0974afd1d786d8a941a8977ed0e6b95feb9c3b2ab",
+          "repaired_at": "2026-08-10T08:58:16+00:00"
+        },
+        {
+          "section_id": "4",
+          "issue_ids": [
+            "AQ-017",
+            "AV-011",
+            "AV-012",
+            "AV-013",
+            "AV-014"
+          ],
+          "before_hash": "48aae6c8d0c825013710ca31f90ddfc9702799f08bd2f7944382187d2793c4f9",
+          "after_hash": "48aae6c8d0c825013710ca31f90ddfc9702799f08bd2f7944382187d2793c4f9",
+          "repaired_at": "2026-08-10T08:58:32+00:00"
+        },
+        {
+          "section_id": "5",
+          "issue_ids": [
+            "AQ-018",
+            "AQ-019",
+            "AV-015",
+            "AV-016",
+            "AV-017",
+            "AV-018"
+          ],
+          "before_hash": "ea0c2bc16e9c280181bf66819e6a130b5258b25cf7abb9044b3315b59f5803ac",
+          "after_hash": "e9b9ca422ea31d55a87d4967ef6e3cd2a0b193c323a00f49405b5b6948366fc3",
+          "repaired_at": "2026-08-10T08:58:48+00:00"
+        }
+      ],
+      "issue_ids": [
+        "AQ-002",
+        "AQ-004",
+        "AQ-005",
+        "AQ-008",
+        "AQ-015",
+        "AQ-016",
+        "AQ-017",
+        "AQ-018",
+        "AQ-019"
+      ],
+      "completed_at": "2026-08-10T08:59:49+00:00"
+    }
+  ],
+  "content_hash": "56d7b883ce50c7edf384943d05ff6024f9be84e117266f9f74786ab933d6e415"
+}

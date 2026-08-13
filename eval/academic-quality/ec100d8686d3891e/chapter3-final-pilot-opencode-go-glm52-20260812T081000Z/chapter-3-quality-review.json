@@ -1,0 +1,2226 @@
+{
+  "schema_version": "chapter3-quality-review-v1",
+  "existing_academic_quality": {
+    "schema_version": "academic-quality-v4",
+    "dimensions": {
+      "problem_definition": {
+        "status": "strong",
+        "reason": "问题定义为口语化轻蔑反问句被扁平化为中性信息探询，语用力度失真，难点有效性已确认。"
+      },
+      "evidence_use": {
+        "status": "strong",
+        "reason": "使用真实源文构造模拟初译与优化译文，provenance明确标注为分析阶段生成，诊断、错误实质性与修复有效性均经独立检查确认。"
+      },
+      "initial_failure_or_alternative": {
+        "status": "strong",
+        "reason": "模拟初译'你为什么需要那个本-古里安？'句法忠实但语用扁平，错误诱因诊断深入：书面语体压制了'那个'的微弱贬抑色彩。"
+      },
+      "decision_rationale": {
+        "status": "strong",
+        "reason": "修复决策使用'要……干什么'口语反问结构还原轻蔑语调，不改变命题内容，修复机制与有效性论证充分。"
+      },
+      "translation_effect": {
+        "status": "strong",
+        "reason": "语用力度改善具体：从正式中性探询转变为口语反问句，恢复轻蔑语调与政治张力，效果可由两版译文直接对比验证。"
+      },
+      "theory_mapping": {
+        "status": "not_applicable",
+        "reason": "无理论框架，报告未提及具体理论名称，符合outline约束。"
+      },
+      "bounded_conclusion": {
+        "status": "strong",
+        "reason": "明确限定为'展示一种合理失败模式'，否认代表人类错误频率或作者历史翻译过程，provenance边界清晰。"
+      }
+    },
+    "metrics": {
+      "research_questions": 2,
+      "answered_rqs": 2,
+      "unanswered_rqs": 0,
+      "global_claims": 4,
+      "orphan_claims": 0,
+      "selected_cases": 3,
+      "case_selection_status": "mixed_case_selection",
+      "authentic_revision_cases": 2,
+      "synthetic_contrast_cases": 1,
+      "non_revision_cases": 0,
+      "strong_cases": 1,
+      "usable_cases": 2,
+      "weak_cases": 0,
+      "redundant_cases": 0,
+      "misaligned_cases": 0,
+      "paragraph_roles": {
+        "filler": 9,
+        "claim": 5,
+        "analysis": 4,
+        "background": 11,
+        "evidence": 2,
+        "translation_description": 2
+      },
+      "generic_paragraph_rate": 0.0,
+      "evidence_utilization": {
+        "selected_case_count": 3,
+        "cases_used": 1,
+        "high_value_unused_cases": [
+          "seg-ec100d8686d3891e-0209",
+          "seg-ec100d8686d3891e-0272"
+        ],
+        "rows": [
+          {
+            "case_id": "seg-ec100d8686d3891e-0209",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "case_type": "authentic_revision",
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0272",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "case_type": "authentic_revision",
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change"
+            ]
+          },
+          {
+            "case_id": "SC-0141",
+            "used_in_report": true,
+            "evidence_richness": null,
+            "case_type": "synthetic_contrast",
+            "high_value_unused": false,
+            "unused_dimensions": []
+          }
+        ]
+      },
+      "literature_grounding_status": "evidence_missing",
+      "citation_validation_status": "fail",
+      "cross_section_issue_count": 0,
+      "conclusion_support_issues": 80,
+      "finding_counts": {
+        "P2": 2,
+        "P3": 80
+      },
+      "strategy_label_only_count": 0,
+      "unsupported_quality_effect_count": 0,
+      "unsupported_process_claim_count": 0,
+      "overgeneralized_case_conclusion_count": 0,
+      "theory_name_dropping_count": 0,
+      "case_analysis_depth_summary": {
+        "problem_definition": {
+          "adequate": 1,
+          "strong": 2
+        },
+        "evidence_use": {
+          "adequate": 2,
+          "strong": 1
+        },
+        "initial_failure_or_alternative": {
+          "adequate": 1,
+          "strong": 2
+        },
+        "decision_rationale": {
+          "weak": 2,
+          "strong": 1
+        },
+        "translation_effect": {
+          "adequate": 2,
+          "strong": 1
+        },
+        "theory_mapping": {
+          "not_applicable": 3
+        },
+        "bounded_conclusion": {
+          "strong": 3
+        }
+      }
+    },
+    "findings": [
+      {
+        "issue_id": "AQ-001",
+        "type": "high_value_evidence_unused",
+        "dimension": "evidence_utilization",
+        "section_id": null,
+        "claim_id": null,
+        "case_id": "seg-ec100d8686d3891e-0209",
+        "severity": "medium",
+        "priority": "P2",
+        "evidence": "",
+        "reason": "案例 seg-ec100d8686d3891e-0209 有高价值过程证据但正文未使用（未用维度：['initial_final_change']）。",
+        "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-002",
+        "type": "high_value_evidence_unused",
+        "dimension": "evidence_utilization",
+        "section_id": null,
+        "claim_id": null,
+        "case_id": "seg-ec100d8686d3891e-0272",
+        "severity": "medium",
+        "priority": "P2",
+        "evidence": "",
+        "reason": "案例 seg-ec100d8686d3891e-0272 有高价值过程证据但正文未使用（未用维度：['initial_final_change']）。",
+        "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-003",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：## 3 翻译问题的层级化修订与受控对比 ### 3.1 证据边界与分析路径 本章以源译对应关系、话语指称与语用力度为递进主线，对翻译实践中的修订问题进行层级化分析。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-004",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--rq:RQ1-->首先考察两项具有真实初译至终译记录的修订案例，提取其中可观察的文本变化与修订事实；",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-005",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--rq:RQ2-->随后引入一项受控合成对比案例，以补充真实修订证据未能覆盖的语用力度分析维度。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-006",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：在此过程中，本章严格区分历史修订事实、作者分析与合成对比证据，确保不同类型的证据支持相应强度的结论。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-007",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--case-count-policy:two_case_fallback-->现有项目证据仅支持 2 个通过修订资格门禁的真实修订案例；",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-008",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：未用弱证据或无真实修订的片段补足第三个案例。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-009",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：为在真实历史证据不足的语用维度提供补充性分析，本章引入受控合成对比方法。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-010",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--synthetic-methodology-->合成对比案例以真实源文为基础，模拟初译与优化译文均为分析阶段生成，不代表作者的历史翻译；",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-011",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：其合理性、错误实质性与修复有效性分别经过检查。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-012",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--synthetic-limitation-->合成案例只能展示合理的翻译失败模式，不能证明此类错误在人类译者中的实际发生频率。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-013",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：### 3.2 真实修订案例 本节分析两项真实修订案例，分别关注源译对应关系的修复与话语指称的调整。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-014",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：两项案例均具有历史初译与终译记录，但缺乏同期的审校发现或修订理由记录，因此分析仅限于可观察的文本差异及其直接导致的文本效果，不推测译者的历史主观意图。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-015",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：#### 3.2.1 源译对应关系的修复 <!",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-016",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--claim:C1-->案例 seg-ec100d8686d3891e-0209 展示了一项针对源译对应关系的修订。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-017",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：该段位于文本末尾区域，源文为一部影片的英文题名。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-018",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：> [SOURCE seg-ec100d8686d3891e-0209]: RIOT IN CELL BLOCK 11 > [INITIAL seg-ec100d8686d3891e-0209]: 那是夏天，或是夏末。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-019",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：> [TARGET seg-ec100d8686d3891e-0209]: RIOT IN CELL BLOCK 11 从历史初译与终译的对比来看，初译文本\"那是夏天，或是夏末。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-020",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\"与源文\"RIOT IN CELL BLOCK 11\"在语义和文本结构上均无对应关系，属于相邻正文片段误入当前段落的信息结构错位。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-021",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：实际修订动作将初译文本替换为源文题名文本，从而恢复了源译段落的精确对应关系。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-022",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：在备选方案层面，若将题名进行汉化处理，可提出反事实备选（counterfactual_rendering）：\"十一号牢房暴动\"。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-023",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：然而，历史终译记录显示，译者最终选择保留英文题名。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-024",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：从结果看可解释为，该修订直接纠正了文本对齐错误，使目标文本片段与源文题名在表层形式上完全一致。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-025",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：在翻译效果维度上，该修订在指称清晰度（reference_clarity）上实现了具体改善：通过将\"那是夏天，或是夏末。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-026",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\"替换为\"RIOT IN CELL BLOCK 11\"，恢复了源文题名与目标文本片段之间的精确对应关系。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-027",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：然而，本项目证据不足以支持保留英文题名是有意的最终翻译策略这一推论。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-028",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：现有记录缺乏译者保留英文题名的理由说明，也缺乏解释相邻正文如何被误插入初译的项目工作流记录。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-029",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：因此，有界结论仅限于：该修订通过恢复源文题名纠正了文本对齐错误，但现有证据不能证明保留英文题名是一种经过深思熟虑的翻译策略。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-030",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：为获得更充分的解释，后续研究需要的人工证据包括：译者保留英文题名而非将其译出的理由说明，以及项目工作流记录中关于相邻正文被误插入初译的机制解释。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-031",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：#### 3.2.2 话语指称的调整 <!",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-032",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--claim:C2-->案例 seg-ec100d8686d3891e-0272 展示了一项针对话语指称的修订。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-033",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：该段同样位于文本末尾区域，涉及一段关键对话及其长期影响的描述。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-034",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：> [SOURCE seg-ec100d8686d3891e-0272]: \"You will not have a war,\" Matti suddenly said. Those five words have echoed within me for fifty years. > [INITIAL seg-ec1",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-035",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：这五个字在我心中回响了五十年。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-036",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：> [TARGET seg-ec100d8686d3891e-0272]: \"你不会经历战争，\"马蒂突然说道。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-037",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：这句话在我心中回响了五十年。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-038",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：源文中的\"Those five words\"直接回指前文引语\"You will not have a war\"的词数。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-039",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：在初译中，译者将其直译为\"这五个字\"。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-040",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：然而，前文引语的汉译\"你不会经历战争\"包含七个汉字，导致目标语表层的字数统计与源语的词数回指产生错位，形成指称消解上的矛盾。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-041",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：实际修订将\"五个字\"替换为\"句话\"，把无法直接迁移到汉语的源语词数回指转换为对整句言语的泛化指称。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-042",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：在备选方案层面，若强行保留字数对应，可提出反事实备选（counterfactual_rendering）：\"'你不会有战争，'马蒂突然说道。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-043",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：这五个字在我心中回响了五十年。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-044",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\"该备选通过缩减引语长度以匹配\"五个字\"，但历史终译并未采用此路径。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-045",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：最终决策与理由在于，将\"五个字\"改为\"句话\"避免了英文词数与汉字字数之间的数字错位，将指称对象转移至整个话语。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-046",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：在翻译效果维度上，该修订在指称清晰度（reference_clarity）上实现了具体改善：通过将\"五个字\"改为\"句话\"，消解了英文\"five words\"与包含超过五个汉字的中文引语之间的数字错位。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-047",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：本项目证据不足以支持译者做出该替换的历史动机。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-048",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：现有记录缺乏译者选择\"这句话\"而非调整引语长度的解释。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-049",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：因此，有界结论仅限于：该修订通过将具体的字数指称替换为对整句言语的一般指称，解决了指称错位问题，但无历史证据解释译者的确切推理过程。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-050",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：后续研究需要的人工证据包括：译者选择\"这句话\"而非其他备选方案（如调整引语长度以匹配\"五个字\"）的说明。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-051",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：### 3.3 合成对比案例 本节引入一项合成对比案例 SC-0141，以补充真实修订证据中缺失的语用力度分析。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-052",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：该案例基于真实源文构造，旨在检验中性疑问结构与口语反问结构在命题内容近似不变时对语用力度的影响。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-053",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：#### 3.3.1 语用暗示的模拟与优化 <!",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-054",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--claim:C3-->案例 SC-0141 的源文包含一句带有轻蔑色彩的政治性反问句。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-055",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：> [SYNTHETIC_SOURCE SC-0141]: After Israel's tenth anniversary celebrations, in the spring of 1958, he told me how he once said to Berl Katznelson, a founder of",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-056",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\" 为考察可能偏差，构造如下模拟初译： > [SIMULATED SC-0141]: 在1958年春天以色列建国十周年庆典之后，他告诉我有一次他对劳工锡安主义的创始人贝尔·卡茨内尔森说：\"你为什么需要那个本-古里安？",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-057",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\" 该模拟初译在句法上忠实于源文，将\"What do you need X for?",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-058",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\"译为\"你为什么需要X\"，并保留了指示词\"那个\"以呼应英文的\"that\"。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-059",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：然而，该翻译难点在于源文并非中性信息探询，而是口语化、带有轻蔑色彩的反问句，暗示本-古里安是多余或惹人厌的。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-060",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：模拟初译的错误诱因与诊断在于：\"你为什么需要……\"在汉语中读作正式的中性疑问句，抽离了原文轻蔑、对抗的语用力度。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-061",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：尽管\"那个\"带有微弱的贬抑色彩，但\"你为什么需要\"的书面语体压制了这一色彩。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-062",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：这种意义/功能失真表现为：原文作为一句带有政治张力的轻蔑话语，传达了说话者对本-古里安的负面评价；",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-063",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：而模拟初译将其软化为一中性疑问句，使说话者听起来像是在真诚发问，从而改变了人物性格化特征与轶事的情感质感。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-064",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：针对该模拟错误，提出优化译文如下： > [OPTIMIZED SC-0141]: 在1958年春天以色列建国十周年庆典之后，他告诉我有一次他对劳工锡安主义的创始人贝尔·卡茨内尔森说：\"你要那个本-古里安干什么？",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-065",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\" 在备选方案层面，该优化译文亦可作为分析对比（analytical_comparison）方案，与模拟初译形成直接对照。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-066",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：AI 优化的修复机制与有效性在于：将中性疑问句\"你为什么需要那个本-古里安？",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-067",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\"改为口语化反问句\"你要那个本-古里安干什么？",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-068",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：\"，使用了\"要……干什么\"的口语反问结构。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-069",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：该修复在不改变命题内容的前提下，还原了原文轻蔑、质问的语用力度。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-070",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：在翻译效果维度上，该优化在语用力度（pragmatic_force）上实现了具体改善：通过将\"你为什么需要\"替换为\"你要……干什么\"，将语域从正式的中性探询转变为口语反问句，恢复了轻蔑语调。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-071",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：本项目证据不足以支持将该案例视为作者历史初译的一部分。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-072",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：该合成对比案例的模拟初译和优化译文均为分析阶段生成，不属于作者翻译历史。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-073",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：因此，有界结论仅限于：该受控对比展示了一种合理的翻译失败模式，即反问句被扁平化为中性疑问句；",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-074",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：它不证明此类错误在人类译者中的发生频率，也不代表作者的历史翻译过程。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-075",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：### 3.4 跨案例综合与局限 <!",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-076",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：--claim:C4-->综合本章三项材料，可以观察到从段落对应、话语指称到语用力度的递进分析路径。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-077",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：案例 seg-ec100d8686d3891e-0209 证明了源译对应关系的修复，案例 seg-ec100d8686d3891e-0272 证明了实际词语替换及其可观察的指称效果，而合成对比案例 SC-0141 则补充展示了一种语用力度失真与修复的机制。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-078",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：然而，历史证据与合成证据支持的结论强度必须分开。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-079",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：两项真实修订案例支持的是实际发生的修订事实，其文本变化可由源文与两版译文直接比较得出；",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-080",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：但由于缺乏同期的发现记录与修订理由，这些案例不能声称历史动机，也不能单独证明翻译成品的整体质量。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-081",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：合成案例只支持一种经验证的可能失败机制，其合理性、错误实质性与优化有效性虽通过独立检查，但若将两类证据并列为同等案例，章节会产生方法突变感。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      },
+      {
+        "issue_id": "AQ-082",
+        "type": "conclusion_without_trace",
+        "dimension": "conclusion_discipline",
+        "section_id": "3",
+        "claim_id": null,
+        "case_id": null,
+        "severity": "low",
+        "priority": "P3",
+        "evidence": "",
+        "reason": "结论句缺少证据标记，需人工或语义确认：因此，本章严格区分了真实修订事实与受控合成对比，确保所有结论均限定在各自案例的证据边界之内，禁止外推为一般规则。",
+        "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+        "repair_action": "rewrite"
+      }
+    ],
+    "diagnostics": {
+      "paragraph_statistics": {
+        "total_paragraphs": 33,
+        "paragraph_roles": {
+          "filler": 9,
+          "claim": 5,
+          "analysis": 4,
+          "background": 11,
+          "evidence": 2,
+          "translation_description": 2
+        },
+        "per_section_roles": {
+          "3": {
+            "filler": 9,
+            "claim": 5,
+            "analysis": 4,
+            "background": 11,
+            "evidence": 2,
+            "translation_description": 2
+          }
+        },
+        "claim_bearing_paragraphs": 5,
+        "evidence_bearing_paragraphs": 2,
+        "analysis_bearing_paragraphs": 4,
+        "generic_paragraphs": 0,
+        "generic_rate": 0.0
+      },
+      "case_quality": [
+        {
+          "case_id": "seg-ec100d8686d3891e-0209",
+          "case_type": "authentic_revision",
+          "class": "usable_case",
+          "reasons": [
+            "证据丰富度 2/7"
+          ],
+          "supports_claims": [
+            "C1",
+            "C4"
+          ],
+          "evidence_richness": 2,
+          "case_role": "revision_case",
+          "synthetic_dimensions": {}
+        },
+        {
+          "case_id": "seg-ec100d8686d3891e-0272",
+          "case_type": "authentic_revision",
+          "class": "usable_case",
+          "reasons": [
+            "证据丰富度 2/7"
+          ],
+          "supports_claims": [
+            "C2",
+            "C4"
+          ],
+          "evidence_richness": 2,
+          "case_role": "revision_case",
+          "synthetic_dimensions": {}
+        },
+        {
+          "case_id": "SC-0141",
+          "case_type": "synthetic_contrast",
+          "class": "strong_case",
+          "reasons": [
+            "The source 'What do you need that Ben-Gurion for?' is a colloquial, dismissive rhetorical question. The baseline '你为什么需要那个本-古里安？' is syntactically faithful but reads as a neutral information-seeking inquiry, flattening the contemptuous pragmatic force. The optimized '你要那个本-古里安干什么？' uses the colloquial '要……干什么' rhetorical structure, restoring the dismissive, confrontational register without altering the propositional content. The repair is well-grounded and adds meaningful pragmatic value."
+          ],
+          "supports_claims": [
+            "C3",
+            "C4"
+          ],
+          "evidence_richness": null,
+          "case_role": "synthetic_contrast_case",
+          "synthetic_dimensions": {
+            "difficulty_validity": "confirmed",
+            "baseline_plausibility": "plausible",
+            "error_materiality": "confirmed",
+            "diagnosis_depth": "confirmed",
+            "repair_validity": "confirmed",
+            "analysis_depth": "pending_semantic_review",
+            "theory_case_fit": "pending_literature_grounding",
+            "bounded_conclusion": "pending_semantic_review",
+            "provenance_correctness": "confirmed"
+          }
+        }
+      ],
+      "rq_matrix": {
+        "matrix": {
+          "RQ1": {
+            "claims": [
+              "C1",
+              "C2"
+            ],
+            "cases": [
+              "seg-ec100d8686d3891e-0209",
+              "seg-ec100d8686d3891e-0272"
+            ],
+            "sections": [
+              "3"
+            ],
+            "answered": true,
+            "unanswered_reason": ""
+          },
+          "RQ2": {
+            "claims": [
+              "C3",
+              "C4"
+            ],
+            "cases": [
+              "seg-ec100d8686d3891e-0209",
+              "seg-ec100d8686d3891e-0272"
+            ],
+            "sections": [
+              "3"
+            ],
+            "answered": true,
+            "unanswered_reason": ""
+          }
+        },
+        "answered_rqs": 2,
+        "unanswered_rqs": [],
+        "orphan_claims": [],
+        "sections_without_rq": []
+      },
+      "evidence_utilization": {
+        "selected_case_count": 3,
+        "cases_used": 1,
+        "high_value_unused_cases": [
+          "seg-ec100d8686d3891e-0209",
+          "seg-ec100d8686d3891e-0272"
+        ],
+        "rows": [
+          {
+            "case_id": "seg-ec100d8686d3891e-0209",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "case_type": "authentic_revision",
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change"
+            ]
+          },
+          {
+            "case_id": "seg-ec100d8686d3891e-0272",
+            "used_in_report": false,
+            "evidence_richness": 2,
+            "case_type": "authentic_revision",
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change"
+            ]
+          },
+          {
+            "case_id": "SC-0141",
+            "used_in_report": true,
+            "evidence_richness": null,
+            "case_type": "synthetic_contrast",
+            "high_value_unused": false,
+            "unused_dimensions": []
+          }
+        ]
+      },
+      "conclusion_traceability": [
+        {
+          "section_id": "3",
+          "sentence": "## 3 翻译问题的层级化修订与受控对比 ### 3.1 证据边界与分析路径 本章以源译对应关系、话语指称与语用力度为递进主线，对翻译实践中的修订问题进行层级化分析。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--rq:RQ1-->首先考察两项具有真实初译至终译记录的修订案例，提取其中可观察的文本变化与修订事实；",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--rq:RQ2-->随后引入一项受控合成对比案例，以补充真实修订证据未能覆盖的语用力度分析维度。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "在此过程中，本章严格区分历史修订事实、作者分析与合成对比证据，确保不同类型的证据支持相应强度的结论。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--case-count-policy:two_case_fallback-->现有项目证据仅支持 2 个通过修订资格门禁的真实修订案例；",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "未用弱证据或无真实修订的片段补足第三个案例。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "为在真实历史证据不足的语用维度提供补充性分析，本章引入受控合成对比方法。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--synthetic-methodology-->合成对比案例以真实源文为基础，模拟初译与优化译文均为分析阶段生成，不代表作者的历史翻译；",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "其合理性、错误实质性与修复有效性分别经过检查。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--synthetic-limitation-->合成案例只能展示合理的翻译失败模式，不能证明此类错误在人类译者中的实际发生频率。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "### 3.2 真实修订案例 本节分析两项真实修订案例，分别关注源译对应关系的修复与话语指称的调整。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "两项案例均具有历史初译与终译记录，但缺乏同期的审校发现或修订理由记录，因此分析仅限于可观察的文本差异及其直接导致的文本效果，不推测译者的历史主观意图。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "#### 3.2.1 源译对应关系的修复 <!",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--claim:C1-->案例 seg-ec100d8686d3891e-0209 展示了一项针对源译对应关系的修订。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "该段位于文本末尾区域，源文为一部影片的英文题名。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "> [SOURCE seg-ec100d8686d3891e-0209]: RIOT IN CELL BLOCK 11 > [INITIAL seg-ec100d8686d3891e-0209]: 那是夏天，或是夏末。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "> [TARGET seg-ec100d8686d3891e-0209]: RIOT IN CELL BLOCK 11 从历史初译与终译的对比来看，初译文本\"那是夏天，或是夏末。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\"与源文\"RIOT IN CELL BLOCK 11\"在语义和文本结构上均无对应关系，属于相邻正文片段误入当前段落的信息结构错位。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "实际修订动作将初译文本替换为源文题名文本，从而恢复了源译段落的精确对应关系。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "在备选方案层面，若将题名进行汉化处理，可提出反事实备选（counterfactual_rendering）：\"十一号牢房暴动\"。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "然而，历史终译记录显示，译者最终选择保留英文题名。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "从结果看可解释为，该修订直接纠正了文本对齐错误，使目标文本片段与源文题名在表层形式上完全一致。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "在翻译效果维度上，该修订在指称清晰度（reference_clarity）上实现了具体改善：通过将\"那是夏天，或是夏末。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\"替换为\"RIOT IN CELL BLOCK 11\"，恢复了源文题名与目标文本片段之间的精确对应关系。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "然而，本项目证据不足以支持保留英文题名是有意的最终翻译策略这一推论。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "现有记录缺乏译者保留英文题名的理由说明，也缺乏解释相邻正文如何被误插入初译的项目工作流记录。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "因此，有界结论仅限于：该修订通过恢复源文题名纠正了文本对齐错误，但现有证据不能证明保留英文题名是一种经过深思熟虑的翻译策略。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "为获得更充分的解释，后续研究需要的人工证据包括：译者保留英文题名而非将其译出的理由说明，以及项目工作流记录中关于相邻正文被误插入初译的机制解释。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "#### 3.2.2 话语指称的调整 <!",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--claim:C2-->案例 seg-ec100d8686d3891e-0272 展示了一项针对话语指称的修订。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "该段同样位于文本末尾区域，涉及一段关键对话及其长期影响的描述。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "> [SOURCE seg-ec100d8686d3891e-0272]: \"You will not have a war,\" Matti suddenly said. Those five words have echoed within me for fifty years. > [INITIAL seg-ec1",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "这五个字在我心中回响了五十年。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "> [TARGET seg-ec100d8686d3891e-0272]: \"你不会经历战争，\"马蒂突然说道。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "这句话在我心中回响了五十年。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "源文中的\"Those five words\"直接回指前文引语\"You will not have a war\"的词数。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "在初译中，译者将其直译为\"这五个字\"。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "然而，前文引语的汉译\"你不会经历战争\"包含七个汉字，导致目标语表层的字数统计与源语的词数回指产生错位，形成指称消解上的矛盾。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "实际修订将\"五个字\"替换为\"句话\"，把无法直接迁移到汉语的源语词数回指转换为对整句言语的泛化指称。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "在备选方案层面，若强行保留字数对应，可提出反事实备选（counterfactual_rendering）：\"'你不会有战争，'马蒂突然说道。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "这五个字在我心中回响了五十年。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\"该备选通过缩减引语长度以匹配\"五个字\"，但历史终译并未采用此路径。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "最终决策与理由在于，将\"五个字\"改为\"句话\"避免了英文词数与汉字字数之间的数字错位，将指称对象转移至整个话语。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "在翻译效果维度上，该修订在指称清晰度（reference_clarity）上实现了具体改善：通过将\"五个字\"改为\"句话\"，消解了英文\"five words\"与包含超过五个汉字的中文引语之间的数字错位。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "本项目证据不足以支持译者做出该替换的历史动机。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "现有记录缺乏译者选择\"这句话\"而非调整引语长度的解释。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "因此，有界结论仅限于：该修订通过将具体的字数指称替换为对整句言语的一般指称，解决了指称错位问题，但无历史证据解释译者的确切推理过程。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "后续研究需要的人工证据包括：译者选择\"这句话\"而非其他备选方案（如调整引语长度以匹配\"五个字\"）的说明。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "### 3.3 合成对比案例 本节引入一项合成对比案例 SC-0141，以补充真实修订证据中缺失的语用力度分析。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "该案例基于真实源文构造，旨在检验中性疑问结构与口语反问结构在命题内容近似不变时对语用力度的影响。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "#### 3.3.1 语用暗示的模拟与优化 <!",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--claim:C3-->案例 SC-0141 的源文包含一句带有轻蔑色彩的政治性反问句。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "> [SYNTHETIC_SOURCE SC-0141]: After Israel's tenth anniversary celebrations, in the spring of 1958, he told me how he once said to Berl Katznelson, a founder of",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\" 为考察可能偏差，构造如下模拟初译： > [SIMULATED SC-0141]: 在1958年春天以色列建国十周年庆典之后，他告诉我有一次他对劳工锡安主义的创始人贝尔·卡茨内尔森说：\"你为什么需要那个本-古里安？",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\" 该模拟初译在句法上忠实于源文，将\"What do you need X for?",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\"译为\"你为什么需要X\"，并保留了指示词\"那个\"以呼应英文的\"that\"。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "然而，该翻译难点在于源文并非中性信息探询，而是口语化、带有轻蔑色彩的反问句，暗示本-古里安是多余或惹人厌的。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "模拟初译的错误诱因与诊断在于：\"你为什么需要……\"在汉语中读作正式的中性疑问句，抽离了原文轻蔑、对抗的语用力度。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "尽管\"那个\"带有微弱的贬抑色彩，但\"你为什么需要\"的书面语体压制了这一色彩。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "这种意义/功能失真表现为：原文作为一句带有政治张力的轻蔑话语，传达了说话者对本-古里安的负面评价；",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "而模拟初译将其软化为一中性疑问句，使说话者听起来像是在真诚发问，从而改变了人物性格化特征与轶事的情感质感。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "针对该模拟错误，提出优化译文如下： > [OPTIMIZED SC-0141]: 在1958年春天以色列建国十周年庆典之后，他告诉我有一次他对劳工锡安主义的创始人贝尔·卡茨内尔森说：\"你要那个本-古里安干什么？",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\" 在备选方案层面，该优化译文亦可作为分析对比（analytical_comparison）方案，与模拟初译形成直接对照。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "AI 优化的修复机制与有效性在于：将中性疑问句\"你为什么需要那个本-古里安？",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\"改为口语化反问句\"你要那个本-古里安干什么？",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "\"，使用了\"要……干什么\"的口语反问结构。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "该修复在不改变命题内容的前提下，还原了原文轻蔑、质问的语用力度。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "在翻译效果维度上，该优化在语用力度（pragmatic_force）上实现了具体改善：通过将\"你为什么需要\"替换为\"你要……干什么\"，将语域从正式的中性探询转变为口语反问句，恢复了轻蔑语调。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "本项目证据不足以支持将该案例视为作者历史初译的一部分。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "该合成对比案例的模拟初译和优化译文均为分析阶段生成，不属于作者翻译历史。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "因此，有界结论仅限于：该受控对比展示了一种合理的翻译失败模式，即反问句被扁平化为中性疑问句；",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "它不证明此类错误在人类译者中的发生频率，也不代表作者的历史翻译过程。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "### 3.4 跨案例综合与局限 <!",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "--claim:C4-->综合本章三项材料，可以观察到从段落对应、话语指称到语用力度的递进分析路径。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "案例 seg-ec100d8686d3891e-0209 证明了源译对应关系的修复，案例 seg-ec100d8686d3891e-0272 证明了实际词语替换及其可观察的指称效果，而合成对比案例 SC-0141 则补充展示了一种语用力度失真与修复的机制。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "然而，历史证据与合成证据支持的结论强度必须分开。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "两项真实修订案例支持的是实际发生的修订事实，其文本变化可由源文与两版译文直接比较得出；",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "但由于缺乏同期的发现记录与修订理由，这些案例不能声称历史动机，也不能单独证明翻译成品的整体质量。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "合成案例只支持一种经验证的可能失败机制，其合理性、错误实质性与优化有效性虽通过独立检查，但若将两类证据并列为同等案例，章节会产生方法突变感。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        },
+        {
+          "section_id": "3",
+          "sentence": "因此，本章严格区分了真实修订事实与受控合成对比，确保所有结论均限定在各自案例的证据边界之内，禁止外推为一般规则。",
+          "traceable_to_evidence": false,
+          "needs_semantic_check": true
+        }
+      ],
+      "cross_section_checks": [],
+      "case_count_policy": {
+        "status": "two_case_fallback",
+        "preferred": 3,
+        "minimum": 2,
+        "selected": 3
+      },
+      "case_analysis_depth": {
+        "seg-ec100d8686d3891e-0209": {
+          "problem_definition": {
+            "status": "adequate",
+            "reason": "问题定义为相邻正文片段误入当前段落导致源译对应关系断裂，可由源文与初译直接观察验证。"
+          },
+          "evidence_use": {
+            "status": "adequate",
+            "reason": "使用了源文、历史初译、历史终译三重文本对比，并提出反事实备选'十一号牢房暴动'作为对照。"
+          },
+          "initial_failure_or_alternative": {
+            "status": "adequate",
+            "reason": "初译'那是夏天，或是夏末。那是午后。'与源文无语义对应，失败模式明确为信息结构错位。"
+          },
+          "decision_rationale": {
+            "status": "weak",
+            "reason": "报告正确承认缺乏译者保留英文题名的理由说明，未推测主观意图，但'从结果看可解释为'的措辞仍略带解释性倾向。"
+          },
+          "translation_effect": {
+            "status": "adequate",
+            "reason": "指称清晰度改善有文本证据支持：替换后目标片段与源文题名表层形式完全一致。"
+          },
+          "theory_mapping": {
+            "status": "not_applicable",
+            "reason": "无理论框架，报告未提及具体理论名称，符合outline约束。"
+          },
+          "bounded_conclusion": {
+            "status": "strong",
+            "reason": "明确限定为'对应关系修复'，否认保留英文题名是有意策略，并列出后续所需人工证据。"
+          }
+        },
+        "seg-ec100d8686d3891e-0272": {
+          "problem_definition": {
+            "status": "strong",
+            "reason": "问题定义为源语词数回指'five words'与汉语字数'七个字'的计数错位，导致指称消解矛盾，诊断精准。"
+          },
+          "evidence_use": {
+            "status": "adequate",
+            "reason": "使用源文词数回指、初译字数统计与终译泛化指称的三方对比，并提出缩减引语长度的反事实备选。"
+          },
+          "initial_failure_or_alternative": {
+            "status": "strong",
+            "reason": "初译'这五个字'与引语'你不会经历战争'（七字）产生数字矛盾，失败模式具体且可验证。"
+          },
+          "decision_rationale": {
+            "status": "weak",
+            "reason": "报告称'最终决策与理由在于'但随即承认无历史动机证据，措辞与有界结论声明之间存在轻微张力。"
+          },
+          "translation_effect": {
+            "status": "adequate",
+            "reason": "指称清晰度改善可观察：'这句话'消解了数字错位，将指称对象转移至整句言语。"
+          },
+          "theory_mapping": {
+            "status": "not_applicable",
+            "reason": "无理论框架，报告未提及具体理论名称，符合outline约束。"
+          },
+          "bounded_conclusion": {
+            "status": "strong",
+            "reason": "明确限定为'实际词语替换及其可观察的指称效果'，否认历史动机，并列出后续所需证据。"
+          }
+        },
+        "SC-0141": {
+          "problem_definition": {
+            "status": "strong",
+            "reason": "问题定义为口语化轻蔑反问句被扁平化为中性信息探询，语用力度失真，难点有效性已确认。"
+          },
+          "evidence_use": {
+            "status": "strong",
+            "reason": "使用真实源文构造模拟初译与优化译文，provenance明确标注为分析阶段生成，诊断、错误实质性与修复有效性均经独立检查确认。"
+          },
+          "initial_failure_or_alternative": {
+            "status": "strong",
+            "reason": "模拟初译'你为什么需要那个本-古里安？'句法忠实但语用扁平，错误诱因诊断深入：书面语体压制了'那个'的微弱贬抑色彩。"
+          },
+          "decision_rationale": {
+            "status": "strong",
+            "reason": "修复决策使用'要……干什么'口语反问结构还原轻蔑语调，不改变命题内容，修复机制与有效性论证充分。"
+          },
+          "translation_effect": {
+            "status": "strong",
+            "reason": "语用力度改善具体：从正式中性探询转变为口语反问句，恢复轻蔑语调与政治张力，效果可由两版译文直接对比验证。"
+          },
+          "theory_mapping": {
+            "status": "not_applicable",
+            "reason": "无理论框架，报告未提及具体理论名称，符合outline约束。"
+          },
+          "bounded_conclusion": {
+            "status": "strong",
+            "reason": "明确限定为'展示一种合理失败模式'，否认代表人类错误频率或作者历史翻译过程，provenance边界清晰。"
+          }
+        }
+      }
+    },
+    "content_hash": "2bdcff7e1d3b7f1a7bb3ee02d03eb828fbd7069c63ad0c57db3cd321a9216462"
+  },
+  "existing_semantic_review": {
+    "schema_version": "academic-reviewer-v1",
+    "status": "pass_with_warnings",
+    "issues": [
+      {
+        "issue_id": "AR-001",
+        "section_id": "3",
+        "type": "unsupported_conclusion",
+        "claim_id": "C1",
+        "evidence_ids": [
+          "seg-ec100d8686d3891e-0209"
+        ],
+        "severity": "low",
+        "reason": "正文称初译文本属于“相邻正文片段误入当前段落的信息结构错位”，但现有证据仅能观察到初译与源文不对应，无法证实“相邻正文误入”这一机制性判断。",
+        "suggested_action": "将“相邻正文片段误入”改为“与源文无对应关系的文本片段”，或明确标注为作者推测而非可证实事实。"
+      },
+      {
+        "issue_id": "AR-002",
+        "section_id": "3",
+        "type": "unsupported_conclusion",
+        "claim_id": "C2",
+        "evidence_ids": [
+          "seg-ec100d8686d3891e-0272"
+        ],
+        "severity": "low",
+        "reason": "正文称修订“避免了英文词数与汉字字数之间的数字错位，将指称对象转移至整个话语”，其中“将指称对象转移至整个话语”属于修订效果描述，但前文已声明不推测历史动机，此处“将……转移”的表述隐含主动策略意图，与证据边界略有张力。",
+        "suggested_action": "将“将指称对象转移至整个话语”改为“客观上使指称对象变为整个话语”，以区分效果描述与意图归因。"
+      },
+      {
+        "issue_id": "AR-003",
+        "section_id": "3",
+        "type": "descriptive_not_analytical",
+        "claim_id": "C3",
+        "evidence_ids": [
+          "SC-0141"
+        ],
+        "severity": "low",
+        "reason": "3.3.1 对模拟初译错误的分析较为充分，但对优化译文的分析主要重复“使用了口语反问结构”“还原了语用力度”，缺少对优化方案自身潜在代价或备选口语结构的比较分析，分析深度略不足。",
+        "suggested_action": "可简要说明为何选择“要……干什么”而非其他口语反问结构，或指出优化方案仍可能存在的语域或语气偏差。"
+      },
+      {
+        "issue_id": "AR-004",
+        "section_id": "3",
+        "type": "conclusion_too_strong",
+        "claim_id": "C4",
+        "evidence_ids": [
+          "seg-ec100d8686d3891e-0209",
+          "seg-ec100d8686d3891e-0272",
+          "SC-0141"
+        ],
+        "severity": "low",
+        "reason": "3.4 称三项材料形成“从段落对应、话语指称到语用力度的递进分析路径”，但合成案例与前两项真实修订在方法上不同类，“递进”表述可能暗示三者构成同一证据链上的连续推进，略有过度整合。",
+        "suggested_action": "将“递进分析路径”改为“分层补充的分析路径”，并明确合成案例为方法上独立的补充层而非同一链条的第三环。"
+      }
+    ],
+    "content_hash": "4f4170c67d313da4d7dde5eea1acf01ac06e65928f56b281bbe81e9b1226f0d7"
+  },
+  "chapter_composition_review": {
+    "schema_version": "chapter3-supervisor-review-v1",
+    "dimensions": {
+      "argument_coherence": {
+        "status": "pass_with_warnings",
+        "reason": "章节以'源译对应→话语指称→语用力度'为递进主线，3.1设定路径、3.2分析真实案例、3.3引入合成对比、3.4综合与局限，整体逻辑链清晰。但3.4综合段在区分真实与合成证据强度时，'递进分析路径'的表述与3.1重复，未在综合层面产生新的论证增量。"
+      },
+      "case_analytical_depth": {
+        "status": "pass_with_warnings",
+        "reason": "0272的词数回指与字数错位诊断精准（strong），SC-0141的语用力度失真诊断深入（strong）。但0209的decision_rationale为weak——'从结果看可解释为'的措辞略带解释性倾向，与后文'不推测译者历史主观意图'的声明存在轻微张力；0272的'最终决策与理由在于'同样与无历史动机声明有轻微张力。"
+      },
+      "case_complementarity": {
+        "status": "pass",
+        "reason": "三个案例分别覆盖源译段落对应修复（0209）、跨语言话语指称调整（0272）、语用力度失真与修复（SC-0141），维度互补性强，无功能重叠。"
+      },
+      "theory_case_fit": {
+        "status": "not_applicable",
+        "reason": "composition_plan明确设定literature_evidence_boundary为'no grounded literature evidence; no theory names allowed'，正文未提及具体理论名称，符合outline约束。"
+      },
+      "evidence_utilization": {
+        "status": "pass_with_warnings",
+        "reason": "正文实际详细使用了0209和0272两个真实案例的源文、初译、终译三重对比，验证器报告的'used_in_report: false'系误判。但AV-001错误需关注：验证器报告SC-0141描述的初译/终译差异与存储delta不一致。鉴于SC-0141为合成案例，此错误可能是验证器将合成案例误纳入历史delta检查所致，但需人工确认存储的合成delta是否与正文逐字一致。"
+      },
+      "synthetic_methodology_clarity": {
+        "status": "pass",
+        "reason": "3.1通过<!--synthetic-methodology-->和<!--synthetic-limitation-->标记明确声明合成案例的性质、生成阶段与边界限制；3.3再次确认'模拟初译和优化译文均为分析阶段生成，不属于作者翻译历史'；3.4强调'若将两类证据并列为同等案例，章节会产生方法突变感'。方法论边界清晰。"
+      },
+      "cross_case_progression": {
+        "status": "pass",
+        "reason": "从段落级对应关系（0209）→句内话语指称（0272）→语用力度（SC-0141），分析粒度由表入深，递进路径明确且在3.4得到显式总结。"
+      },
+      "academic_specificity": {
+        "status": "pass",
+        "reason": "使用了reference_clarity、pragmatic_force等分析维度标签，counterfactual_rendering、analytical_comparison等方法论标记，以及对'词数回指'与'字数统计'错位、'书面语体压制贬抑色彩'等具体语言现象的精准描述，学术特异性充分。"
+      },
+      "redundancy": {
+        "status": "pass_with_warnings",
+        "reason": "3.4首句'综合本章三项材料，可以观察到从段落对应、话语指称到语用力度的递进分析路径'与3.1的路径声明高度重复。0209案例中'恢复了源文题名与目标文本片段之间的精确对应关系'在相邻两句中重复出现。"
+      },
+      "conclusion_discipline": {
+        "status": "pass_with_warnings",
+        "reason": "三个案例均设有明确的有界结论声明，否认历史动机外推，并列出后续所需人工证据。但验证器报告80个P3级'conclusion_without_trace'问题，虽多数为验证器对HTML注释标记的解析限制所致，仍建议检查正文非标记句子的证据可追溯性。"
+      },
+      "provenance_correctness": {
+        "status": "review_required",
+        "reason": "SC-0141的provenance标注在正文中清晰（'分析阶段生成，不属于作者翻译历史'），但AV-001确定性验证错误报告'章节3描述的初译/终译差异与所引案例保存的delta不一致'。需人工确认：验证器存储的合成delta是否与正文引用的SIMULATED/OPTIMIZED文本逐字一致，或此错误系验证器将合成案例误纳入历史delta检查所致。"
+      }
+    },
+    "supervisor_review": {
+      "overall_assessment": "章节在证据边界管理上表现出较强的方法论自觉，真实案例与合成案例的区分清晰，有界结论声明规范。主要问题集中在：(1) AV-001确定性错误需人工核实SC-0141的存储delta与正文是否一致；(2) 0209和0272的decision_rationale措辞（'从结果看可解释为'、'最终决策与理由在于'）与有界结论声明存在轻微张力，建议调整为更中立的描述性措辞；(3) 3.4综合段与3.1路径声明重复，建议在综合层面提供跨案例的新分析增量而非重述路径。",
+      "key_strengths": [
+        "0272词数回指与字数错位的诊断精准，从源语特征到目标语效果的推理链完整",
+        "SC-0141语用力度诊断区分了指示词微弱贬抑色彩与书面语体压制效应，分析层次丰富",
+        "合成案例的provenance边界声明在3.1、3.3、3.4三处反复确认，方法论纪律性强"
+      ],
+      "key_concerns": [
+        "AV-001确定性错误需优先核实",
+        "0209案例分析深度相对薄弱，'信息结构错位'的诊断虽正确但分析增量有限",
+        "3.4综合段缺乏跨案例的比较性洞察，主要重述3.1已声明的递进路径"
+      ]
+    },
+    "sc0141_adversarial_review": {
+      "plausibility": "模拟初译'你为什么需要那个本-古里安？'句法忠实于源文'What do you need that Ben-Gurion for?'，将反问句式译为中性疑问句是合理的翻译失败模式，尤其在机器翻译或初级译者场景中具有较高发生可能性。",
+      "qualified_translator_susceptibility": "合格译者不太可能受诱于此错误。'What do you need X for?'的口语反问性质在英语中较为显著，有经验的译者通常会识别其语用功能并选择对应的汉语反问结构。但初级译者或过度依赖句法对等的译者可能受诱。",
+      "error_materiality": "错误具有实质性。语用力度从轻蔑、对抗的反问句变为中性信息探询，改变了说话者对本-古里安的负面评价立场，进而影响人物性格化特征与轶事情感质感。这不是表层风格偏好问题，而是语用功能的根本失真。",
+      "optimization_justified_by_diagnosis": "是。诊断准确识别了'你为什么需要'的书面语体压制了'那个'的微弱贬抑色彩，优化译文'你要……干什么'使用口语反问结构直接回应了这一诊断，在不改变命题内容的前提下还原了轻蔑语调。修复机制与诊断理由之间有明确的因果对应。",
+      "translation_phenomenon_or_model_self_direction": "更接近展示翻译现象。模拟初译是合理的失败模式而非人为构造的荒谬错误，源文的语用复杂性真实存在，诊断与修复均针对可观察的语言现象。但需注意：由于模拟初译和优化译文均由同一分析阶段生成，存在'自设陷阱再自解'的方法论风险，正文中'AI优化的修复机制'措辞可能强化这一印象。",
+      "academic_increment": "语用力度失真作为翻译研究议题本身并非新发现，但具体到'What do you need X for?'从英语反问句到汉语中性疑问句的语用扁平化机制，以及'要……干什么'结构的修复路径，提供了可操作的分析实例。在缺乏真实语用修订证据的条件下，作为补充性演示具有部分学术增量。",
+      "contribution": "partially_redundant",
+      "retain": true,
+      "role": "supplement"
+    },
+    "configuration_comparison": {
+      "A": {
+        "description": "三个真实修订案例（不可行：仅2个通过门禁）",
+        "coherence": "若可行则最高，因证据类型统一",
+        "depth": "受限于可用案例的证据丰富度",
+        "methodological_clarity": "最高，无需区分证据类型",
+        "diversity": "取决于第三个案例的维度覆盖",
+        "provenance_risk": "最低",
+        "reader_burden": "最低",
+        "naturalness": "最高"
+      },
+      "B": {
+        "description": "两个真实案例+合成案例不标注合成性质",
+        "coherence": "表面连贯但实质存在证据层级混淆",
+        "depth": "与C相当",
+        "methodological_clarity": "最低，读者无法区分证据强度",
+        "diversity": "与C相当",
+        "provenance_risk": "最高，构成学术不端风险",
+        "reader_burden": "表面最低但实质最高（读者可能错误外推）",
+        "naturalness": "表面最高但实质虚假"
+      },
+      "C": {
+        "description": "两个真实案例+明确标注的合成对比（当前配置）",
+        "coherence": "较高，3.1和3.4的边界声明有效衔接了证据类型差异",
+        "depth": "最高，因合成案例可针对真实证据未覆盖维度进行定向设计",
+        "methodological_clarity": "较高，但需读者理解合成方法的限制",
+        "diversity": "最高，覆盖段落对应、话语指称、语用力度三个维度",
+        "provenance_risk": "低，标注清晰",
+        "reader_burden": "中等，需理解证据层级的区分",
+        "naturalness": "中等，从真实到合成的过渡存在方法论断裂感，但3.4已显式承认"
+      }
+    },
+    "recommended_configuration": "C",
+    "passage_inspection": {
+      "strongest_analytical_passage": {
+        "excerpt": "然而，前文引语的汉译\"你不会经历战争\"包含七个汉字，导致目标语表层的字数统计与源语的词数回指产生错位，形成指称消解上的矛盾。实际修订将\"五个字\"替换为\"句话\"，把无法直接迁移到汉语的源语词数回指转换为对整句言语的泛化指称。",
+        "observation": "诊断精准：将源语词数回指与目标语字数统计的错位机制解释清楚，从源语特征→初译问题→修订动作→效果改善的推理链完整，分析增量显著。"
+      },
+      "weakest_analytical_passage": {
+        "excerpt": "从结果看可解释为，该修订直接纠正了文本对齐错误，使目标文本片段与源文题名在表层形式上完全一致。",
+        "observation": "'从结果看可解释为'的措辞略带解释性倾向，与后文'不推测译者的历史主观意图'的声明存在轻微张力。0209案例整体分析深度相对薄弱，'信息结构错位'的诊断虽正确但分析增量有限。"
+      },
+      "best_authentic_reasoning_chain": {
+        "excerpt": "源文中的\"Those five words\"直接回指前文引语\"You will not have a war\"的词数。在初译中，译者将其直译为\"这五个字\"。然而，前文引语的汉译\"你不会经历战争\"包含七个汉字，导致目标语表层的字数统计与源语的词数回指产生错位，形成指称消解上的矛盾。",
+        "observation": "从源文回指机制→直译策略→目标语字数现实→指称消解矛盾的推理链完整且可验证，是本章最扎实的真实案例分析段落。"
+      },
+      "best_synthetic_reasoning_chain": {
+        "excerpt": "模拟初译的错误诱因与诊断在于：\"你为什么需要……\"在汉语中读作正式的中性疑问句，抽离了原文轻蔑、对抗的语用力度。尽管\"那个\"带有微弱的贬抑色彩，但\"你为什么需要\"的书面语体压制了这一色彩。",
+        "observation": "诊断层次丰富：区分了指示词'那个'的微弱贬抑色彩与书面语体'你为什么需要'的压制效应，解释了为何句法忠实的翻译反而导致语用功能失真，分析逻辑超越了简单的'直译不好'判断。"
+      },
+      "most_awkward_transition": {
+        "excerpt": "本节引入一项合成对比案例 SC-0141，以补充真实修订证据中缺失的语用力度分析。",
+        "observation": "从真实修订案例到合成案例的过渡虽有必要，但'补充真实修订证据中缺失'的措辞暗示了真实证据的不足，可能引起读者对章节完整性的疑虑。3.4虽已显式承认'方法突变感'，但3.3开头的过渡仍略显突兀。"
+      },
+      "most_generic_paragraph": {
+        "excerpt": "综合本章三项材料，可以观察到从段落对应、话语指称到语用力度的递进分析路径。案例 seg-ec100d8686d3891e-0209 证明了源译对应关系的修复，案例 seg-ec100d8686d3891e-0272 证明了实际词语替换及其可观察的指称效果，而合成对比案例 SC-0141 则补充展示了一种语用力度失真与修复的机制。",
+        "observation": "此段主要重述3.1已声明的递进路径和各案例的功能定位，缺乏跨案例的比较性洞察或新的综合分析增量。'证明了'的措辞也略显强硬，与有界结论的基调不完全一致。"
+      }
+    },
+    "readiness": "supervisor_review_required",
+    "content_hash": "e144d171f7e5cc82ac94c12a5f003ae92aa5977797639e49ddebb78e63f1d5f2"
+  },
+  "content_hash": "7b55d801027265dc804882d124f2e5bfbb9b3df6c45ac29a493896b6eb87595f"
+}

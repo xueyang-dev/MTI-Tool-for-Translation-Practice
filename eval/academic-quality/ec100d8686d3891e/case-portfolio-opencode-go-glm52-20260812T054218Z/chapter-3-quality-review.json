@@ -1,0 +1,24 @@
+{
+  "schema_version": "portfolio-chapter-quality-review-v1",
+  "readiness": "academically_reviewable",
+  "judgment": "The chapter now has enough evidence-grounded breadth and hierarchy to sustain a substantial MTI case-analysis chapter. It is not submission-ready because most supporting cases document review findings rather than implemented repairs, and neither Human Author Evidence nor Literature Evidence is available.",
+  "case_balance": {
+    "core": 12,
+    "supporting": 10,
+    "contrast_boundary": 4,
+    "assessment": "core cases establish mechanisms; supporting cases are concise extensions"
+  },
+  "strongest_passage": {
+    "case_id": "seg-ec100d8686d3891e-0272",
+    "reason": "It uses a genuine stored delta and limits the conclusion to an observable referential effect."
+  },
+  "weakest_pattern": {
+    "scope": "tier_2_supporting",
+    "reason": "Repeated evidence-boundary wording is necessary but still formulaic; these examples should remain concise in a supervisor revision."
+  },
+  "methodological_risk": "Readers may still mistake review suggestions for completed revisions if the case-type methodology paragraph is removed during later editing.",
+  "highest_leverage_next_step": "real Human Author Evidence, followed by grounded literature/theory refinement",
+  "validation_status": "pass",
+  "chapter_characters": 24402,
+  "content_hash": "86b71a54f1f9aa3922fd72191cf23e40ff2d0b9d97c84dc96550417018dd2681"
+}

@@ -72,8 +72,10 @@ def _context_snippets(segments: List[str], term: str, limit: int = 3,
 
 def generate_audit_rows(glossary: List[Dict[str, Any]],
                         segments: List[str],
-                        pairs: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+                        pairs: List[Dict[str, Any]],
+                        contexts_segments: List[str] | None = None) -> List[Dict[str, str]]:
     """自动填充统计；decision/approved_target/variants/scope/case_sensitive 留空。"""
+    ctx_segs = contexts_segments if contexts_segments is not None else segments
     rows: List[Dict[str, str]] = []
     for e in glossary:
         term = e["source"]
@@ -99,7 +101,7 @@ def generate_audit_rows(glossary: List[Dict[str, Any]],
             "current_status": e.get("status") or "",
             "occurrences": str(len(occ)),
             "sample_contexts": " || ".join(
-                _context_snippets(segments, term)) if occ else "",
+                _context_snippets(ctx_segs, term)) if ctx_segs else "",
             "current_adoption_rate": "" if rate is None else str(rate),
             "decision": "",
             "approved_target": "",
@@ -184,6 +186,9 @@ def main(argv=None) -> int:
     ap.add_argument("--glossary", default=None,
                     help="源术语表（缺省用 results-dir/glossary_eval.json）")
     ap.add_argument("--glossary-out", default="eval/approved_glossary.json")
+    ap.add_argument("--contexts-corpus", default=None,
+                    help="可选：全文 jsonl（用于补全 sample_contexts，"
+                         "避免子集外的术语上下文为 NaN）")
     args = ap.parse_args(argv)
 
     results = Path(args.results_dir)
@@ -205,11 +210,13 @@ def main(argv=None) -> int:
         return 0
 
     segments = _load_corpus(results / "corpus.jsonl")
+    contexts_segments = _load_corpus(Path(args.contexts_corpus)) \
+        if args.contexts_corpus else None
     # 用 governance 臂（B）的译文计算 current_adoption_rate
     pairs = _load_pairs(results / "runs" / "B" /
                         _first_job_id(results / "runs" / "B") / "state.json") \
         if (results / "runs" / "B").is_dir() else []
-    rows = generate_audit_rows(glossary, segments, pairs)
+    rows = generate_audit_rows(glossary, segments, pairs, contexts_segments)
     out = Path(args.out)
     write_audit_csv(rows, out)
     print(f"term audit -> {out}（{len(rows)} 条；decision 留空，待人工填写）")

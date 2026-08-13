@@ -1,0 +1,321 @@
+{
+  "schema_version": "case-selector-v1",
+  "selection_policy": "argument relevance > complete process chain > representativeness > complexity",
+  "cases": [
+    {
+      "case_id": "seg-ec100d8686d3891e-0144",
+      "segment_id": "seg-ec100d8686d3891e-0144",
+      "segment_index": 144,
+      "coverage_zone": "middle",
+      "score": 38.0,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "actionable_finding",
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "long_source",
+        "clause_complexity",
+        "punctuation_complexity",
+        "passive_construction",
+        "quotation_or_dash_complexity"
+      ],
+      "features": {
+        "source_chars": 3632,
+        "clause_markers": 14,
+        "punctuation_count": 85,
+        "term_count": 1,
+        "term_entry_ids": [
+          "t-13bdacf558f9"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 1,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [
+        "C1",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ3"
+      ],
+      "selection_rationale": "complete_translation_evidence_chain；actionable_finding；repair_or_initial_final_change；terminology_dense；long_source；clause_complexity；punctuation_complexity；passive_construction；quotation_or_dash_complexity"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0215",
+      "segment_id": "seg-ec100d8686d3891e-0215",
+      "segment_index": 215,
+      "coverage_zone": "end",
+      "score": 35.0,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "actionable_finding",
+        "repair_or_initial_final_change",
+        "long_source",
+        "clause_complexity",
+        "punctuation_complexity",
+        "quotation_or_dash_complexity"
+      ],
+      "features": {
+        "source_chars": 539,
+        "clause_markers": 4,
+        "punctuation_count": 10,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 1,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [
+        "C1",
+        "C2"
+      ],
+      "research_questions": [
+        "RQ1"
+      ],
+      "selection_rationale": "complete_translation_evidence_chain；actionable_finding；repair_or_initial_final_change；long_source；clause_complexity；punctuation_complexity；quotation_or_dash_complexity"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0233",
+      "segment_id": "seg-ec100d8686d3891e-0233",
+      "segment_index": 233,
+      "coverage_zone": "end",
+      "score": 21.0,
+      "reasons": [
+        "actionable_finding",
+        "tm_reuse",
+        "long_source",
+        "clause_complexity",
+        "punctuation_complexity",
+        "quotation_or_dash_complexity"
+      ],
+      "features": {
+        "source_chars": 639,
+        "clause_markers": 4,
+        "punctuation_count": 26,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 2,
+        "informational_findings": 0,
+        "repair_evidence": false,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": true
+      },
+      "supports_claims": [
+        "C1",
+        "C2",
+        "C5",
+        "C6",
+        "C7"
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ3"
+      ],
+      "selection_rationale": "actionable_finding；tm_reuse；long_source；clause_complexity；punctuation_complexity；quotation_or_dash_complexity"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0235",
+      "segment_id": "seg-ec100d8686d3891e-0235",
+      "segment_index": 235,
+      "coverage_zone": "end",
+      "score": 19.49,
+      "reasons": [
+        "actionable_finding",
+        "tm_reuse",
+        "long_source",
+        "clause_complexity",
+        "punctuation_complexity",
+        "quotation_or_dash_complexity"
+      ],
+      "features": {
+        "source_chars": 349,
+        "clause_markers": 5,
+        "punctuation_count": 11,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 2,
+        "informational_findings": 0,
+        "repair_evidence": false,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": true
+      },
+      "supports_claims": [
+        "C1",
+        "C2",
+        "C4",
+        "C7"
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ3"
+      ],
+      "selection_rationale": "actionable_finding；tm_reuse；long_source；clause_complexity；punctuation_complexity；quotation_or_dash_complexity"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0141",
+      "segment_id": "seg-ec100d8686d3891e-0141",
+      "segment_index": 141,
+      "coverage_zone": "middle",
+      "score": 19.8,
+      "reasons": [
+        "actionable_finding",
+        "tm_reuse",
+        "long_source",
+        "clause_complexity",
+        "punctuation_complexity",
+        "passive_construction",
+        "quotation_or_dash_complexity"
+      ],
+      "features": {
+        "source_chars": 330,
+        "clause_markers": 5,
+        "punctuation_count": 14,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 1,
+        "informational_findings": 0,
+        "repair_evidence": false,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": true
+      },
+      "supports_claims": [
+        "C1",
+        "C2",
+        "C7"
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ3"
+      ],
+      "selection_rationale": "actionable_finding；tm_reuse；long_source；clause_complexity；punctuation_complexity；passive_construction；quotation_or_dash_complexity"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0007",
+      "segment_id": "seg-ec100d8686d3891e-0007",
+      "segment_index": 7,
+      "coverage_zone": "beginning",
+      "score": 14.0,
+      "reasons": [
+        "actionable_finding",
+        "repair_or_initial_final_change"
+      ],
+      "features": {
+        "source_chars": 36,
+        "clause_markers": 0,
+        "punctuation_count": 0,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 3,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [
+        "C1"
+      ],
+      "research_questions": [
+        "RQ1"
+      ],
+      "selection_rationale": "replacement of seg-ec100d8686d3891e-0133: 案例 seg-ec100d8686d3891e-0133 缺少真实翻译问题、决策差异或修复证据。"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0059",
+      "segment_id": "seg-ec100d8686d3891e-0059",
+      "segment_index": 59,
+      "coverage_zone": "beginning",
+      "score": 11.0,
+      "reasons": [
+        "actionable_finding",
+        "terminology_dense",
+        "tm_reuse"
+      ],
+      "features": {
+        "source_chars": 171,
+        "clause_markers": 0,
+        "punctuation_count": 3,
+        "term_count": 3,
+        "term_entry_ids": [
+          "t-2e013149b628",
+          "t-aa7ac352c720",
+          "t-39aca3fafeda"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 1,
+        "informational_findings": 0,
+        "repair_evidence": false,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": true
+      },
+      "supports_claims": [
+        "C1",
+        "C4"
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ3"
+      ],
+      "selection_rationale": "actionable_finding；terminology_dense；tm_reuse"
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0139",
+      "segment_id": "seg-ec100d8686d3891e-0139",
+      "segment_index": 139,
+      "coverage_zone": "middle",
+      "score": 32.07,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "actionable_finding",
+        "repair_or_initial_final_change",
+        "long_source",
+        "clause_complexity",
+        "punctuation_complexity",
+        "quotation_or_dash_complexity"
+      ],
+      "features": {
+        "source_chars": 307,
+        "clause_markers": 3,
+        "punctuation_count": 9,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 1,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [
+        "C1",
+        "C4"
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ3"
+      ],
+      "selection_rationale": "replacement of seg-ec100d8686d3891e-0043: 案例 seg-ec100d8686d3891e-0043 缺少真实翻译问题、决策差异或修复证据。"
+    }
+  ],
+  "content_hash": "c2cd5cc26625c9a8ade072002bdc384a8899b6eb511504df229178bbbdeaa178"
+}

@@ -1,0 +1,294 @@
+{
+  "literature_sources": [
+    {
+      "source_id": "house2001-tqa",
+      "title": "Translation Quality Assessment: Linguistic Description versus Social Evaluation",
+      "authors": [
+        "Juliane House"
+      ],
+      "year": 2001,
+      "source_type": "journal_article",
+      "concepts": [
+        "translation quality assessment",
+        "functional-pragmatic analysis",
+        "register",
+        "genre"
+      ],
+      "citation_metadata": {
+        "title": "Translation Quality Assessment: Linguistic Description versus Social Evaluation",
+        "authors": [
+          "Juliane House"
+        ],
+        "year": 2001,
+        "journal": "Meta",
+        "volume": "46",
+        "issue": "2",
+        "pages": "243–257",
+        "doi": "10.7202/003141ar",
+        "in_text": "House（2001）",
+        "apa7": "House, J. (2001). Translation quality assessment: Linguistic description versus social evaluation. Meta, 46(2), 243–257. https://doi.org/10.7202/003141ar"
+      },
+      "verification": {
+        "existence": "verified",
+        "original_checked": true,
+        "checks": [
+          "original_pdf",
+          "publisher_record",
+          "crossref",
+          "semantic_scholar"
+        ],
+        "note": "期刊卷期与原始 PDF 均为 2001；Crossref 的 online metadata 日期为 2002，不据此改写卷期年份。",
+        "study_design_level": "VII",
+        "overall_grade": "A"
+      },
+      "local_source_path": "eval/academic-quality/ec100d8686d3891e/thesis-closeout-v6/literature-sources/house-2001-translation-quality-assessment.pdf",
+      "verification_status": "metadata_verified",
+      "allowed_citation_status": "allowed",
+      "citation_allowed": true,
+      "content_availability": "full_text_available"
+    },
+    {
+      "source_id": "karoly-et-al-2022-cohesion",
+      "title": "A szövegkohézió újrateremtése műfordításban: esettanulmány Salinger The Catcher in the Rye című művének két magyar fordításáról",
+      "authors": [
+        "Krisztina Károly",
+        "Gerda Karádi",
+        "Judit Olgyay-Fekete",
+        "Kamilla Sulyok"
+      ],
+      "year": 2022,
+      "source_type": "journal_article",
+      "concepts": [
+        "literary translation",
+        "textual cohesion",
+        "reference",
+        "explicitation"
+      ],
+      "citation_metadata": {
+        "title": "A szövegkohézió újrateremtése műfordításban: esettanulmány Salinger The Catcher in the Rye című művének két magyar fordításáról",
+        "authors": [
+          "Krisztina Károly",
+          "Gerda Karádi",
+          "Judit Olgyay-Fekete",
+          "Kamilla Sulyok"
+        ],
+        "year": 2022,
+        "journal": "Fordítástudomány",
+        "volume": "24",
+        "issue": "2",
+        "pages": "5–40",
+        "doi": "10.35924/fordtud.24.2.1",
+        "in_text": "Károly等（2022a）",
+        "apa7": "Károly, K., Karádi, G., Olgyay-Fekete, J., & Sulyok, K. (2022). A szövegkohézió újrateremtése műfordításban: esettanulmány Salinger The Catcher in the Rye című művének két magyar fordításáról. Fordítástudomány, 24(2), 5–40. https://doi.org/10.35924/fordtud.24.2.1"
+      },
+      "verification": {
+        "existence": "verified",
+        "original_checked": true,
+        "checks": [
+          "original_pdf",
+          "journal_record",
+          "crossref",
+          "semantic_scholar"
+        ],
+        "study_design_level": "VI",
+        "overall_grade": "A"
+      },
+      "local_source_path": "eval/academic-quality/ec100d8686d3891e/thesis-closeout-v6/literature-sources/karoly-et-al-2022-literary-cohesion.pdf",
+      "verification_status": "metadata_verified",
+      "allowed_citation_status": "allowed",
+      "citation_allowed": true,
+      "content_availability": "full_text_available"
+    },
+    {
+      "source_id": "karoly-et-al-2022-macrostructure",
+      "title": "A makrostruktúra újrateremtése műfordításban: esettanulmány Salinger The Catcher in the Rye című művének két magyar fordításáról",
+      "authors": [
+        "Krisztina Károly",
+        "Andrea Csiborné Horváth",
+        "Izolda Engel",
+        "Franciska Van Waarden"
+      ],
+      "year": 2022,
+      "source_type": "journal_article",
+      "concepts": [
+        "literary translation",
+        "coherence",
+        "macrostructure",
+        "rhetorical structure"
+      ],
+      "citation_metadata": {
+        "title": "A makrostruktúra újrateremtése műfordításban: esettanulmány Salinger The Catcher in the Rye című művének két magyar fordításáról",
+        "authors": [
+          "Krisztina Károly",
+          "Andrea Csiborné Horváth",
+          "Izolda Engel",
+          "Franciska Van Waarden"
+        ],
+        "year": 2022,
+        "journal": "Fordítástudomány",
+        "volume": "24",
+        "issue": "2",
+        "pages": "41–81",
+        "doi": "10.35924/fordtud.24.2.2",
+        "in_text": "Károly等（2022b）",
+        "apa7": "Károly, K., Csiborné Horváth, A., Engel, I., & Van Waarden, F. (2022). A makrostruktúra újrateremtése műfordításban: esettanulmány Salinger The Catcher in the Rye című művének két magyar fordításáról. Fordítástudomány, 24(2), 41–81. https://doi.org/10.35924/fordtud.24.2.2"
+      },
+      "verification": {
+        "existence": "verified",
+        "original_checked": true,
+        "checks": [
+          "original_pdf",
+          "journal_record",
+          "crossref",
+          "semantic_scholar"
+        ],
+        "study_design_level": "VI",
+        "overall_grade": "A"
+      },
+      "local_source_path": "eval/academic-quality/ec100d8686d3891e/thesis-closeout-v6/literature-sources/karoly-et-al-2022-literary-macrostructure.pdf",
+      "verification_status": "metadata_verified",
+      "allowed_citation_status": "allowed",
+      "citation_allowed": true,
+      "content_availability": "full_text_available"
+    },
+    {
+      "source_id": "eekhof-et-al-2020-vpip",
+      "title": "VPIP: A Lexical Identification Procedure for Perceptual, Cognitive, and Emotional Viewpoint in Narrative Discourse",
+      "authors": [
+        "Lynn S. Eekhof",
+        "Kobie van Krieken",
+        "José Sanders"
+      ],
+      "year": 2020,
+      "source_type": "journal_article",
+      "concepts": [
+        "narrative viewpoint",
+        "lexical markers",
+        "perception",
+        "cognition",
+        "emotion"
+      ],
+      "citation_metadata": {
+        "title": "VPIP: A Lexical Identification Procedure for Perceptual, Cognitive, and Emotional Viewpoint in Narrative Discourse",
+        "authors": [
+          "Lynn S. Eekhof",
+          "Kobie van Krieken",
+          "José Sanders"
+        ],
+        "year": 2020,
+        "journal": "Open Library of Humanities",
+        "volume": "6",
+        "issue": "1",
+        "article": "18",
+        "pages": "1–38",
+        "doi": "10.16995/olh.483",
+        "in_text": "Eekhof等（2020）",
+        "apa7": "Eekhof, L. S., van Krieken, K., & Sanders, J. (2020). VPIP: A lexical identification procedure for perceptual, cognitive, and emotional viewpoint in narrative discourse. Open Library of Humanities, 6(1), Article 18, 1–38. https://doi.org/10.16995/olh.483"
+      },
+      "verification": {
+        "existence": "verified",
+        "original_checked": true,
+        "checks": [
+          "original_pdf",
+          "journal_record",
+          "crossref",
+          "semantic_scholar"
+        ],
+        "study_design_level": "VI",
+        "overall_grade": "A"
+      },
+      "local_source_path": "eval/academic-quality/ec100d8686d3891e/thesis-closeout-v6/literature-sources/eekhof-et-al-2020-vpip.pdf",
+      "verification_status": "metadata_verified",
+      "allowed_citation_status": "allowed",
+      "citation_allowed": true,
+      "content_availability": "full_text_available"
+    },
+    {
+      "source_id": "van-krieken-2018-perspective",
+      "title": "Ambiguous Perspective in Narrative Discourse: Effects of Viewpoint Markers and Verb Tense on Readers’ Interpretation of Represented Perceptions",
+      "authors": [
+        "Kobie van Krieken"
+      ],
+      "year": 2018,
+      "source_type": "journal_article",
+      "concepts": [
+        "narrative viewpoint",
+        "reader interpretation",
+        "viewpoint markers",
+        "verb tense"
+      ],
+      "citation_metadata": {
+        "title": "Ambiguous Perspective in Narrative Discourse: Effects of Viewpoint Markers and Verb Tense on Readers’ Interpretation of Represented Perceptions",
+        "authors": [
+          "Kobie van Krieken"
+        ],
+        "year": 2018,
+        "journal": "Discourse Processes",
+        "volume": "55",
+        "issue": "8",
+        "pages": "771–786",
+        "doi": "10.1080/0163853X.2017.1381540",
+        "in_text": "van Krieken（2018）",
+        "apa7": "van Krieken, K. (2018). Ambiguous perspective in narrative discourse: Effects of viewpoint markers and verb tense on readers’ interpretation of represented perceptions. Discourse Processes, 55(8), 771–786. https://doi.org/10.1080/0163853X.2017.1381540"
+      },
+      "verification": {
+        "existence": "verified",
+        "original_checked": true,
+        "checks": [
+          "publisher_version_in_institutional_repository",
+          "crossref",
+          "semantic_scholar"
+        ],
+        "study_design_level": "III",
+        "overall_grade": "A"
+      },
+      "local_source_path": "eval/academic-quality/ec100d8686d3891e/thesis-closeout-v6/literature-sources/van-krieken-2018-ambiguous-perspective.pdf",
+      "verification_status": "metadata_verified",
+      "allowed_citation_status": "allowed",
+      "citation_allowed": true,
+      "content_availability": "full_text_available"
+    },
+    {
+      "source_id": "al-herz-2016-narrative-pov",
+      "title": "Narrative Point of View in Translation: A Systemic Functional Analysis of the Arabic Translations of J. M. Coetzee’s Waiting for the Barbarians",
+      "authors": [
+        "Komail Hussain H. Al Herz"
+      ],
+      "year": 2016,
+      "source_type": "doctoral_thesis",
+      "concepts": [
+        "narrative point of view",
+        "translation shifts",
+        "systemic functional analysis"
+      ],
+      "citation_metadata": {
+        "title": "Narrative Point of View in Translation: A Systemic Functional Analysis of the Arabic Translations of J. M. Coetzee’s Waiting for the Barbarians",
+        "authors": [
+          "Komail Hussain H. Al Herz"
+        ],
+        "year": 2016,
+        "institution": "University of Leeds",
+        "repository": "White Rose eTheses Online",
+        "url": "https://etheses.whiterose.ac.uk/id/eprint/17870/",
+        "in_text": "Al Herz（2016）",
+        "apa7": "Al Herz, K. H. H. (2016). Narrative point of view in translation: A systemic functional analysis of the Arabic translations of J. M. Coetzee’s Waiting for the Barbarians [Doctoral dissertation, University of Leeds]. White Rose eTheses Online. https://etheses.whiterose.ac.uk/id/eprint/17870/"
+      },
+      "verification": {
+        "existence": "verified",
+        "original_checked": true,
+        "checks": [
+          "original_pdf",
+          "institutional_repository_record"
+        ],
+        "note": "无 DOI；自动索引未找到可靠精确匹配，来源身份由 University of Leeds 机构库与原始论文核验。",
+        "study_design_level": "VI",
+        "overall_grade": "B"
+      },
+      "local_source_path": "eval/academic-quality/ec100d8686d3891e/thesis-closeout-v6/literature-sources/al-herz-2016-narrative-point-of-view.pdf",
+      "verification_status": "metadata_verified",
+      "allowed_citation_status": "allowed",
+      "citation_allowed": true,
+      "content_availability": "full_text_available"
+    }
+  ]
+}

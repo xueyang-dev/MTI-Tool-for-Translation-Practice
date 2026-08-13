@@ -1,0 +1,134 @@
+{
+  "schema_version": "academic-reviewer-v1",
+  "status": "review_required",
+  "issues": [
+    {
+      "issue_id": "AR-001",
+      "section_id": "3",
+      "type": "weak_evidence",
+      "claim_id": "C3",
+      "evidence_ids": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011",
+        "metric:blocking_findings",
+        "metric:actionable_findings",
+        "metric:informational_findings"
+      ],
+      "severity": "high",
+      "reason": "C3声称不同严重级别问题的分布反映了受众反应的差异化层次，但每个级别仅有一例样本，且三个案例的源文本在句法结构上高度相似（均为'Although...continued...'句式），初译均为占位符。如此小的样本量和同质化的案例无法支撑关于'梯度分布'和'层次性'的结论，属于以个案证据过度推断普遍规律。",
+      "suggested_action": "在正文中明确将C3的结论限定为'探索性观察'，避免使用'梯度分布''层次性'等暗示普遍规律的表述；或补充更多不同句式和初译类型的案例以增强证据支撑。"
+    },
+    {
+      "issue_id": "AR-002",
+      "section_id": "4",
+      "type": "overgeneralization",
+      "claim_id": "C2",
+      "evidence_ids": [
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0011"
+      ],
+      "severity": "medium",
+      "reason": "C2声称'让步关系的准确传达是影响受众理解回忆录叙事逻辑的关键因素'，但所有案例的源文本均为同一句式（Although...continued...），且初译均为占位符，未提供任何真实翻译中让步关系处理不当的实例。基于三个同质化案例推断让步关系在'回忆录叙事'中的普遍关键性，属于过度概括。",
+      "suggested_action": "将C2的表述限定为'在本项目所处理的特定句式结构中'，避免推广到所有回忆录叙事；或补充不同句式、不同初译质量的案例以支持更广泛的结论。"
+    },
+    {
+      "issue_id": "AR-003",
+      "section_id": "4",
+      "type": "case_claim_mismatch",
+      "claim_id": "C1",
+      "evidence_ids": [
+        "seg-track-b-fixture-0011"
+      ],
+      "severity": "medium",
+      "reason": "C1主张受众反应可通过审校环节中发现的'翻译问题及其修复结果'进行间接观察。但案例三（seg-track-b-fixture-0011）的审校发现是'结尾段语气处理可接受'，属于肯定性确认而非问题发现，且该案例的初译也是占位符，修复结果与案例一、二完全相同。该案例并未展示'问题发现与修复'的过程，与C1的核心主张存在不匹配。",
+      "suggested_action": "在正文中明确区分'问题发现与修复'和'可接受性确认'两种证据类型，并说明案例三如何支持C1（例如作为受众反应层次性的补充证据），或调整C1的表述以涵盖肯定性确认。"
+    },
+    {
+      "issue_id": "AR-004",
+      "section_id": "4",
+      "type": "contradiction",
+      "claim_id": "C1",
+      "evidence_ids": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011"
+      ],
+      "severity": "medium",
+      "reason": "正文多处强调'受众反应'是通过审校者的专业判断间接观察的，并承认审校者反应不能等同于普通读者反应（如3.5节、4.6节）。但在4.1节和4.2节中，分析却将审校者的判断直接等同于'受众'的理解障碍（如'受众无法获得完整信息''受众无法理解飞行员行为背后的复杂情境'），未始终区分'专业受众'与'普通受众'，存在概念使用上的矛盾。",
+      "suggested_action": "在案例分析中统一使用'专业受众'或'审校者'作为反应主体，避免直接使用'受众'一词造成混淆；或在首次使用时明确界定'受众'在本研究中的操作化定义。"
+    },
+    {
+      "issue_id": "AR-005",
+      "section_id": "4",
+      "type": "descriptive_not_analytical",
+      "claim_id": "C3",
+      "evidence_ids": [
+        "metric:blocking_findings",
+        "metric:actionable_findings",
+        "metric:informational_findings"
+      ],
+      "severity": "medium",
+      "reason": "4.4节对三类问题的梯度分布进行了描述（阻断→可操作→信息性），但未深入分析这一分布与受众反应之间的因果机制。例如，为何阻断性问题必然导致'理解过程完全中断'？为何信息性确认就表明'受众能够顺利完成意义建构'？这些关联缺乏理论或实证支撑，仅停留在描述层面。",
+      "suggested_action": "补充对问题严重级别与受众认知加工之间关系的理论论证，或引用相关认知翻译研究文献，使分析超越描述性层面。"
+    },
+    {
+      "issue_id": "AR-006",
+      "section_id": "5",
+      "type": "conclusion_too_strong",
+      "claim_id": "C1",
+      "evidence_ids": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011"
+      ],
+      "severity": "medium",
+      "reason": "5.1节总结称'受众反应可通过审校证据间接解释'这一核心论点在三个典型案例中得到了'初步支持'，但随后又承认样本为构造性示例、每类问题仅一例。'初步支持'的表述仍可能被解读为对论点的实质性验证，而实际上证据强度极弱，结论表述过于乐观。",
+      "suggested_action": "将结论表述改为'本研究展示了审校证据作为受众反应间接指标的可行性，但结论仅为探索性，需更大规模数据验证'，避免使用'支持'等暗示验证性的词汇。"
+    },
+    {
+      "issue_id": "AR-007",
+      "section_id": "3",
+      "type": "weak_evidence",
+      "claim_id": "C1",
+      "evidence_ids": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011"
+      ],
+      "severity": "high",
+      "reason": "C1的核心主张是受众反应可通过审校发现及其修复结果间接观察。但三个案例的初译均为占位符（'第X段初译。'），并非真实的翻译产出。以占位符作为'翻译问题'的证据，无法代表真实翻译中可能出现的错误类型，严重削弱了证据的有效性和代表性。",
+      "suggested_action": "在正文中明确说明案例为构造性示例，并讨论其与真实翻译语料的差异；或补充真实翻译案例作为辅助证据，以增强C1的证据基础。"
+    },
+    {
+      "issue_id": "AR-008",
+      "section_id": "4",
+      "type": "duplicate_argument",
+      "claim_id": "C2",
+      "evidence_ids": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011"
+      ],
+      "severity": "low",
+      "reason": "4.1节、4.2节和4.4节均重复论证了'让步结构的完整传达'这一主题，且使用的证据相同（三个案例的修复均以'尽管'开篇）。虽然各节侧重点略有不同，但核心论点重复出现，导致论证冗余。",
+      "suggested_action": "合并或精简重复论证部分，将让步关系的分析集中在单一章节中，避免在多个小节中重复相同证据和结论。"
+    },
+    {
+      "issue_id": "AR-009",
+      "section_id": "4",
+      "type": "chapter_drift",
+      "claim_id": "C1",
+      "evidence_ids": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011"
+      ],
+      "severity": "low",
+      "reason": "第四章标题为'案例分析：受众反应的证据化解释'，但4.5节'术语决策与受众理解的稳定性'讨论的是术语一致性对受众认知的影响，与本章核心的'问题类型与修复过程'分析关联较弱，且未使用任何案例证据（仅提及术语锁定状态），偏离了案例分析的主线。",
+      "suggested_action": "将4.5节内容移至第三章（项目描述）或将其与案例分析整合，确保每节内容紧扣'受众反应'的证据化解释主题。"
+    }
+  ],
+  "content_hash": "9d6da44e41c33ae59a7c753f3a2697d3eae56b5d23fbcdbb8d25335544c15e47"
+}

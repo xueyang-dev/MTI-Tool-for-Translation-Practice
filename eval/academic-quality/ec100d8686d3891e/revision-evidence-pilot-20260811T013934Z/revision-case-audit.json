@@ -1,0 +1,298 @@
+{
+  "schema_version": "revision-case-audit-v1",
+  "job_id": "ec100d8686d3891e",
+  "state_source": "outputs/ec100d8686d3891e/state.json",
+  "state_sha256": "9ff6cd1fac9663af394a772cc99842be789c8e20085fb1fdba184db81bae2e1f",
+  "eligibility_rule": "No revision case without an actual meaningful initial-to-final revision.",
+  "statistics": {
+    "total_segments": 273,
+    "segments_with_initial_final_data": 237,
+    "unchanged_segments": 234,
+    "meaningfully_revised_segments": 3,
+    "revision_cases_with_findings": 0,
+    "revision_cases_with_repair_history": 0,
+    "revision_cases_with_complete_repair_chains": 0,
+    "revision_cases_academically_eligible": 2
+  },
+  "selection_status": "insufficient_revision_cases",
+  "selected_case_ids": [
+    "seg-ec100d8686d3891e-0209",
+    "seg-ec100d8686d3891e-0272"
+  ],
+  "excluded_review_required_case_ids": [
+    "seg-ec100d8686d3891e-0142"
+  ],
+  "chapter_3_sufficiency": "insufficient_revision_cases",
+  "candidate_cases": [
+    {
+      "case_id": "seg-ec100d8686d3891e-0209",
+      "segment_id": "seg-ec100d8686d3891e-0209",
+      "segment_index": 209,
+      "coverage_zone": "end",
+      "case_role": "revision_case",
+      "score": 30.0,
+      "reasons": [
+        "revision_with_repair_link",
+        "meaningful_initial_final_revision"
+      ],
+      "academic_candidate_status": "eligible",
+      "features": {
+        "source_chars": 21,
+        "clause_markers": 0,
+        "punctuation_count": 0,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": true,
+        "has_repair_history": false,
+        "has_human_revision_action": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": []
+      },
+      "source": "RIOT IN CELL BLOCK 11",
+      "initial_target": "那是夏天，或是夏末。那是午后。",
+      "final_target": "RIOT IN CELL BLOCK 11",
+      "actual_delta": {
+        "available": true,
+        "changed": true,
+        "meaningful": true,
+        "formatting_only": false,
+        "case_role": "revision_case",
+        "lexical_changes": [
+          {
+            "old": "那是夏天，或是夏末。那是午后。",
+            "new": "RIOT IN CELL BLOCK 11"
+          }
+        ],
+        "structural_changes": [],
+        "omission_addition": [],
+        "finding_link": [],
+        "repair_link": false,
+        "unchanged": false
+      },
+      "finding": [],
+      "repair_history": [],
+      "human_revision_actions": [
+        {
+          "finding_id": "segment:209",
+          "action": "retranslated",
+          "note": "重新翻译段 209",
+          "timestamp": "2026-08-08T15:45:00+00:00",
+          "actor": "user"
+        }
+      ],
+      "translation_problem": "初译“那是夏天，或是夏末。那是午后。”与源文标题不对应；终译恢复为标题原文。",
+      "research_question_relevance": "可支持段落错配/题名处理与人工重译的质量控制分析。",
+      "academic_usefulness": "selected; meaningful revision plus recorded human retranslation action",
+      "missing_human_evidence": [
+        "修订所针对的具体问题",
+        "修订由作者还是审校意见触发",
+        "预期读者效果"
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0272",
+      "segment_id": "seg-ec100d8686d3891e-0272",
+      "segment_index": 272,
+      "coverage_zone": "end",
+      "case_role": "revision_case",
+      "score": 13.0,
+      "reasons": [
+        "meaningful_initial_final_revision",
+        "quotation_or_dash_complexity"
+      ],
+      "academic_candidate_status": "eligible",
+      "features": {
+        "source_chars": 103,
+        "clause_markers": 0,
+        "punctuation_count": 3,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": false,
+        "has_repair_history": false,
+        "has_human_revision_action": false,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": []
+      },
+      "source": "“You will not have a war,” Matti suddenly said. Those five words have echoed within me for fifty years.",
+      "initial_target": "“你不会经历战争，”马蒂突然说道。这五个字在我心中回响了五十年。",
+      "final_target": "“你不会经历战争，”马蒂突然说道。这句话在我心中回响了五十年。",
+      "actual_delta": {
+        "available": true,
+        "changed": true,
+        "meaningful": true,
+        "formatting_only": false,
+        "case_role": "revision_case",
+        "lexical_changes": [
+          {
+            "old": "五个字",
+            "new": "句话"
+          }
+        ],
+        "structural_changes": [],
+        "omission_addition": [],
+        "finding_link": [],
+        "repair_link": false,
+        "unchanged": false
+      },
+      "finding": [],
+      "repair_history": [],
+      "human_revision_actions": [],
+      "translation_problem": "初译“这五个字”在终译中改为“这句话”，改变了对前述话语的指称单位。",
+      "research_question_relevance": "可支持字面对等与篇章指称/叙事自然度之间的微观修订分析。",
+      "academic_usefulness": "selected; meaningful textual revision without recorded rationale",
+      "missing_human_evidence": [
+        "为何将“五个字”改为“这句话”",
+        "预期这一变化产生的阅读效果"
+      ]
+    },
+    {
+      "case_id": "seg-ec100d8686d3891e-0142",
+      "segment_id": "seg-ec100d8686d3891e-0142",
+      "segment_index": 142,
+      "coverage_zone": "middle",
+      "case_role": "revision_case",
+      "score": -59.86,
+      "reasons": [
+        "revision_with_repair_link",
+        "meaningful_initial_final_revision",
+        "long_source",
+        "clause_complexity",
+        "punctuation_complexity",
+        "quotation_or_dash_complexity",
+        "integrity_review_required"
+      ],
+      "academic_candidate_status": "review_required",
+      "features": {
+        "source_chars": 314,
+        "clause_markers": 3,
+        "punctuation_count": 13,
+        "term_count": 0,
+        "term_entry_ids": [],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "has_meaningful_revision": true,
+        "repair_evidence": true,
+        "has_repair_history": false,
+        "has_human_revision_action": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false,
+        "integrity_flags": [
+          {
+            "type": "probable_adjacent_target_overlap",
+            "following_segment_id": "seg-ec100d8686d3891e-0143",
+            "similarity": 0.839
+          }
+        ]
+      },
+      "source": "Before Dad started the jeep, Mom said to him, “Now you’ll appreciate my coffee.” Dad laughed and replied, “That was chicory.” “What’s chicory?” I asked. Mom explained about the austerity period and Dov Yosef, who was the Minister of Rationing. On the short drive back westward, I saw Mom place her left hand on the",
+      "initial_target": "在爸爸发动吉普车之前，妈妈对他说：“现在你会欣赏我的咖啡了。”爸爸笑着回答：“那是菊苣。”“什么是菊苣？”我问。妈妈解释了关于配给时期和多夫·约瑟夫的事，他是配给部长。在向西返回的短暂车程中，我看到妈妈把左手放在",
+      "final_target": "在爸爸发动吉普车之前，妈妈对他说：“现在你会欣赏我的咖啡了。”爸爸笑着回答：“那是菊苣。”我问：“什么是菊苣？”妈妈解释了配给时期和时任配给部长的多夫·约瑟夫。在向西返回的短途车程中，我看到妈妈把左手放在爸爸的右手背上——那只换挡的手。吉普车有三个前进挡和一个倒挡。他立刻甩开她的手，看向左边。妈妈把目光转向右边。我无法忘记这一幕。爸爸去世后，我问妈妈那次去菊苣地的旅行。“你在说什么？”她说，“我们和露丝、阿扎里亚连朋友都不是。而且贝特哈希塔属于基布兹联合派系，谁会跟他们说话？”她说完就转过身去，背对着我这个三岁半的孩子。我想，你不该和菊苣争论，但没说出口。",
+      "actual_delta": {
+        "available": true,
+        "changed": true,
+        "meaningful": true,
+        "formatting_only": false,
+        "case_role": "revision_case",
+        "lexical_changes": [
+          {
+            "old": "暂",
+            "new": "途"
+          }
+        ],
+        "structural_changes": [
+          {
+            "addition": "我问："
+          },
+          {
+            "removal": "我问。"
+          },
+          {
+            "removal": "关于"
+          },
+          {
+            "addition": "时任配给部长的"
+          },
+          {
+            "removal": "的事，他是配给部长"
+          },
+          {
+            "addition": "爸爸的右手背上——那只换挡的手。吉普车有三个前进挡和一个倒挡。他立刻甩开她的手，看向左边。妈妈把目光转向右边。我无法忘记这一幕。爸爸去世后，我问妈妈那次去菊苣地的旅行。“你在说什么？”她说，“我们和露丝、阿扎里亚连朋友都不是。而且贝特哈希塔"
+          }
+        ],
+        "omission_addition": [
+          {
+            "addition": "我问："
+          },
+          {
+            "removal": "我问。"
+          },
+          {
+            "removal": "关于"
+          },
+          {
+            "addition": "时任配给部长的"
+          },
+          {
+            "removal": "的事，他是配给部长"
+          },
+          {
+            "addition": "爸爸的右手背上——那只换挡的手。吉普车有三个前进挡和一个倒挡。他立刻甩开她的手，看向左边。妈妈把目光转向右边。我无法忘记这一幕。爸爸去世后，我问妈妈那次去菊苣地的旅行。“你在说什么？”她说，“我们和露丝、阿扎里亚连朋友都不是。而且贝特哈希塔"
+          }
+        ],
+        "finding_link": [],
+        "repair_link": false,
+        "unchanged": false
+      },
+      "finding": [],
+      "repair_history": [],
+      "human_revision_actions": [
+        {
+          "finding_id": "segment:142",
+          "action": "retranslated",
+          "note": "重新翻译段 142",
+          "timestamp": "2026-08-08T15:44:58+00:00",
+          "actor": "user"
+        }
+      ],
+      "translation_problem": "终译新增部分与下一段终译高度重叠，存在跨段内容并入风险。",
+      "research_question_relevance": "可用于讨论分段与重译完整性，但不能在复核前作为成功修订案例。",
+      "academic_usefulness": "review_required; excluded from core selection",
+      "missing_human_evidence": [
+        "先确认终译是否误并入下一段；在完整性问题解决前不询问修订理据"
+      ]
+    }
+  ],
+  "content_hash": "22a09fbfd4f51697985cbbbe8675e5f7d70dc584c2a3456bce46f65017a78826",
+  "replaces_ineligible_target_set": {
+    "removed_case_ids": [
+      "seg-ec100d8686d3891e-0138",
+      "seg-ec100d8686d3891e-0152",
+      "seg-ec100d8686d3891e-0140"
+    ],
+    "replacement_case_ids": [
+      "seg-ec100d8686d3891e-0209",
+      "seg-ec100d8686d3891e-0272"
+    ],
+    "unfilled_slots": 1
+  },
+  "scarcity_recommendations": [
+    "reduce_case_analysis_count",
+    "recover_historical_translation_versions_or_revision_records",
+    "select_another_translation_job",
+    "request_human_evidence_only_for_genuine_revision_cases"
+  ]
+}

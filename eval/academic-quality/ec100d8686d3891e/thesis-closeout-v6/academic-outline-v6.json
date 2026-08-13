@@ -1,0 +1,449 @@
+{
+  "schema_version": "academic-outline-v5",
+  "sections": [
+    {
+      "section_id": "1",
+      "title": "引言",
+      "purpose": "交代研究背景与意义，提出研究问题，并说明报告结构。",
+      "required_subsections": [
+        {
+          "heading_id": "1.1",
+          "title": "研究背景及意义",
+          "level": 2,
+          "markdown_prefix": "###"
+        },
+        {
+          "heading_id": "1.2",
+          "title": "研究问题",
+          "level": 2,
+          "markdown_prefix": "###"
+        },
+        {
+          "heading_id": "1.3",
+          "title": "报告结构",
+          "level": 2,
+          "markdown_prefix": "###"
+        }
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ2",
+        "RQ3"
+      ],
+      "claims": [
+        "C1"
+      ],
+      "cases": [],
+      "literature_claims": [
+        "LC-001",
+        "LC-002"
+      ],
+      "literature_evidence": [
+        "LE-e5ded84745ab50ba",
+        "LE-7570ee4c4bb53468"
+      ],
+      "literature_sources": [
+        "house2001-tqa"
+      ],
+      "required_statistics": [
+        "total_segments"
+      ],
+      "target_words": 1800,
+      "minimum_chars": 900,
+      "allowed_conclusions": [
+        "说明研究问题和证据边界，不预告未经分析的答案"
+      ]
+    },
+    {
+      "section_id": "2",
+      "title": "翻译项目概述",
+      "purpose": "说明项目事实、本人职责以及译前、译中和译后的真实过程。",
+      "required_subsections": [
+        {
+          "heading_id": "2.1",
+          "title": "项目简介",
+          "level": 2,
+          "markdown_prefix": "###"
+        },
+        {
+          "heading_id": "2.2",
+          "title": "翻译流程",
+          "level": 2,
+          "markdown_prefix": "###"
+        },
+        {
+          "heading_id": "2.2.1",
+          "title": "译前准备",
+          "level": 3,
+          "markdown_prefix": "####"
+        },
+        {
+          "heading_id": "2.2.2",
+          "title": "翻译过程",
+          "level": 3,
+          "markdown_prefix": "####"
+        },
+        {
+          "heading_id": "2.2.3",
+          "title": "译后管理",
+          "level": 3,
+          "markdown_prefix": "####"
+        }
+      ],
+      "research_questions": [
+        "RQ3"
+      ],
+      "claims": [
+        "C3"
+      ],
+      "cases": [],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "reviewed_segments",
+        "tm_reuse_count",
+        "actionable_findings",
+        "recorded_actionable_findings"
+      ],
+      "target_words": 2300,
+      "minimum_chars": 1400,
+      "allowed_conclusions": [
+        "区分系统动作、人工动作与不可观察意图"
+      ]
+    },
+    {
+      "section_id": "3",
+      "title": "翻译项目案例分析",
+      "purpose": "由源语文本特征识别实际难点，并以真实证据说明对应策略与解决方案。",
+      "required_subsections": [
+        {
+          "heading_id": "3.1",
+          "title": "源语文本的类型与特征",
+          "level": 2,
+          "markdown_prefix": "###"
+        },
+        {
+          "heading_id": "3.2",
+          "title": "翻译难点",
+          "level": 2,
+          "markdown_prefix": "###"
+        },
+        {
+          "heading_id": "3.3",
+          "title": "翻译策略与解决方案",
+          "level": 2,
+          "markdown_prefix": "###"
+        }
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ2"
+      ],
+      "claims": [
+        "C2",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "cases": [
+        "seg-ec100d8686d3891e-0139",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0272"
+      ],
+      "case_groups": {
+        "authentic_revision": [
+          "seg-ec100d8686d3891e-0139",
+          "seg-ec100d8686d3891e-0233",
+          "seg-ec100d8686d3891e-0272"
+        ],
+        "synthetic_contrast": []
+      },
+      "literature_claims": [
+        "LC-004",
+        "LC-007",
+        "LC-008",
+        "LC-009"
+      ],
+      "literature_evidence": [
+        "LE-3998419e29ec39a1",
+        "LE-d74ce265282f2156",
+        "LE-0009ea2f3fde992f",
+        "LE-79875e659daeb23e",
+        "LE-e7bd2ad9342a7490"
+      ],
+      "literature_sources": [
+        "karoly-et-al-2022-cohesion",
+        "eekhof-et-al-2020-vpip",
+        "van-krieken-2018-perspective",
+        "al-herz-2016-narrative-pov"
+      ],
+      "required_statistics": [],
+      "target_words": 4500,
+      "minimum_chars": 3000,
+      "allowed_conclusions": [
+        "只分析保存的初译—终译差异和可观察文本效果",
+        "不得把system_actions表述为作者本人意图",
+        "不得把荷兰语、英匈或英阿研究外推为本项目读者实验结果"
+      ]
+    },
+    {
+      "section_id": "4",
+      "title": "总结与反思",
+      "purpose": "逐项回答研究问题，提炼项目内经验，并说明局限与改进方向。",
+      "required_subsections": [
+        {
+          "heading_id": "4.1",
+          "title": "研究问题回应",
+          "level": 2,
+          "markdown_prefix": "###"
+        },
+        {
+          "heading_id": "4.2",
+          "title": "实践经验与可迁移方法",
+          "level": 2,
+          "markdown_prefix": "###"
+        },
+        {
+          "heading_id": "4.3",
+          "title": "局限与改进方向",
+          "level": 2,
+          "markdown_prefix": "###"
+        }
+      ],
+      "research_questions": [
+        "RQ1",
+        "RQ2",
+        "RQ3"
+      ],
+      "claims": [
+        "C7"
+      ],
+      "cases": [],
+      "literature_claims": [
+        "LC-006"
+      ],
+      "literature_evidence": [
+        "LE-e628d716576bbbfa"
+      ],
+      "literature_sources": [
+        "karoly-et-al-2022-macrostructure"
+      ],
+      "required_statistics": [
+        "revision_cases_academically_eligible"
+      ],
+      "target_words": 1400,
+      "minimum_chars": 900,
+      "allowed_conclusions": [
+        "逐项回应研究问题",
+        "不引入新案例",
+        "不声称已完成导师人工复核"
+      ]
+    }
+  ],
+  "planner_fallback": false,
+  "institutional_constraints": {
+    "schema_version": "mti-thesis-constraints-v1",
+    "degree_type": "MTI",
+    "report_type": "translation_practice_report",
+    "submission_year": 2026,
+    "body_language": {
+      "language": "zh-CN",
+      "status": "required",
+      "effective_from": 2026,
+      "reason": "学院规则：2026年及以后 MTI 学位论文正文使用中文撰写。"
+    },
+    "document_scope": {
+      "front_matter": [
+        "中文摘要",
+        "ABSTRACT",
+        "目录"
+      ],
+      "body_chapters": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "back_matter": [
+        "参考文献",
+        "致谢",
+        "附录"
+      ],
+      "current_pipeline_scope": "body_chapters",
+      "chinese_abstract_chars": [
+        400,
+        600
+      ],
+      "keywords_per_language": [
+        5,
+        8
+      ]
+    },
+    "chapters": [
+      {
+        "section_id": "1",
+        "title": "引言",
+        "purpose": "交代研究背景与意义，提出研究问题，并说明报告结构。",
+        "required_subsections": [
+          {
+            "heading_id": "1.1",
+            "title": "研究背景及意义",
+            "level": 2,
+            "markdown_prefix": "###"
+          },
+          {
+            "heading_id": "1.2",
+            "title": "研究问题",
+            "level": 2,
+            "markdown_prefix": "###"
+          },
+          {
+            "heading_id": "1.3",
+            "title": "报告结构",
+            "level": 2,
+            "markdown_prefix": "###"
+          }
+        ]
+      },
+      {
+        "section_id": "2",
+        "title": "翻译项目概述",
+        "purpose": "说明项目事实、本人职责以及译前、译中和译后的真实过程。",
+        "required_subsections": [
+          {
+            "heading_id": "2.1",
+            "title": "项目简介",
+            "level": 2,
+            "markdown_prefix": "###"
+          },
+          {
+            "heading_id": "2.2",
+            "title": "翻译流程",
+            "level": 2,
+            "markdown_prefix": "###"
+          },
+          {
+            "heading_id": "2.2.1",
+            "title": "译前准备",
+            "level": 3,
+            "markdown_prefix": "####"
+          },
+          {
+            "heading_id": "2.2.2",
+            "title": "翻译过程",
+            "level": 3,
+            "markdown_prefix": "####"
+          },
+          {
+            "heading_id": "2.2.3",
+            "title": "译后管理",
+            "level": 3,
+            "markdown_prefix": "####"
+          }
+        ]
+      },
+      {
+        "section_id": "3",
+        "title": "翻译项目案例分析",
+        "purpose": "由源语文本特征识别实际难点，并以真实证据说明对应策略与解决方案。",
+        "required_subsections": [
+          {
+            "heading_id": "3.1",
+            "title": "源语文本的类型与特征",
+            "level": 2,
+            "markdown_prefix": "###"
+          },
+          {
+            "heading_id": "3.2",
+            "title": "翻译难点",
+            "level": 2,
+            "markdown_prefix": "###"
+          },
+          {
+            "heading_id": "3.3",
+            "title": "翻译策略与解决方案",
+            "level": 2,
+            "markdown_prefix": "###"
+          }
+        ]
+      },
+      {
+        "section_id": "4",
+        "title": "总结与反思",
+        "purpose": "逐项回答研究问题，提炼项目内经验，并说明局限与改进方向。",
+        "required_subsections": [
+          {
+            "heading_id": "4.1",
+            "title": "研究问题回应",
+            "level": 2,
+            "markdown_prefix": "###"
+          },
+          {
+            "heading_id": "4.2",
+            "title": "实践经验与可迁移方法",
+            "level": 2,
+            "markdown_prefix": "###"
+          },
+          {
+            "heading_id": "4.3",
+            "title": "局限与改进方向",
+            "level": 2,
+            "markdown_prefix": "###"
+          }
+        ]
+      }
+    ],
+    "cross_chapter_chain": [
+      "research_question",
+      "source_text_feature",
+      "translation_difficulty",
+      "case_evidence",
+      "strategy_or_solution",
+      "translation_effect",
+      "bounded_conclusion"
+    ],
+    "research_question_policy": {
+      "recommended_count": [
+        2,
+        3
+      ],
+      "declare_in_chapter": "1",
+      "develop_in_chapter": "3",
+      "answer_in_chapter": "4"
+    },
+    "case_analysis_contract": [
+      "problem_and_rq_link",
+      "source_and_context",
+      "recorded_initial_translation_if_available",
+      "recorded_final_translation",
+      "specific_initial_problem",
+      "repair_evidence_or_explicit_evidence_gap",
+      "decision_rationale",
+      "translation_effect",
+      "bounded_case_conclusion"
+    ],
+    "evidence_rules": {
+      "revision_case_requires_recorded_initial_final_difference": true,
+      "do_not_reconstruct_initial_translation": true,
+      "do_not_infer_translator_intention": true,
+      "theory_is_optional_and_must_be_grounded": true,
+      "case_count_follows_evidence": true,
+      "conclusion_must_not_introduce_new_case_evidence": true
+    },
+    "style_rules": {
+      "author_reference": "笔者",
+      "avoid_first_person_pronoun": "我",
+      "academic_register": "规范、克制、问题驱动的中文 MTI 学术书面语",
+      "toc_max_heading_depth": 3
+    }
+  },
+  "case_count_policy": {
+    "status": "sufficient_revision_cases",
+    "preferred": 3,
+    "minimum": 2,
+    "selected": 3,
+    "scarcity_disclosure": ""
+  },
+  "content_hash": "6eb5a51d24d8d76f268fff0b0b10235dd3f4642ead35efa8b86b8c62449b3c84"
+}

@@ -1,0 +1,194 @@
+{
+  "job_id": "track-b-fixture",
+  "state_source": "outputs/track-b-fixture/state.json",
+  "isolated_output": "eval/academic-quality/fixture-track-b/track-b-20260810T065827Z",
+  "timestamp": "20260810T065827Z",
+  "segments": 12,
+  "provider": "DeepSeek",
+  "model": "deepseek-chat",
+  "theory": "功能对等理论",
+  "research_settings": {
+    "research_questions": [
+      "如何解释受众反应？"
+    ]
+  },
+  "pipeline_version": "academic-pipeline-v2",
+  "versions": {
+    "evidence_version": "academic-evidence-v2",
+    "research_model_version": "research-model-v1",
+    "literature_sources_version": "literature-sources-v1",
+    "literature_evidence_version": "literature-evidence-v1",
+    "literature_claims_version": "literature-claims-v1",
+    "argument_plan_version": "argument-planner-v2",
+    "case_selection_version": "case-selector-v1",
+    "outline_version": "academic-outline-v2",
+    "writer_version": "academic-writer-v2",
+    "validator_version": "validator-v2",
+    "reviewer_version": "academic-reviewer-v1",
+    "literature_reviewer_version": "literature-support-reviewer-v1",
+    "academic_quality_version": "academic-quality-v1"
+  },
+  "artifact_hashes": {
+    "evidence": "fdfe68cbef7db8d42eaa3722d5799b483d2acaa9c9928bbe940d05c816c76c4d",
+    "research_model": "eeb136b2e8068b90273816193c16afb8d3d6d93eb9b56daea77173d3fa8aa268",
+    "literature_sources": "1b333208ebecc1ee420fa12d23c5bd8f81d13fa55f884409d442bda4663ce4c6",
+    "literature_evidence": "b2a3da371f919f9ffeeaf294002b1121d114771add3059c61cd6b24bcc38b0f9",
+    "literature_claims": "0d1a32e47f166a7ae143f5e6a4353aad4e932438db81fe6036ea7a119a725be0",
+    "argument_plan": "f028e8002f55242a86e73a34fbfa6638a6e8cb3b58f47f7f5f8b2e9fd9a4b9a0",
+    "selected_cases": "1c35c75d3a936f5a029483fff117962068c172deee388a160c88595803cf97a6",
+    "outline": "a92ba30a501e41f4579de62c2680d8ebda2a25951121971d876be8ea285974fe",
+    "sections": "efa2a2bc54d164c98ee719b4b09effd99371c6f5b8c8b89d73afad438e20612a",
+    "validation": "586379dc13ea4fb43303aacaa28de8f66a4fc55084d83060c8ee2ce35ec71cc7",
+    "review": "9d6da44e41c33ae59a7c753f3a2697d3eae56b5d23fbcdbb8d25335544c15e47",
+    "literature_support_review": "aea6a81c37c21e835616399aeb0f83a30d8c86d7ec1ca8067e4c9f8ed1381b5c",
+    "academic_quality": "b8f936e76c47bd4b431aec9e3004a198bc914048a365ce435bbdcb24daccfc31",
+    "quality_repair_history": "c2fbb87f933657947fa4884dcddfea5508a8ea20f051953d611d296d25e5d3c2",
+    "repair_history": "1d516db0e63e4c0bbefd070b17750923e8f24177ba46c36ab32b76f4b158b108"
+  },
+  "report_md_hash": "8a328e3867584dbf810964bcd45b5b6d015f54390b1a0e6352f98e0792892389",
+  "quality_summary": {
+    "dimensions": {
+      "research_alignment": "pass_with_warnings",
+      "argument_quality": "pass",
+      "case_quality": "pass",
+      "analysis_depth": "pass",
+      "theory_case_fit": "pass",
+      "evidence_utilization": "pass",
+      "literature_support": "pass",
+      "cross_section_coherence": "pass",
+      "academic_specificity": "pass",
+      "redundancy": "pass",
+      "conclusion_discipline": "pass",
+      "writing_quality": "pass"
+    },
+    "metrics": {
+      "research_questions": 1,
+      "answered_rqs": 1,
+      "unanswered_rqs": 0,
+      "global_claims": 3,
+      "orphan_claims": 0,
+      "selected_cases": 8,
+      "strong_cases": 0,
+      "usable_cases": 8,
+      "weak_cases": 0,
+      "redundant_cases": 0,
+      "misaligned_cases": 0,
+      "paragraph_roles": {
+        "claim": 33,
+        "filler": 27,
+        "background": 45,
+        "analysis": 14,
+        "evidence": 23,
+        "transition": 2,
+        "summary": 2
+      },
+      "generic_paragraph_rate": 0.0,
+      "evidence_utilization": {
+        "selected_case_count": 8,
+        "cases_used": 0,
+        "high_value_unused_cases": [
+          "seg-track-b-fixture-0006",
+          "seg-track-b-fixture-0000",
+          "seg-track-b-fixture-0011",
+          "seg-track-b-fixture-0005",
+          "seg-track-b-fixture-0001",
+          "seg-track-b-fixture-0002",
+          "seg-track-b-fixture-0003",
+          "seg-track-b-fixture-0004"
+        ],
+        "rows": [
+          {
+            "case_id": "seg-track-b-fixture-0006",
+            "used_in_report": false,
+            "evidence_richness": 4,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-track-b-fixture-0000",
+            "used_in_report": false,
+            "evidence_richness": 6,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change",
+              "repair_history",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-track-b-fixture-0011",
+            "used_in_report": false,
+            "evidence_richness": 4,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-track-b-fixture-0005",
+            "used_in_report": false,
+            "evidence_richness": 3,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-track-b-fixture-0001",
+            "used_in_report": false,
+            "evidence_richness": 3,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-track-b-fixture-0002",
+            "used_in_report": false,
+            "evidence_richness": 3,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-track-b-fixture-0003",
+            "used_in_report": false,
+            "evidence_richness": 3,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change",
+              "terminology_decision"
+            ]
+          },
+          {
+            "case_id": "seg-track-b-fixture-0004",
+            "used_in_report": false,
+            "evidence_richness": 3,
+            "high_value_unused": true,
+            "unused_dimensions": [
+              "initial_final_change",
+              "terminology_decision"
+            ]
+          }
+        ]
+      },
+      "literature_grounding_status": "grounded",
+      "citation_validation_status": "fail",
+      "cross_section_issue_count": 13,
+      "conclusion_support_issues": 51,
+      "finding_counts": {
+        "P2": 23,
+        "P3": 51
+      }
+    },
+    "finding_count": 74
+  }
+}

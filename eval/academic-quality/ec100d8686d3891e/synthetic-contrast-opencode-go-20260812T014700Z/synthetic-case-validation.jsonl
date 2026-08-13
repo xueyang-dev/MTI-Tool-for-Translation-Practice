@@ -1,0 +1,1 @@
+{"metrics": {"academically_eligible_synthetic_cases": 0, "baselines_rejected_as_implausible": 0, "errors_rejected_as_non_material": 0, "repairs_rejected": 0, "synthetic_baselines_generated": 0}, "pipeline_status": "failed", "record_type": "artifact_metadata", "schema_version": "synthetic-validation-v2"}

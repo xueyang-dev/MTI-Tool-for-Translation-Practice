@@ -1,0 +1,32 @@
+{
+  "schema_version": "portfolio-quality-review-v1",
+  "status": "pass",
+  "checks": {
+    "case_count_20_to_30": true,
+    "tier_1_core_8_to_12": true,
+    "tier_2_supporting_10_to_15": true,
+    "tier_3_small": true,
+    "taxonomy_has_multiple_major_problems": true,
+    "all_cases_traceable": true,
+    "authentic_revision_gate_preserved": true,
+    "supporting_examples_not_labelled_revisions": true,
+    "boundary_and_synthetic_not_core": true,
+    "coverage_has_no_empty_selected_category": true
+  },
+  "dimensions": {
+    "coverage": "pass",
+    "diversity": "pass",
+    "analytical_depth": "pass_with_warnings",
+    "evidence_quality": "pass_with_warnings",
+    "logical_progression": "pass",
+    "redundancy": "pass",
+    "provenance_discipline": "pass"
+  },
+  "warnings": [
+    "Most selected cases document a problem and reviewer judgment, not an implemented historical repair.",
+    "Human Author Evidence remains unanswered for the two historical revisions.",
+    "Theory mapping remains unavailable until grounded Literature Evidence is registered."
+  ],
+  "composition_gate": "open",
+  "content_hash": "5117a795e3b04bfebc3c64a7a930585a8f1f9193a275389361136aeb139e7a44"
+}

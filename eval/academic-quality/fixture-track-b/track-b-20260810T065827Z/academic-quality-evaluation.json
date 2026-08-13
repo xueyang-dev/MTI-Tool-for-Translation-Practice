@@ -1,0 +1,1882 @@
+{
+  "schema_version": "academic-quality-v1",
+  "dimensions": {
+    "research_alignment": "pass_with_warnings",
+    "argument_quality": "pass",
+    "case_quality": "pass",
+    "analysis_depth": "pass",
+    "theory_case_fit": "pass",
+    "evidence_utilization": "pass",
+    "literature_support": "pass",
+    "cross_section_coherence": "pass",
+    "academic_specificity": "pass",
+    "redundancy": "pass",
+    "conclusion_discipline": "pass",
+    "writing_quality": "pass"
+  },
+  "metrics": {
+    "research_questions": 1,
+    "answered_rqs": 1,
+    "unanswered_rqs": 0,
+    "global_claims": 3,
+    "orphan_claims": 0,
+    "selected_cases": 8,
+    "strong_cases": 0,
+    "usable_cases": 8,
+    "weak_cases": 0,
+    "redundant_cases": 0,
+    "misaligned_cases": 0,
+    "paragraph_roles": {
+      "claim": 33,
+      "filler": 27,
+      "background": 45,
+      "analysis": 14,
+      "evidence": 23,
+      "transition": 2,
+      "summary": 2
+    },
+    "generic_paragraph_rate": 0.0,
+    "evidence_utilization": {
+      "selected_case_count": 8,
+      "cases_used": 0,
+      "high_value_unused_cases": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011",
+        "seg-track-b-fixture-0005",
+        "seg-track-b-fixture-0001",
+        "seg-track-b-fixture-0002",
+        "seg-track-b-fixture-0003",
+        "seg-track-b-fixture-0004"
+      ],
+      "rows": [
+        {
+          "case_id": "seg-track-b-fixture-0006",
+          "used_in_report": false,
+          "evidence_richness": 4,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0000",
+          "used_in_report": false,
+          "evidence_richness": 6,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "repair_history",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0011",
+          "used_in_report": false,
+          "evidence_richness": 4,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0005",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0001",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0002",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0003",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0004",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        }
+      ]
+    },
+    "literature_grounding_status": "grounded",
+    "citation_validation_status": "fail",
+    "cross_section_issue_count": 13,
+    "conclusion_support_issues": 51,
+    "finding_counts": {
+      "P2": 23,
+      "P3": 51
+    }
+  },
+  "findings": [
+    {
+      "issue_id": "AQ-001",
+      "type": "high_value_evidence_unused",
+      "dimension": "evidence_utilization",
+      "section_id": null,
+      "claim_id": null,
+      "case_id": "seg-track-b-fixture-0000",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "",
+      "reason": "案例 seg-track-b-fixture-0000 有高价值过程证据但正文未使用（未用维度：['initial_final_change', 'repair_history', 'terminology_decision']）。",
+      "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-002",
+      "type": "high_value_evidence_unused",
+      "dimension": "evidence_utilization",
+      "section_id": null,
+      "claim_id": null,
+      "case_id": "seg-track-b-fixture-0001",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "",
+      "reason": "案例 seg-track-b-fixture-0001 有高价值过程证据但正文未使用（未用维度：['initial_final_change', 'terminology_decision']）。",
+      "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-003",
+      "type": "high_value_evidence_unused",
+      "dimension": "evidence_utilization",
+      "section_id": null,
+      "claim_id": null,
+      "case_id": "seg-track-b-fixture-0002",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "",
+      "reason": "案例 seg-track-b-fixture-0002 有高价值过程证据但正文未使用（未用维度：['initial_final_change', 'terminology_decision']）。",
+      "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-004",
+      "type": "high_value_evidence_unused",
+      "dimension": "evidence_utilization",
+      "section_id": null,
+      "claim_id": null,
+      "case_id": "seg-track-b-fixture-0003",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "",
+      "reason": "案例 seg-track-b-fixture-0003 有高价值过程证据但正文未使用（未用维度：['initial_final_change', 'terminology_decision']）。",
+      "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-005",
+      "type": "high_value_evidence_unused",
+      "dimension": "evidence_utilization",
+      "section_id": null,
+      "claim_id": null,
+      "case_id": "seg-track-b-fixture-0004",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "",
+      "reason": "案例 seg-track-b-fixture-0004 有高价值过程证据但正文未使用（未用维度：['initial_final_change', 'terminology_decision']）。",
+      "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-006",
+      "type": "high_value_evidence_unused",
+      "dimension": "evidence_utilization",
+      "section_id": null,
+      "claim_id": null,
+      "case_id": "seg-track-b-fixture-0005",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "",
+      "reason": "案例 seg-track-b-fixture-0005 有高价值过程证据但正文未使用（未用维度：['initial_final_change', 'terminology_decision']）。",
+      "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-007",
+      "type": "high_value_evidence_unused",
+      "dimension": "evidence_utilization",
+      "section_id": null,
+      "claim_id": null,
+      "case_id": "seg-track-b-fixture-0006",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "",
+      "reason": "案例 seg-track-b-fixture-0006 有高价值过程证据但正文未使用（未用维度：['initial_final_change', 'terminology_decision']）。",
+      "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-008",
+      "type": "high_value_evidence_unused",
+      "dimension": "evidence_utilization",
+      "section_id": null,
+      "claim_id": null,
+      "case_id": "seg-track-b-fixture-0011",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "",
+      "reason": "案例 seg-track-b-fixture-0011 有高价值过程证据但正文未使用（未用维度：['initial_final_change', 'terminology_decision']）。",
+      "recommended_action": "用 finding/修复/初译—终译差异充实该案例分析。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-009",
+      "type": "claim_unsupported",
+      "dimension": "research_alignment",
+      "section_id": "4",
+      "claim_id": "C2",
+      "case_id": "seg-track-b-fixture-0006",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "这一案例初步显示，让步结构的完整传达在本案例中体现了对叙事逻辑的重视——当译文因截断而丧失让步结构时，受众不仅失去具体信息，更失去理解后续叙事所必需的逻辑框架。",
+      "reason": "案例中初译仅为占位符，未包含让步结构，因此无法证明让步结构缺失对受众理解的影响。",
+      "recommended_action": "替换为具有真实初译的案例，或删除该论证。",
+      "repair_action": "replace_case"
+    },
+    {
+      "issue_id": "AQ-010",
+      "type": "claim_unsupported",
+      "dimension": "research_alignment",
+      "section_id": "4",
+      "claim_id": "C1",
+      "case_id": "seg-track-b-fixture-0011",
+      "severity": "medium",
+      "priority": "P2",
+      "evidence": "从受众反应的角度看，信息性问题的确认具有独特的方法论意义。它表明受众反应并非单一的“好”或“坏”的二元判断，而是存在层次性差异。",
+      "reason": "案例中初译仅为占位符，审校发现为“语气处理可接受”，但初译并未包含任何语气处理，因此无法支持关于受众反应层次性的论证。",
+      "recommended_action": "替换为具有真实初译的案例，或删除该论证。",
+      "repair_action": "replace_case"
+    },
+    {
+      "issue_id": "AQ-011",
+      "type": "duplicate_claim",
+      "dimension": "cross_section_coherence",
+      "section_id": null,
+      "claim_id": "C1",
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "C1 出现在 4 个章节",
+      "reason": "同一论点在多个章节重复标记，需确认是否构成重复论证。",
+      "recommended_action": "若为重复论证，合并；若为递进，补充章节间衔接。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-012",
+      "type": "duplicate_claim",
+      "dimension": "cross_section_coherence",
+      "section_id": null,
+      "claim_id": "C2",
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "C2 出现在 3 个章节",
+      "reason": "同一论点在多个章节重复标记，需确认是否构成重复论证。",
+      "recommended_action": "若为重复论证，合并；若为递进，补充章节间衔接。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-013",
+      "type": "duplicate_claim",
+      "dimension": "cross_section_coherence",
+      "section_id": null,
+      "claim_id": "C3",
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "C3 出现在 3 个章节",
+      "reason": "同一论点在多个章节重复标记，需确认是否构成重复论证。",
+      "recommended_action": "若为重复论证，合并；若为递进，补充章节间衔接。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-014",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "3",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [LITERATURE LE-96c7e6e40d86d1ba]: Functional equivalence focuses on receptor r",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-015",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "4",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "<!--rq:RQ1-->",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-016",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "4",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [SOURCE seg-track-b-fixture-0006]: Although segment 6 contains several clauses",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-017",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "4",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [TARGET seg-track-b-fixture-0006]: 尽管第6段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-018",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "4",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [SOURCE seg-track-b-fixture-0000]: Although segment 0 contains several clauses",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-019",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "4",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [TARGET seg-track-b-fixture-0000]: 尽管第0段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-020",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "4",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [SOURCE seg-track-b-fixture-0011]: Although segment 11 contains several clause",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-021",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [LITERATURE LE-96c7e6e40d86d1ba]: Functional equivalence focuses on receptor r",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-022",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [LITERATURE LE-40d411b6c8a07b44]: 用于解释受众反应。",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-023",
+      "type": "duplicate_paragraph",
+      "dimension": "cross_section_coherence",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P2",
+      "evidence": "> [LITERATURE LE-8993dee56de5ae8c]: Translation consists in reproducing the clos",
+      "reason": "两个章节出现高度重复段落。",
+      "recommended_action": "合并或删除重复内容。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-024",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：## 5 结论 本章总结本研究的核心发现，回应研究问题，讨论研究局限，并提出未来研究方向。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-025",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：### 5.1 研究发现总结 <!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-026",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--claim:C1--><!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-027",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--rq:RQ1-->本研究以功能对等理论为分析框架，基于一项回忆录翻译项目的全过程证据，对受众反应进行了证据化解释。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-028",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：研究的基本立场是：受众反应并非不可观察的心理黑箱，而是可以通过译后审校环节中发现的翻译问题及其修复结果进行间接观察和解释的实证对象。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-029",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：这一立场与功能对等理论的核心关切一脉相承。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-030",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：Nida（1964）指出，功能对等理论关注的是受体反应（receptor response）Nida（1964）<!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-031",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--cite:nida1964-->。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-032",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：> [LITERATURE LE-96c7e6e40d86d1ba]: Functional equivalence focuses on receptor response. <!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-033",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--lit-claim:LC-001--><!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-034",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--lit-evidence:LE-96c7e6e40d86d1ba-->从结果看，本研究的核心论点——受众反应可通过审校证据间接解释——在三个典型案例中得到了初步支持。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-035",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：审校环节中识别出的三类问题（阻断性问题、可操作性问题、参考性问题）分别对应受众理解的不同障碍层级，构成了从“根本性障碍”到“可接受水平”的梯度分布。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-036",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：这一发现将功能对等理论中抽象的“受体反应”概念操作化为可追溯的项目证据，为翻译质量评估提供了实证路径。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-037",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：需要强调的是，由于样本规模有限且案例为构造性示例，上述发现更多具有探索性和示例性意义，其普遍性有待更大规模数据的进一步检验。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-038",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--lit-claim:LC-003--><!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-039",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--lit-evidence:LE-40d411b6c8a07b44-->从研究设计看，功能对等理论在本研究中被用于解释受众反应Nida（1964）<!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-040",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--cite:nida1964-->，而审校证据正是将这一理论关切转化为可观察、可分析的经验材料的桥梁。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-041",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：> [LITERATURE LE-40d411b6c8a07b44]: 用于解释受众反应。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-042",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--claim:C2-->在具体翻译策略层面，本研究识别出让步关系的准确传达是影响受众理解回忆录叙事逻辑的关键因素。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-043",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：Nida（1964）提出，翻译在于再现“最贴近的自然对等”（the closest natural equivalent）Nida（1964）<!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-044",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--cite:nida1964-->。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-045",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：> [LITERATURE LE-8993dee56de5ae8c]: Translation consists in reproducing the closest natural equivalent. <!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-046",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--lit-claim:LC-002--><!",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-047",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--lit-evidence:LE-8993dee56de5ae8c-->从结果看，审校环节对让步关系的修复——从初译中遗漏让步标记到终译中以“尽管”恢复让步逻辑——可被理解为“最贴近的自然对等”原则在实践中的一种体现。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-048",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：这一修复恢复了源文本的逻辑结构，使目标语读者能够获得与源语读者相近的叙事理解体验。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-049",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：需要说明的是，这一关联是本研究基于项目证据所作的分析性推断，而非对理论原则的直接应用证明。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-050",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：--claim:C3-->此外，本研究通过审校环节中不同严重级别问题的分布，观察了受众对译文质量的差异化反应。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-051",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：阻断性问题（如译文疑似截断）对受众理解构成根本性障碍，可操作性问题（如遗漏让步关系）虽不影响基本可读性但损害逻辑完整性，参考性问题（如语气处理）则表明译文已达到可接受水平。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-052",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：这一发现为翻译质量评估提供了分层化的诊断工具。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-053",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：需要指出的是，问题严重级别的划分与功能对等理论中“受体反应”概念之间的对应关系，是本研究基于项目数据所作的分析性联结，文献证据本身并未直接论述“反应层次”或“差异化反应”的问题。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-054",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：### 5.2 研究局限 本研究存在以下局限，需要在解读研究结论时予以注意。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-055",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：本项目仅包含 12 个翻译片段，其中阻断性问题、可操作性问题、参考性问题各仅一例。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-056",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：如此小的样本量无法支撑具有统计意义的比较分析，研究结论更多具有案例启示意义而非普遍性推论价值。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-057",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：第二，审校者反应的代表性存疑。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-058",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：审校者作为具备专业翻译能力的受众，其判断标准可能高于普通目标语读者。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-059",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：审校者对译文问题的敏感度、对翻译规范的把握程度，均与一般读者的阅读体验存在差异。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-060",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：因此，审校环节所反映的“受众反应”更接近专业受众的反应，而非普通读者的反应。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-061",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：第三，问题严重级别的划分标准可能受审校者主观判断影响。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-062",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：阻断性、可操作性与参考性三类问题的边界并非截然分明，不同审校者可能对同一问题给出不同的严重级别判定。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-063",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：本研究未进行跨审校者的一致性验证，这在一定程度上影响了分类结果的客观性。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-064",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：第四，本研究所依据的案例为构造性示例（fixture），其代表性可能不足以支撑普遍性结论。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-065",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：虽然这些案例在结构上反映了真实翻译项目中可能出现的问题类型，但其与自然发生的翻译语料之间仍存在一定距离。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-066",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：### 5.3 未来研究方向 基于上述局限，未来研究可从以下方向拓展。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-067",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：通过收集更多翻译项目的审校数据，建立包含更多问题类别与修复案例的语料库，从而对受众反应的层次性进行更具统计效力的分析。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-068",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：其二，引入多审校者交叉验证。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-069",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：通过多位审校者独立审校同一译文，检验问题严重级别划分的一致性与可靠性，提升分类标准的客观性。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-070",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：其三，将审校者反应与普通读者反应进行对照研究。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-071",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：通过问卷调查、阅读测试等方法收集普通目标语读者的反馈，与审校环节的发现进行比对，从而更全面地理解不同受众群体的反应差异。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-072",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：本研究聚焦于回忆录文体，未来可将分析框架应用于其他叙事文体或非叙事文体（如说明性文本、技术文档等），检验审校证据解释受众反应的适用边界。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-073",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：综上所述，本研究通过将功能对等理论的核心概念操作化为可追溯的项目证据，为回忆录翻译实践中的受众反应研究提供了一条证据化的分析路径。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    },
+    {
+      "issue_id": "AQ-074",
+      "type": "conclusion_without_trace",
+      "dimension": "conclusion_discipline",
+      "section_id": "5",
+      "claim_id": null,
+      "case_id": null,
+      "severity": "low",
+      "priority": "P3",
+      "evidence": "",
+      "reason": "结论句缺少证据标记，需人工或语义确认：尽管存在样本量小等局限，但研究框架与分析方法为后续研究奠定了基础，也为翻译实践中的质量控制提供了可参考的诊断工具。",
+      "recommended_action": "绑定 claim/案例/统计/文献标记，或删除无法追溯的断言。",
+      "repair_action": "rewrite"
+    }
+  ],
+  "diagnostics": {
+    "paragraph_statistics": {
+      "total_paragraphs": 146,
+      "paragraph_roles": {
+        "claim": 33,
+        "filler": 27,
+        "background": 45,
+        "analysis": 14,
+        "evidence": 23,
+        "transition": 2,
+        "summary": 2
+      },
+      "per_section_roles": {
+        "1": {
+          "claim": 3,
+          "filler": 6,
+          "background": 5,
+          "analysis": 2,
+          "evidence": 1,
+          "transition": 2
+        },
+        "2": {
+          "filler": 5,
+          "claim": 4,
+          "evidence": 2,
+          "background": 8,
+          "analysis": 2
+        },
+        "3": {
+          "filler": 6,
+          "claim": 6,
+          "background": 14,
+          "evidence": 10,
+          "analysis": 3,
+          "summary": 1
+        },
+        "4": {
+          "filler": 7,
+          "claim": 14,
+          "background": 11,
+          "evidence": 7,
+          "analysis": 2
+        },
+        "5": {
+          "filler": 3,
+          "analysis": 5,
+          "claim": 6,
+          "evidence": 3,
+          "background": 7,
+          "summary": 1
+        }
+      },
+      "claim_bearing_paragraphs": 33,
+      "evidence_bearing_paragraphs": 23,
+      "analysis_bearing_paragraphs": 14,
+      "generic_paragraphs": 0,
+      "generic_rate": 0.0
+    },
+    "case_quality": [
+      {
+        "case_id": "seg-track-b-fixture-0006",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 4/7"
+        ],
+        "supports_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "evidence_richness": 4
+      },
+      {
+        "case_id": "seg-track-b-fixture-0000",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 6/7"
+        ],
+        "supports_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "evidence_richness": 6
+      },
+      {
+        "case_id": "seg-track-b-fixture-0011",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 4/7"
+        ],
+        "supports_claims": [
+          "C1",
+          "C2",
+          "C3"
+        ],
+        "evidence_richness": 4
+      },
+      {
+        "case_id": "seg-track-b-fixture-0005",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 3/7"
+        ],
+        "supports_claims": [],
+        "evidence_richness": 3
+      },
+      {
+        "case_id": "seg-track-b-fixture-0001",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 3/7"
+        ],
+        "supports_claims": [],
+        "evidence_richness": 3
+      },
+      {
+        "case_id": "seg-track-b-fixture-0002",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 3/7"
+        ],
+        "supports_claims": [],
+        "evidence_richness": 3
+      },
+      {
+        "case_id": "seg-track-b-fixture-0003",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 3/7"
+        ],
+        "supports_claims": [],
+        "evidence_richness": 3
+      },
+      {
+        "case_id": "seg-track-b-fixture-0004",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 3/7"
+        ],
+        "supports_claims": [],
+        "evidence_richness": 3
+      }
+    ],
+    "rq_matrix": {
+      "matrix": {
+        "RQ1": {
+          "claims": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "cases": [
+            "seg-track-b-fixture-0006",
+            "seg-track-b-fixture-0000",
+            "seg-track-b-fixture-0011"
+          ],
+          "sections": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+          ],
+          "answered": true,
+          "unanswered_reason": ""
+        }
+      },
+      "answered_rqs": 1,
+      "unanswered_rqs": [],
+      "orphan_claims": [],
+      "sections_without_rq": []
+    },
+    "evidence_utilization": {
+      "selected_case_count": 8,
+      "cases_used": 0,
+      "high_value_unused_cases": [
+        "seg-track-b-fixture-0006",
+        "seg-track-b-fixture-0000",
+        "seg-track-b-fixture-0011",
+        "seg-track-b-fixture-0005",
+        "seg-track-b-fixture-0001",
+        "seg-track-b-fixture-0002",
+        "seg-track-b-fixture-0003",
+        "seg-track-b-fixture-0004"
+      ],
+      "rows": [
+        {
+          "case_id": "seg-track-b-fixture-0006",
+          "used_in_report": false,
+          "evidence_richness": 4,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0000",
+          "used_in_report": false,
+          "evidence_richness": 6,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "repair_history",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0011",
+          "used_in_report": false,
+          "evidence_richness": 4,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0005",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0001",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0002",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0003",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        },
+        {
+          "case_id": "seg-track-b-fixture-0004",
+          "used_in_report": false,
+          "evidence_richness": 3,
+          "high_value_unused": true,
+          "unused_dimensions": [
+            "initial_final_change",
+            "terminology_decision"
+          ]
+        }
+      ]
+    },
+    "conclusion_traceability": [
+      {
+        "section_id": "5",
+        "sentence": "## 5 结论 本章总结本研究的核心发现，回应研究问题，讨论研究局限，并提出未来研究方向。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "### 5.1 研究发现总结 <!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--claim:C1--><!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--rq:RQ1-->本研究以功能对等理论为分析框架，基于一项回忆录翻译项目的全过程证据，对受众反应进行了证据化解释。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "研究的基本立场是：受众反应并非不可观察的心理黑箱，而是可以通过译后审校环节中发现的翻译问题及其修复结果进行间接观察和解释的实证对象。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "这一立场与功能对等理论的核心关切一脉相承。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "Nida（1964）指出，功能对等理论关注的是受体反应（receptor response）Nida（1964）<!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--cite:nida1964-->。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "> [LITERATURE LE-96c7e6e40d86d1ba]: Functional equivalence focuses on receptor response. <!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--lit-claim:LC-001--><!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--lit-evidence:LE-96c7e6e40d86d1ba-->从结果看，本研究的核心论点——受众反应可通过审校证据间接解释——在三个典型案例中得到了初步支持。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "审校环节中识别出的三类问题（阻断性问题、可操作性问题、参考性问题）分别对应受众理解的不同障碍层级，构成了从“根本性障碍”到“可接受水平”的梯度分布。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "这一发现将功能对等理论中抽象的“受体反应”概念操作化为可追溯的项目证据，为翻译质量评估提供了实证路径。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "需要强调的是，由于样本规模有限且案例为构造性示例，上述发现更多具有探索性和示例性意义，其普遍性有待更大规模数据的进一步检验。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--lit-claim:LC-003--><!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--lit-evidence:LE-40d411b6c8a07b44-->从研究设计看，功能对等理论在本研究中被用于解释受众反应Nida（1964）<!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--cite:nida1964-->，而审校证据正是将这一理论关切转化为可观察、可分析的经验材料的桥梁。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "> [LITERATURE LE-40d411b6c8a07b44]: 用于解释受众反应。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--claim:C2-->在具体翻译策略层面，本研究识别出让步关系的准确传达是影响受众理解回忆录叙事逻辑的关键因素。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "Nida（1964）提出，翻译在于再现“最贴近的自然对等”（the closest natural equivalent）Nida（1964）<!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--cite:nida1964-->。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "> [LITERATURE LE-8993dee56de5ae8c]: Translation consists in reproducing the closest natural equivalent. <!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--lit-claim:LC-002--><!",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--lit-evidence:LE-8993dee56de5ae8c-->从结果看，审校环节对让步关系的修复——从初译中遗漏让步标记到终译中以“尽管”恢复让步逻辑——可被理解为“最贴近的自然对等”原则在实践中的一种体现。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "这一修复恢复了源文本的逻辑结构，使目标语读者能够获得与源语读者相近的叙事理解体验。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "需要说明的是，这一关联是本研究基于项目证据所作的分析性推断，而非对理论原则的直接应用证明。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "--claim:C3-->此外，本研究通过审校环节中不同严重级别问题的分布，观察了受众对译文质量的差异化反应。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "阻断性问题（如译文疑似截断）对受众理解构成根本性障碍，可操作性问题（如遗漏让步关系）虽不影响基本可读性但损害逻辑完整性，参考性问题（如语气处理）则表明译文已达到可接受水平。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "这一发现为翻译质量评估提供了分层化的诊断工具。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "需要指出的是，问题严重级别的划分与功能对等理论中“受体反应”概念之间的对应关系，是本研究基于项目数据所作的分析性联结，文献证据本身并未直接论述“反应层次”或“差异化反应”的问题。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "### 5.2 研究局限 本研究存在以下局限，需要在解读研究结论时予以注意。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "本项目仅包含 12 个翻译片段，其中阻断性问题、可操作性问题、参考性问题各仅一例。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "如此小的样本量无法支撑具有统计意义的比较分析，研究结论更多具有案例启示意义而非普遍性推论价值。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "第二，审校者反应的代表性存疑。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "审校者作为具备专业翻译能力的受众，其判断标准可能高于普通目标语读者。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "审校者对译文问题的敏感度、对翻译规范的把握程度，均与一般读者的阅读体验存在差异。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "因此，审校环节所反映的“受众反应”更接近专业受众的反应，而非普通读者的反应。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "第三，问题严重级别的划分标准可能受审校者主观判断影响。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "阻断性、可操作性与参考性三类问题的边界并非截然分明，不同审校者可能对同一问题给出不同的严重级别判定。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "本研究未进行跨审校者的一致性验证，这在一定程度上影响了分类结果的客观性。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "第四，本研究所依据的案例为构造性示例（fixture），其代表性可能不足以支撑普遍性结论。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "虽然这些案例在结构上反映了真实翻译项目中可能出现的问题类型，但其与自然发生的翻译语料之间仍存在一定距离。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "### 5.3 未来研究方向 基于上述局限，未来研究可从以下方向拓展。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "通过收集更多翻译项目的审校数据，建立包含更多问题类别与修复案例的语料库，从而对受众反应的层次性进行更具统计效力的分析。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "其二，引入多审校者交叉验证。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "通过多位审校者独立审校同一译文，检验问题严重级别划分的一致性与可靠性，提升分类标准的客观性。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "其三，将审校者反应与普通读者反应进行对照研究。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "通过问卷调查、阅读测试等方法收集普通目标语读者的反馈，与审校环节的发现进行比对，从而更全面地理解不同受众群体的反应差异。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "本研究聚焦于回忆录文体，未来可将分析框架应用于其他叙事文体或非叙事文体（如说明性文本、技术文档等），检验审校证据解释受众反应的适用边界。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "综上所述，本研究通过将功能对等理论的核心概念操作化为可追溯的项目证据，为回忆录翻译实践中的受众反应研究提供了一条证据化的分析路径。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      },
+      {
+        "section_id": "5",
+        "sentence": "尽管存在样本量小等局限，但研究框架与分析方法为后续研究奠定了基础，也为翻译实践中的质量控制提供了可参考的诊断工具。",
+        "traceable_to_evidence": false,
+        "needs_semantic_check": true
+      }
+    ],
+    "cross_section_checks": [
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "3",
+        "other_section_id": "2",
+        "severity": "low",
+        "evidence": "> [LITERATURE LE-96c7e6e40d86d1ba]: Functional equivalence focuses on receptor r",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "4",
+        "other_section_id": "1",
+        "severity": "low",
+        "evidence": "<!--rq:RQ1-->",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "4",
+        "other_section_id": "3",
+        "severity": "low",
+        "evidence": "> [SOURCE seg-track-b-fixture-0006]: Although segment 6 contains several clauses",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "4",
+        "other_section_id": "3",
+        "severity": "low",
+        "evidence": "> [TARGET seg-track-b-fixture-0006]: 尽管第6段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "4",
+        "other_section_id": "3",
+        "severity": "low",
+        "evidence": "> [SOURCE seg-track-b-fixture-0000]: Although segment 0 contains several clauses",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "4",
+        "other_section_id": "3",
+        "severity": "low",
+        "evidence": "> [TARGET seg-track-b-fixture-0000]: 尽管第0段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "4",
+        "other_section_id": "3",
+        "severity": "low",
+        "evidence": "> [SOURCE seg-track-b-fixture-0011]: Although segment 11 contains several clause",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "5",
+        "other_section_id": "3",
+        "severity": "low",
+        "evidence": "> [LITERATURE LE-96c7e6e40d86d1ba]: Functional equivalence focuses on receptor r",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "5",
+        "other_section_id": "3",
+        "severity": "low",
+        "evidence": "> [LITERATURE LE-40d411b6c8a07b44]: 用于解释受众反应。",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_paragraph",
+        "section_id": "5",
+        "other_section_id": "2",
+        "severity": "low",
+        "evidence": "> [LITERATURE LE-8993dee56de5ae8c]: Translation consists in reproducing the clos",
+        "reason": "两个章节出现高度重复段落。",
+        "recommended_action": "合并或删除重复内容。"
+      },
+      {
+        "type": "duplicate_claim",
+        "section_id": null,
+        "claim_id": "C1",
+        "severity": "low",
+        "evidence": "C1 出现在 4 个章节",
+        "reason": "同一论点在多个章节重复标记，需确认是否构成重复论证。",
+        "recommended_action": "若为重复论证，合并；若为递进，补充章节间衔接。"
+      },
+      {
+        "type": "duplicate_claim",
+        "section_id": null,
+        "claim_id": "C2",
+        "severity": "low",
+        "evidence": "C2 出现在 3 个章节",
+        "reason": "同一论点在多个章节重复标记，需确认是否构成重复论证。",
+        "recommended_action": "若为重复论证，合并；若为递进，补充章节间衔接。"
+      },
+      {
+        "type": "duplicate_claim",
+        "section_id": null,
+        "claim_id": "C3",
+        "severity": "low",
+        "evidence": "C3 出现在 3 个章节",
+        "reason": "同一论点在多个章节重复标记，需确认是否构成重复论证。",
+        "recommended_action": "若为重复论证，合并；若为递进，补充章节间衔接。"
+      }
+    ]
+  },
+  "content_hash": "b8f936e76c47bd4b431aec9e3004a198bc914048a365ce435bbdcb24daccfc31"
+}

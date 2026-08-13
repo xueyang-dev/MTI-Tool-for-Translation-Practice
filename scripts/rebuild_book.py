@@ -93,15 +93,18 @@ def main():
     ap.add_argument("--job", required=True, help="旧任务 job_id")
     ap.add_argument("--pdf", required=True, help="源 PDF 路径")
     ap.add_argument("--review", action="store_true", help="重译段落启用独立审校")
-    ap.add_argument("--provider", default="DeepSeek")
-    ap.add_argument("--model", default="deepseek-chat")
+    ap.add_argument("--provider", default="OpenCode Go")
+    ap.add_argument("--model", default="glm-5.2")
     ap.add_argument("--target-lang", default="简体中文")
     args = ap.parse_args()
 
     import os
-    api_key = os.environ.get("DEEPSEEK_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    env_key = {"OpenCode Go": "OPENCODE_GO_API_KEY",
+               "DeepSeek": "DEEPSEEK_API_KEY", "OpenAI": "OPENAI_API_KEY",
+               "Gemini": "GEMINI_API_KEY"}.get(args.provider, "MTI_API_KEY")
+    api_key = os.environ.get(env_key) or os.environ.get("MTI_API_KEY")
     if not api_key:
-        sys.exit("请设置 DEEPSEEK_API_KEY 环境变量")
+        sys.exit(f"请设置 {env_key} 或 MTI_API_KEY 环境变量")
 
     old_state = core.load_job_state(args.job)
     if not old_state:

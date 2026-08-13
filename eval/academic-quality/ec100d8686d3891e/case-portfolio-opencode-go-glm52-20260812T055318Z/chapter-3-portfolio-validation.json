@@ -1,0 +1,10 @@
+{
+  "schema_version": "portfolio-validator-v1",
+  "status": "pass",
+  "issues": [],
+  "summary": {
+    "errors": 0,
+    "selected_cases": 25,
+    "case_markers": 25
+  }
+}

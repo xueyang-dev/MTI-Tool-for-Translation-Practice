@@ -1,0 +1,373 @@
+{
+  "schema_version": "deterministic-academic-quality-v1",
+  "status": "pass",
+  "review_type": "deterministic_only_no_external_model",
+  "dimensions": {
+    "research_alignment": "pass",
+    "case_quality": "pass",
+    "evidence_utilization": "pass",
+    "cross_section_coherence": "pass",
+    "semantic_academic_judgment": "pending_supervisor_review"
+  },
+  "findings": [],
+  "diagnostics": {
+    "paragraph_statistics": {
+      "total_paragraphs": 60,
+      "paragraph_roles": {
+        "filler": 18,
+        "background": 13,
+        "claim": 21,
+        "evidence": 6,
+        "translation_description": 1,
+        "analysis": 1
+      },
+      "per_section_roles": {
+        "1": {
+          "filler": 4,
+          "background": 3,
+          "claim": 4,
+          "evidence": 1
+        },
+        "2": {
+          "filler": 5,
+          "background": 7,
+          "evidence": 2,
+          "claim": 1
+        },
+        "3": {
+          "filler": 7,
+          "claim": 9,
+          "evidence": 3,
+          "background": 3,
+          "translation_description": 1
+        },
+        "4": {
+          "filler": 2,
+          "claim": 7,
+          "analysis": 1
+        }
+      },
+      "claim_bearing_paragraphs": 21,
+      "evidence_bearing_paragraphs": 6,
+      "analysis_bearing_paragraphs": 1,
+      "generic_paragraphs": 0,
+      "generic_rate": 0.0
+    },
+    "case_quality": [
+      {
+        "case_id": "seg-ec100d8686d3891e-0139",
+        "case_type": "authentic_revision",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 5/7"
+        ],
+        "supports_claims": [
+          "C2",
+          "C4"
+        ],
+        "evidence_richness": 5,
+        "case_role": "revision_case",
+        "synthetic_dimensions": {}
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0233",
+        "case_type": "authentic_revision",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 5/7"
+        ],
+        "supports_claims": [
+          "C2",
+          "C5"
+        ],
+        "evidence_richness": 5,
+        "case_role": "revision_case",
+        "synthetic_dimensions": {}
+      },
+      {
+        "case_id": "seg-ec100d8686d3891e-0272",
+        "case_type": "authentic_revision",
+        "class": "usable_case",
+        "reasons": [
+          "证据丰富度 2/7"
+        ],
+        "supports_claims": [
+          "C2",
+          "C6"
+        ],
+        "evidence_richness": 2,
+        "case_role": "revision_case",
+        "synthetic_dimensions": {}
+      }
+    ],
+    "rq_matrix": {
+      "matrix": {
+        "RQ1": {
+          "claims": [
+            "C2"
+          ],
+          "cases": [
+            "seg-ec100d8686d3891e-0139",
+            "seg-ec100d8686d3891e-0233",
+            "seg-ec100d8686d3891e-0272"
+          ],
+          "sections": [
+            "1",
+            "3",
+            "4"
+          ],
+          "answered": true,
+          "unanswered_reason": ""
+        },
+        "RQ2": {
+          "claims": [
+            "C4",
+            "C5",
+            "C6"
+          ],
+          "cases": [
+            "seg-ec100d8686d3891e-0139",
+            "seg-ec100d8686d3891e-0233",
+            "seg-ec100d8686d3891e-0272"
+          ],
+          "sections": [
+            "1",
+            "3",
+            "4"
+          ],
+          "answered": true,
+          "unanswered_reason": ""
+        },
+        "RQ3": {
+          "claims": [
+            "C1",
+            "C3",
+            "C7"
+          ],
+          "cases": [],
+          "sections": [
+            "1",
+            "2",
+            "4"
+          ],
+          "answered": true,
+          "unanswered_reason": ""
+        }
+      },
+      "answered_rqs": 3,
+      "unanswered_rqs": [],
+      "orphan_claims": [],
+      "sections_without_rq": []
+    },
+    "evidence_utilization": {
+      "selected_case_count": 3,
+      "cases_used": 3,
+      "high_value_unused_cases": [],
+      "rows": [
+        {
+          "case_id": "seg-ec100d8686d3891e-0139",
+          "used_in_report": true,
+          "evidence_richness": 5,
+          "case_type": "authentic_revision",
+          "high_value_unused": false,
+          "unused_dimensions": []
+        },
+        {
+          "case_id": "seg-ec100d8686d3891e-0233",
+          "used_in_report": true,
+          "evidence_richness": 5,
+          "case_type": "authentic_revision",
+          "high_value_unused": false,
+          "unused_dimensions": []
+        },
+        {
+          "case_id": "seg-ec100d8686d3891e-0272",
+          "used_in_report": true,
+          "evidence_richness": 2,
+          "case_type": "authentic_revision",
+          "high_value_unused": false,
+          "unused_dimensions": []
+        }
+      ]
+    },
+    "conclusion_traceability": [
+      {
+        "section_id": "4",
+        "sentence": "<!--rq:RQ1-->对于第一个研究问题，本项目的文学性军事回忆叙事至少呈现三类相互关联的难点：人物关系通过意象和口吻间接显现，文化专名与人物指称共同参与场景建构，源语元语言表达需要根据汉语计量和回指习惯重新建立内部一致性。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "这些难点都超出孤立词义替换，需要回到段落和语篇链中判断。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "<!--rq:RQ2-->对于第二个研究问题，三项真实修订分别显示：汉语句法压缩可以与意象保留并行；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "文化对象核验和代词信息量恢复可以在同一段落分别处理；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "源语计词单位不宜机械转写为汉语计字单位，改用整句回指能够消除目标语内部冲突。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "这些回答只描述保存文本中的变化和效果，不生成译者未记录的动机。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "<!--rq:RQ3--><!--claim:C7-->对于第三个研究问题，证据化流程的主要作用是设置结论边界。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "当前全量候选中有22<!--stat:revision_cases_academically_eligible-->项修订通过共享资格门禁，正式论文再按问题互补性和证据完整度选择三项核心案例；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "作者名误译、相邻段复制和跨段污染等系统修复则因持久完整性标记被排除。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "该区分使“译文已被修好”与“该段可以证明真实翻译修订”不再混为一谈。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "<!--claim:C7-->第一，案例选择应晚于全量源译对齐检查。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "若先写论文、后检查段落边界，系统错位很容易被包装为所谓翻译策略。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "第二，初译、终译、审校问题和修复动作应分别保存；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "只有文本差异而没有过程说明时，仍可开展有限的文本分析，但不能补写历史理由。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "第三，文化专名核验与语篇指称分析需要分层进行：前者回答“对象是谁”，后者回答“表达在上下文中指向谁或什么”。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "第四，质量评价需要指出具体维度和可观察变化，避免用“更准确、更流畅”代替论证。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "Károly等（2022b）<!--cite:karoly-et-al-2022-macrostructure-->指出，同一文学翻译个案中的不同宏观指标可能给出不同甚至彼此制约的结果。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "<!--lit-claim:LC-006--><!--lit-evidence:LE-e628d716576bbbfa-->这提醒本项目：一个案例在指称上改善，并不自动意味着其节奏、文化说明或文体效果同样最优；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "<!--claim:C7-->本报告首先受单一项目和案例规模限制。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "三项核心案例能够展示不同问题机制，却不能代表英语回忆录汉译中的发生率。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "其次，文献证据来自翻译评价、英匈文学翻译、荷兰语叙事视角实验和英阿小说翻译个案；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "它们提供分析概念与限制条件，但不能替代英汉语料或本项目的中文读者实验。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "再次，本报告没有可核验的译者同期说明；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "技术性修复记录只能证明审校时采用了何种判断，不能还原真实译者的心理意图。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "<!--claim:C7-->后续改进可从三个方向展开：一是由导师逐项复核三案例的问题定义、理论映射和结论强度；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "二是在不改写历史证据的前提下，补做中文读者小规模理解测试，检验代词和元语言回指的实际效果；",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "三是将全量对齐扫描前移到翻译阶段，在终译保存前阻止相邻段复制和跨页污染。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      },
+      {
+        "section_id": "4",
+        "sentence": "当前四章正文已通过确定性结构与证据验证后，仍应视为送导师审阅稿，而不是未经人工复核即可提交的定稿。",
+        "traceable_to_evidence": true,
+        "needs_semantic_check": false
+      }
+    ],
+    "cross_section_checks": [],
+    "case_count_policy": {
+      "status": "sufficient_revision_cases",
+      "preferred": 3,
+      "minimum": 2,
+      "selected": 3
+    }
+  },
+  "limitation": "未调用外部模型，也未冒充导师人工审稿；语义充分性由导师复核。",
+  "content_hash": "ddf0ef3e98a17734c227214d0b812ae21d4b98544534f0a24632425aa8ad62a0"
+}

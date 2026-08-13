@@ -1,0 +1,166 @@
+{
+  "schema_version": "academic-outline-v2",
+  "sections": [
+    {
+      "section_id": "1",
+      "title": "引言",
+      "purpose": "介绍研究背景、研究问题、研究方法与论文结构，为后续分析奠定基础。",
+      "research_questions": [
+        "RQ1"
+      ],
+      "claims": [
+        "C1"
+      ],
+      "cases": [
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0238",
+        "seg-ec100d8686d3891e-0007",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0140",
+        "seg-ec100d8686d3891e-0139"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "total_segments",
+        "translated_segments",
+        "reviewed_segments",
+        "actionable_findings",
+        "issue_category_distribution"
+      ],
+      "target_words": 600,
+      "minimum_chars": 200,
+      "allowed_conclusions": [
+        "概述研究背景与意义，明确研究问题与研究方法，说明论文结构。"
+      ]
+    },
+    {
+      "section_id": "2",
+      "title": "源文本特征与翻译难点分析",
+      "purpose": "基于项目证据，系统分析源文本的语言特征与内容特征，并归纳可实证的翻译难点。",
+      "research_questions": [
+        "RQ1"
+      ],
+      "claims": [
+        "C1",
+        "C2"
+      ],
+      "cases": [
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0238",
+        "seg-ec100d8686d3891e-0007",
+        "seg-ec100d8686d3891e-0233",
+        "seg-ec100d8686d3891e-0140",
+        "seg-ec100d8686d3891e-0139",
+        "seg-ec100d8686d3891e-0215",
+        "seg-ec100d8686d3891e-0152"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "issue_category_distribution",
+        "actionable_findings",
+        "repair_category_distribution"
+      ],
+      "target_words": 1200,
+      "minimum_chars": 400,
+      "allowed_conclusions": [
+        "源文本在语言层面呈现长句、多从句、复杂标点与直接引语交织的特征，在内容层面密集嵌入以色列历史事件、地理名称、人名及文化专有项，构成可实证的翻译难点。",
+        "审校环节识别出的可操作问题集中于专有名词处理与语义完整性两方面，且部分问题在初译与终译之间发生了可追溯的修复。"
+      ]
+    },
+    {
+      "section_id": "3",
+      "title": "功能对等视角下的翻译决策分析",
+      "purpose": "选取代表性案例，从功能对等视角对翻译决策进行有限解释，说明信息对等与效果对等优先场景下的策略选择。",
+      "research_questions": [
+        "RQ2"
+      ],
+      "claims": [
+        "C3"
+      ],
+      "cases": [],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [],
+      "target_words": 1200,
+      "minimum_chars": 400,
+      "allowed_conclusions": [
+        "在功能对等视角下，部分翻译决策可被有限解释为：在信息对等优先的场景中采用保留原文或加注策略，在效果对等优先的场景中采用意译或调整策略。"
+      ]
+    },
+    {
+      "section_id": "4",
+      "title": "术语治理、机器翻译与译后编辑的效果与局限",
+      "purpose": "基于项目统计与案例证据，分析术语治理、机器翻译、审校与译后编辑在本项目中的可追溯效果与局限。",
+      "research_questions": [
+        "RQ3"
+      ],
+      "claims": [
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "cases": [
+        "seg-ec100d8686d3891e-0144",
+        "seg-ec100d8686d3891e-0215",
+        "seg-ec100d8686d3891e-0152",
+        "seg-ec100d8686d3891e-0007",
+        "seg-ec100d8686d3891e-0139"
+      ],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [
+        "total_segments",
+        "translated_segments",
+        "reviewed_segments",
+        "actionable_findings",
+        "repaired_segments",
+        "term_conflicts",
+        "tm_reuse_count",
+        "repair_category_distribution"
+      ],
+      "target_words": 1200,
+      "minimum_chars": 400,
+      "allowed_conclusions": [
+        "机器翻译在长句与复杂结构处理上表现出较高效率，但在专名一致性、语义完整性及文化专有项处理上存在可追溯的局限，需依赖人工审校与译后编辑进行修正。",
+        "术语治理在本项目中未出现术语冲突，但术语条目的覆盖范围有限，术语库的作用边界在于预防已知术语冲突，而非覆盖全部专名决策。",
+        "审校与译后编辑环节中，部分修复在初译与终译之间发生了可追溯的变化，且修复类型以建议目标记录和人工操作记录为主，说明人工审校在机器翻译输出修正中发挥了实质性作用。"
+      ]
+    },
+    {
+      "section_id": "5",
+      "title": "结论",
+      "purpose": "总结研究发现，回应研究问题，说明研究贡献与局限。",
+      "research_questions": [
+        "RQ1",
+        "RQ2",
+        "RQ3"
+      ],
+      "claims": [
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "cases": [],
+      "literature_claims": [],
+      "literature_evidence": [],
+      "literature_sources": [],
+      "required_statistics": [],
+      "target_words": 600,
+      "minimum_chars": 200,
+      "allowed_conclusions": [
+        "总结源文本特征与翻译难点、功能对等视角下的翻译决策解释、术语治理与机器翻译的作用边界，以及人工审校的实质性作用。"
+      ]
+    }
+  ],
+  "planner_fallback": false,
+  "content_hash": "e570577fbcd81aac3780220085b65f630ace5e6655107d3b6a9e15e58b352485"
+}

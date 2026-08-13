@@ -1,0 +1,26 @@
+{
+  "schema_version": "thesis-phase-b-run-v1",
+  "generated_at": "2026-08-12T13:22:14+00:00",
+  "job_id": "ec100d8686d3891e",
+  "status": "completed",
+  "external_model_used": false,
+  "state_source": "translation-state-after-review.json",
+  "input_hashes": {
+    "academic-evidence-final.json": "392604064dcf25c05c9bad705fd5f21a97c8cf14f725925689168557cd175c35",
+    "selected-cases-final.json": "8d8e963d646773e43f5781595f945c32059ce45f8be723e48503834a78a356e1",
+    "literature-sources.json": "4cc51d5e27216b2d839b131a50c40d3259f21f605c0f8df5a57135ec2787c0dc",
+    "literature-evidence.jsonl": "17ef16a71b6e2b65c3c1fc020a5f960d45a777fe8378bb4628270a8028a85648",
+    "literature-claims.jsonl": "b747de3abaf0caf5641b3c417e7bc64e5e82c20929a98e8d1a337509ecd1c492"
+  },
+  "output_hashes": {
+    "research-model-v6.json": "fd0e6f1168927741229e1dd8bfd0f72287bf7a181654a5714ce2ad5bb8c3d687",
+    "argument-plan-v6.json": "17b232ec1cfb1e8039a9dbd6cbb0bff75c9b6b29e78b921e041ff2e667d722d2",
+    "selected-cases-v6.json": "ae26edf5cb4f0bf7d4207a7cb38a53b7fb0ac7dc431abf613706e3e28d12b2f5",
+    "academic-outline-v6.json": "5808a483d5d7787751e0c1d926e27e3ccd5c93467b658f414313faaf9c405ace",
+    "academic-sections-v6.json": "c944cc349b836efdf5f4f16cf9cf285444347bf5a6d3ea364592d27c1d565509",
+    "academic-validation-v6.json": "388215418ba2ff460946abb11fd983a61ec5a8408ccabbde0839f12cb9af81b5",
+    "academic-quality-v6.json": "9eac776a0b3e83e676abd202bda991ed7fbfedfc7aef316ab1317dc44359a7db",
+    "thesis-body-v6.md": "2e7f72abfccb28d959bc03fc8474eba3d7f4c3c49ff5bcae3ce12481b50944e1"
+  },
+  "content_hash": "2e1d438dfa6d8bb1f0f174980c4f7164f4785919257399825bcc15ff05e0521b"
+}

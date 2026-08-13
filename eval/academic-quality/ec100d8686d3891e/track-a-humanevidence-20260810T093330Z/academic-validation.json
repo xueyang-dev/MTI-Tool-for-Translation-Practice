@@ -1,0 +1,222 @@
+{
+  "schema_version": "academic-validation-v2",
+  "validator_version": "validator-v2",
+  "status": "fail",
+  "issues": [
+    {
+      "issue_id": "AV-001",
+      "type": "unresolved_statistic_token",
+      "severity": "error",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "报告仍含未解析的统计占位符。",
+      "suggested_action": ""
+    },
+    {
+      "issue_id": "AV-002",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：**覆盖分布。** 术语库匹配覆盖按文本位置分为开头、中间、结尾三段，覆盖率均为 {{STAT:coverage_distribution}}%（91%）。覆盖分布均匀，说明术语库在整个文本中的匹配表",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-003",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：本章选取的案例均满足以下证据条件：其一，分段原文与最终译文完整留存；其二，审校记录中对该分段的修改建议或修改理由有明确标注；其三，修改方向呈现从初始译文向最终译文的实质调整。{{STAT:repair",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-004",
+      "type": "missing_planned_claim",
+      "severity": "error",
+      "section_id": "4",
+      "claim_id": "C3",
+      "evidence_id": null,
+      "reason": "章节 4 未落实论点 C3。",
+      "suggested_action": "围绕该 claim 与其证据补写或调整提纲。"
+    },
+    {
+      "issue_id": "AV-005",
+      "type": "missing_research_question_link",
+      "severity": "warning",
+      "section_id": "4",
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "章节 4 未标明对研究问题 RQ2 的回应。",
+      "suggested_action": ""
+    }
+  ],
+  "summary": {
+    "errors": 2,
+    "warnings": 3,
+    "segment_references": 0,
+    "statistics_markers": 25,
+    "citation_markers": 0,
+    "literature_claim_markers": 0,
+    "literature_evidence_markers": 0,
+    "literature_quote_markers": 0,
+    "claim_markers": 7,
+    "research_question_markers": 13
+  },
+  "content_hash": "2405296fef77b8654cfd7d13ff0f5661d8787e16bdbb8da10ca90c5779f79b18",
+  "runs": [
+    {
+      "schema_version": "academic-validation-v2",
+      "validator_version": "validator-v2",
+      "status": "fail",
+      "issues": [
+        {
+          "issue_id": "AV-001",
+          "type": "unresolved_statistic_token",
+          "severity": "error",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "报告仍含未解析的统计占位符。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-002",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：**覆盖分布。** 术语库匹配覆盖按文本位置分为开头、中间、结尾三段，覆盖率均为 {{STAT:coverage_distribution}}%（91%）。覆盖分布均匀，说明术语库在整个文本中的匹配表",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-003",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：本章选取的案例均满足以下证据条件：其一，分段原文与最终译文完整留存；其二，审校记录中对该分段的修改建议或修改理由有明确标注；其三，修改方向呈现从字面直译向功能调整的转变。{{STAT:repair_c",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-004",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：综合上述分析，术语治理、机器翻译、人工审校与翻译记忆库复用四个环节在本项目中呈现出各自的作用与边界：术语库在已收录词条上无冲突但覆盖有限；机器翻译在复杂文本上错误频发；人工审校修复了部分问题但覆盖率未",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-005",
+          "type": "missing_planned_claim",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": "C3",
+          "evidence_id": null,
+          "reason": "章节 4 未落实论点 C3。",
+          "suggested_action": "围绕该 claim 与其证据补写或调整提纲。"
+        },
+        {
+          "issue_id": "AV-006",
+          "type": "missing_research_question_link",
+          "severity": "warning",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "章节 4 未标明对研究问题 RQ2 的回应。",
+          "suggested_action": ""
+        }
+      ],
+      "summary": {
+        "errors": 2,
+        "warnings": 4,
+        "segment_references": 0,
+        "statistics_markers": 25,
+        "citation_markers": 0,
+        "literature_claim_markers": 0,
+        "literature_evidence_markers": 0,
+        "literature_quote_markers": 0,
+        "claim_markers": 7,
+        "research_question_markers": 13
+      },
+      "content_hash": "7832895816752c7b48dcc92c1d2356eafbbeb50045a2c5c753fc7c6e667acece"
+    },
+    {
+      "schema_version": "academic-validation-v2",
+      "validator_version": "validator-v2",
+      "status": "fail",
+      "issues": [
+        {
+          "issue_id": "AV-001",
+          "type": "unresolved_statistic_token",
+          "severity": "error",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "报告仍含未解析的统计占位符。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-002",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：**覆盖分布。** 术语库匹配覆盖按文本位置分为开头、中间、结尾三段，覆盖率均为 {{STAT:coverage_distribution}}%（91%）。覆盖分布均匀，说明术语库在整个文本中的匹配表",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-003",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：本章选取的案例均满足以下证据条件：其一，分段原文与最终译文完整留存；其二，审校记录中对该分段的修改建议或修改理由有明确标注；其三，修改方向呈现从初始译文向最终译文的实质调整。{{STAT:repair",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-004",
+          "type": "missing_planned_claim",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": "C3",
+          "evidence_id": null,
+          "reason": "章节 4 未落实论点 C3。",
+          "suggested_action": "围绕该 claim 与其证据补写或调整提纲。"
+        },
+        {
+          "issue_id": "AV-005",
+          "type": "missing_research_question_link",
+          "severity": "warning",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "章节 4 未标明对研究问题 RQ2 的回应。",
+          "suggested_action": ""
+        }
+      ],
+      "summary": {
+        "errors": 2,
+        "warnings": 3,
+        "segment_references": 0,
+        "statistics_markers": 25,
+        "citation_markers": 0,
+        "literature_claim_markers": 0,
+        "literature_evidence_markers": 0,
+        "literature_quote_markers": 0,
+        "claim_markers": 7,
+        "research_question_markers": 13
+      },
+      "content_hash": "c4707a958a03e758a738b1d8c4006f385572e7b80b17e3f426f666051cf4fb8f"
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "schema_version": "literature-sources-v1",
+  "sources": [
+    {
+      "source_id": "nida1964",
+      "title": "Toward a Science of Translating",
+      "authors": [
+        "Eugene Nida"
+      ],
+      "year": 1964,
+      "source_type": "book",
+      "citation_metadata": {
+        "title": "Toward a Science of Translating",
+        "authors": [
+          "Eugene Nida"
+        ],
+        "year": 1964,
+        "in_text": "Nida（1964）"
+      },
+      "local_source_path": null,
+      "import_identity": null,
+      "verification_status": "metadata_verified",
+      "allowed_citation_status": "allowed",
+      "content_availability": "full_text_available",
+      "concepts": [],
+      "content_format": "markdown",
+      "citation_allowed": true,
+      "verification": null,
+      "content_hash": "7983c05672983a21ca574df60d9f96441bf8bc752c2a7df7e373f587db09ad71",
+      "source_file_hash": "c14463356a8d6ca61d55e760fb738fb4ffb1dff88563d5187da9eac0718cb585",
+      "content_blocks": [
+        {
+          "block_id": "LB-b37110a7b61c1ee3",
+          "text": "Functional equivalence focuses on receptor response.",
+          "location": {
+            "kind": "markdown",
+            "line_start": 2,
+            "line_end": 2,
+            "heading": "Theory",
+            "chunk": 1
+          },
+          "provenance": "source_text_verified",
+          "evidence_type": "source_passage",
+          "verification_status": "source_text_verified",
+          "origin_id": null,
+          "content_hash": "b37110a7b61c1ee38870b89a9c02353fbfb860b471ef08d07ef88a591b44e256"
+        },
+        {
+          "block_id": "LB-478225781bd388a3",
+          "text": "用于解释受众反应。",
+          "location": {
+            "kind": "user_note",
+            "origin_id": "N-1"
+          },
+          "provenance": "user_note",
+          "evidence_type": "note",
+          "verification_status": "user_attested",
+          "origin_id": "N-1",
+          "content_hash": "478225781bd388a310b4a08862f7cef234cbf5dad83a15a96547d17685911dfc"
+        },
+        {
+          "block_id": "LB-caee6a7de15d7604",
+          "text": "Translation consists in reproducing the closest natural equivalent.",
+          "location": {
+            "kind": "manual_excerpt",
+            "origin_id": "EX-1",
+            "page": 12
+          },
+          "provenance": "manual_excerpt",
+          "evidence_type": "excerpt",
+          "verification_status": "user_attested",
+          "origin_id": "EX-1",
+          "content_hash": "caee6a7de15d76049ed21bdac8cbc5a47dca98bff9c8b144c871633a1256c642"
+        },
+        {
+          "block_id": "LB-b53d3bd899ff6cb8",
+          "text": "A model-extracted passage requiring review.",
+          "location": {
+            "kind": "model_extracted_passage",
+            "origin_id": "MX-1",
+            "page": 13
+          },
+          "provenance": "model_extracted_from_source",
+          "evidence_type": "source_passage",
+          "verification_status": "needs_review",
+          "origin_id": "MX-1",
+          "content_hash": "b53d3bd899ff6cb89dd00d0fc2acb046b3f139dadee71dd34d530f87c44016a2"
+        }
+      ],
+      "content_block_count": 4,
+      "content_blocks_bounded": false,
+      "metadata_hash": "ed07dc27c293c9b144363b8d80489197b3f1e214d1eaf580f1802ced235ce53e"
+    }
+  ],
+  "sources_metadata_hash": "ded37a3dd65e61701d1258ca15a5633249c437261603784729ef8b2c3b9f84de",
+  "sources_content_hash": "8b35e387faed2989653dc26cda252f91165e902048a6ac07f7b5e9d4a9c89e73",
+  "warnings": [],
+  "content_hash": "1b333208ebecc1ee420fa12d23c5bd8f81d13fa55f884409d442bda4663ce4c6"
+}

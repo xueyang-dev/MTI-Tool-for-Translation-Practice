@@ -1,0 +1,34 @@
+{
+  "schema_version": "portfolio-research-model-v1",
+  "research_topic": "回忆录英汉翻译中的多层级问题、调整机制与证据边界",
+  "research_questions": [
+    {
+      "rq_id": "RQ1",
+      "question": "该翻译项目在文本对应、词汇语义、句法逻辑、术语文化和篇章语用层面呈现了哪些主要问题？"
+    },
+    {
+      "rq_id": "RQ2",
+      "question": "这些问题分别由哪些可观察的语言关系或工作流失配机制引起？"
+    },
+    {
+      "rq_id": "RQ3",
+      "question": "真实修订、审校建议与受控对比各自能够说明哪些调整方式及其文本效果？"
+    },
+    {
+      "rq_id": "RQ4",
+      "question": "跨案例比较能够形成哪些受证据约束的翻译实践认识？"
+    }
+  ],
+  "method": "对完整语料进行证据分层的案例研究：真实修订用于分析实际变化，Supporting Example 用于分析已记录问题与建议，Boundary Case 用于说明证据不可用条件，Synthetic Contrast 仅用于受控机制对比。",
+  "analysis_dimensions": [
+    "textual_integrity",
+    "lexical_semantic",
+    "syntax_logic",
+    "terminology_culture",
+    "discourse_pragmatics"
+  ],
+  "theoretical_framework": [],
+  "theory_status": "pending_grounded_literature_evidence",
+  "human_evidence_status": "awaiting_author_input",
+  "portfolio_case_count": 25
+}
