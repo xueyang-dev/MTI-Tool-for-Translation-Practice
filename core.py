@@ -321,6 +321,78 @@ def extract_pdf_paragraphs(file_bytes):
     return [p for p in merged if not _ORNAMENT_RE.match(p)]
 
 
+def _ocr_pdf_text(file_bytes, max_pages=3):
+    """扫描件 OCR：只渲染代表性页（前/中/后），交给 tesseract 识别。
+
+    任何环节失败都返回空字符串（由调用方降级），绝不让 OCR 阻塞流程。
+    """
+    import shutil
+    import subprocess
+    import tempfile
+
+    if shutil.which("tesseract") is None:
+        return ""
+    try:
+        import fitz
+        with fitz.open(stream=file_bytes, filetype="pdf") as doc:
+            count = doc.page_count
+            if count == 0:
+                return ""
+            indices = sorted({0, count // 2, count - 1})[:max_pages]
+            chunks = []
+            for idx in indices:
+                pix = doc[idx].get_pixmap(dpi=200)
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                    pix.save(tmp.name)
+                    tmp_path = tmp.name
+                try:
+                    proc = subprocess.run(
+                        ["tesseract", tmp_path, "-", "-l", "chi_sim+eng"],
+                        capture_output=True, timeout=120)
+                    text = proc.stdout.decode("utf-8", errors="ignore")
+                    if text.strip():
+                        chunks.append(text.strip())
+                except Exception:  # noqa: BLE001 - OCR 失败不阻断
+                    pass
+                finally:
+                    Path(tmp_path).unlink(missing_ok=True)
+            return "\n".join(chunks)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def extract_document_paragraphs(filename, file_bytes):
+    """上传后的轻量预提取：PDF 走确定性解析，扫描件尝试 OCR 代表页；
+    DOCX 走 python-docx。返回 (paragraphs, warnings)。"""
+    warnings = []
+    paragraphs = []
+    name = (filename or "").lower()
+    try:
+        if name.endswith(".pdf"):
+            paragraphs = [clean_xml_chars(p) for p in extract_pdf_paragraphs(file_bytes)]
+            if not paragraphs:
+                warnings.append("PDF 无文本层，正在尝试 OCR 前/中/后代表页…")
+                ocr_text = _ocr_pdf_text(file_bytes)
+                if ocr_text:
+                    paragraphs = [clean_xml_chars(p.strip())
+                                  for p in re.split(r"\n+", ocr_text)
+                                  if p.strip() and len(p.strip()) > 1]
+                else:
+                    warnings.append("OCR 不可用或失败，无法自动画像；可手动选择风格")
+        elif name.endswith(".docx"):
+            doc_word = Document(io.BytesIO(file_bytes))
+            for p in doc_word.paragraphs:
+                for sub_p in re.split(r"\n+", clean_xml_chars(p.text)):
+                    t = sub_p.strip()
+                    if len(t) > 1 and not _ORNAMENT_RE.match(t):
+                        paragraphs.append(t)
+        else:
+            warnings.append("不支持的文档格式，无法自动画像")
+    except Exception as exc:  # noqa: BLE001
+        warnings.append(f"预提取失败：{exc}")
+    return paragraphs, warnings
+
+
 def call_llm(provider, api_key, model, system_prompt, user_prompt,
              temperature=0.1, base_url=None):
     """底层大模型统一路由（超时 150 秒，模型可配置）。
@@ -1179,7 +1251,7 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
     - 独立审校：actionable 建议经确定性复验后应用，blocking 记录给用户确认；
     - 翻译记忆：仅审校通过的段落入库，精确命中直接复用。
     """
-    # 高质量模式后端门禁：存在待审核候选术语且未冻结（且未显式跳过）时，
+    # 严格术语治理门禁：存在待审核候选术语且未冻结（且未显式跳过）时，
     # 任何入口都禁止开始翻译。导入的锁定术语视为已固定，不构成阻塞。
     pending = [e for e in (glossary or [])
                if (e.get("status") or "").lower() == "candidate"]
@@ -1187,7 +1259,7 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
             and not state.get("glossary_frozen") \
             and not state.get("quality_bypass"):
         raise RuntimeError(
-            "高质量模式：仍有候选术语未审核（术语表尚未冻结），"
+            "严格术语治理：仍有候选术语未审核（术语表尚未冻结），"
             "禁止开始翻译（请在术语审核面板冻结后继续）")
     tm = load_tm() if use_tm else {}
     paras = state["paras"]
@@ -1652,6 +1724,58 @@ def _ensure_output_dir():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def is_onboarded():
+    """首次使用引导标记：成功配置并测试通过 AI 引擎后置位。"""
+    return (OUTPUT_DIR / ".onboarded").exists()
+
+
+def mark_onboarded():
+    _ensure_output_dir()
+    (OUTPUT_DIR / ".onboarded").touch()
+
+
+def provider_config_path():
+    return OUTPUT_DIR / "provider_config.json"
+
+
+def save_provider_config(provider, model, api_key, base_url=None):
+    """把 AI 引擎配置落盘（本地单机工具，0600 权限），重启后自动加载。"""
+    _ensure_output_dir()
+    cfg = {
+        "provider": provider or "",
+        "model": model or "",
+        "api_key": api_key or "",
+        "base_url": base_url or "",
+    }
+    path = provider_config_path()
+    path.write_text(json.dumps(cfg, ensure_ascii=False, indent=2),
+                    encoding="utf-8")
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
+    return path
+
+
+def load_provider_config():
+    """读取已保存的 AI 引擎配置；文件缺失或损坏时返回 None。"""
+    try:
+        path = provider_config_path()
+        if not path.exists():
+            return None
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict) or not data.get("provider"):
+            return None
+        return {
+            "provider": str(data.get("provider", "")),
+            "model": str(data.get("model", "") or ""),
+            "api_key": str(data.get("api_key", "") or ""),
+            "base_url": str(data.get("base_url", "") or ""),
+        }
+    except Exception:  # noqa: BLE001 - 配置文件损坏时按未保存处理
+        return None
+
+
 def job_dir(job_id):
     return OUTPUT_DIR / job_id
 
@@ -1928,6 +2052,28 @@ def save_document_profile(job_id, profile):
     return state
 
 
+def write_profile_artifacts(job_id, document_profile, style_profile):
+    """把 Step 01 的画像产物落盘为版本化 artifact：
+    document_profile.json / style_profile.json（含 style_profile_id 哈希）。
+    返回写入的 style_profile_id，失败返回 None。
+    """
+    try:
+        from mti_tool.style_profile import style_profile_id
+        job_root = job_dir(job_id)
+        job_root.mkdir(parents=True, exist_ok=True)
+        (job_root / "document_profile.json").write_text(
+            json.dumps(_models.normalize_document_profile(document_profile),
+                       ensure_ascii=False, indent=2), encoding="utf-8")
+        profile_id = style_profile_id(style_profile or {})
+        artifact = dict(style_profile or {})
+        artifact["style_profile_id"] = profile_id
+        (job_root / "style_profile.json").write_text(
+            json.dumps(artifact, ensure_ascii=False, indent=2), encoding="utf-8")
+        return profile_id
+    except Exception:  # noqa: BLE001 - artifact 落盘失败不影响主流程
+        return None
+
+
 def bypass_freeze(job_id, frozen_by="user"):
     """快速模式跳过人工冻结：允许以 provisional 术语直接翻译（记录审计标记）。"""
     state = load_job_state(job_id)
@@ -2082,17 +2228,15 @@ def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_ke
 def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                      target_lang, auto_term, enable_report, translation_theory,
                      user_glossary=None, style_rules="", enable_review=True,
-                     enable_annotate=True, use_tm=True, mode="quick",
+                     enable_annotate=True, use_tm=True,
+                     strict_terminology_governance=False, mode=None,
                      research_settings=None, literature_sources=None,
                      on_status=None, on_caption=None):
     """执行单个文档的完整流程；每个里程碑实时落盘，刷新/重启后均可继续。
 
-    mode="quick"：省 token 的快速策略——跳过文档画像，术语只作建议，
-    默认不跑独立审校（由 UI 控制）。
-    mode="quality"：全流程——文档画像 → 术语抽取 → 人工审核候选 → 冻结 →
-    相关术语注入 → 翻译 + 独立审校 → 标注 → 报告。仅当存在待审核的
-    candidate 术语且未冻结时在 TERMS_PREPARED 返回；导入的锁定术语视为
-    已固定，不会阻塞翻译。
+    strict_terminology_governance=True：翻译前建立文档画像，并要求自动候选
+    术语完成审核/冻结。导入的锁定术语视为已固定，不会阻塞翻译。
+    ``mode`` 仅保留给旧调用方；quality 映射到严格术语治理，quick 映射到关闭。
     """
     _ensure_output_dir()
     base = new_job_state(filename)
@@ -2100,6 +2244,9 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     state = {**base, **state}  # 兼容旧版本状态缺字段
     state = _state_migration.migrate_state(state)
     state["report_enabled"] = bool(enable_report)
+    if mode is not None:
+        strict_terminology_governance = mode == "quality"
+    state["quality_mode"] = bool(strict_terminology_governance)
     warnings = state.setdefault("warnings", [])
 
     if enable_report:
@@ -2150,8 +2297,8 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         save_source(job_id, file_bytes)  # 留存源文件，刷新后无需重新上传
         save_job_state(job_id, state)
 
-    # ---------------- 阶段 1.2：文档画像（仅高质量模式；失败仅警告，不阻断） ----------------
-    if mode == "quality" and not state.get("profile_done"):
+    # ---------------- 阶段 1.2：文档画像（严格术语治理；失败仅警告，不阻断） ----------------
+    if strict_terminology_governance and not state.get("profile_done"):
         if on_status:
             on_status("【阶段1.2】文档画像（分布式采样 + 结构化校验）...")
         from mti_tool.document_profile import profile_document
@@ -2197,7 +2344,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
                    for k, v in (state["auto_terms"] or {}).items()]
     auto_entries = normalize_glossary(state.get("auto_term_entries") or legacy_auto)
     user_entries = normalize_glossary(list(user_glossary or []))
-    if mode == "quick":
+    if not strict_terminology_governance:
         for e in auto_entries:
             if e["status"] == "candidate":
                 e["status"] = "provisional"
@@ -2210,20 +2357,23 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         for e in user_entries + auto_entries:
             if e["source"].casefold() not in known:
                 working.append(e)
+    if not strict_terminology_governance:
+        for e in working:
+            if e["status"] == "candidate":
+                e["status"] = "provisional"
     state["glossary"] = working
     glossary = working
     final_termbase = glossary_to_terms(glossary)
 
-    # ---------------- 高质量模式门禁：候选术语需人工审核/冻结后才能翻译 ----------------
-    if mode == "quality":
-        state["quality_mode"] = True
+    # ---------------- 严格术语治理门禁：候选术语需人工审核/冻结后才能翻译 ----------------
+    if strict_terminology_governance:
         pending = [e for e in working
                    if (e.get("status") or "").lower() == "candidate"]
         if not state.get("glossary_frozen") and not state.get("quality_bypass") \
                 and pending:
             if on_status:
-                on_status(f"⏸ 高质量模式：{len(pending)} 条候选术语等待人工审核与冻结...")
-            msg = (f"高质量模式：术语表尚未冻结（{len(pending)} 条自动抽取的"
+                on_status(f"⏸ 严格术语治理：{len(pending)} 条候选术语等待人工审核与冻结...")
+            msg = (f"严格术语治理：术语表尚未冻结（{len(pending)} 条自动抽取的"
                    "候选术语待审核），翻译未开始。请在“术语准备与审核”面板"
                    "完成审核并冻结后继续；导入术语库中的锁定术语已视为固定，"
                    "无需再次审核。")

@@ -1,11 +1,13 @@
-"""MTI Tool Streamlit 界面层。
+"""TransPraxis / 译践 Streamlit 界面层。
 
 信息架构：左侧产品导航 + 四步任务创建 + 运行后任务工作台。AI Provider
 与翻译记忆属于全局设置；学术报告属于翻译后的下游工作流，不占据文档首屏。
 """
+import base64
 import json
 import re
 from html import escape
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -16,7 +18,14 @@ from mti_tool import delivery as _delivery
 from mti_tool import report_evidence as _report_evidence
 
 # ================= 页面全局设置 =================
-st.set_page_config(page_title="MTI Tool", page_icon="M", layout="wide",
+_APP_ROOT = Path(__file__).resolve().parent
+_BRAND_DIR = _APP_ROOT / "assets" / "brand"
+_BRAND_MARK = _BRAND_DIR / "transpraxis-mark.png"
+_BRAND_FAVICON = _BRAND_DIR / "transpraxis-favicon.png"
+_BRAND_MARK_URI = "data:image/png;base64," + base64.b64encode(
+    _BRAND_MARK.read_bytes()).decode("ascii")
+
+st.set_page_config(page_title="TransPraxis / 译践", page_icon=_BRAND_FAVICON, layout="wide",
                    initial_sidebar_state="expanded")
 
 if "doc_states" not in st.session_state:
@@ -29,6 +38,24 @@ if "provider_configured" not in st.session_state:
     st.session_state.provider_configured = False
 if "provider_connection_status" not in st.session_state:
     st.session_state.provider_connection_status = "unverified"
+# 从本地配置恢复 AI 引擎（保存过之后，重启应用无需重新填写）
+_saved_provider_cfg = core.load_provider_config()
+if _saved_provider_cfg:
+    _saved_provider = _saved_provider_cfg["provider"]
+    if _saved_provider in core.PROVIDERS \
+            and "provider_choice" not in st.session_state:
+        st.session_state.provider_choice = _saved_provider
+    if _saved_provider_cfg.get("api_key") \
+            and f"api_key_{_saved_provider}" not in st.session_state:
+        st.session_state[f"api_key_{_saved_provider}"] = \
+            _saved_provider_cfg["api_key"]
+    if _saved_provider_cfg.get("model") \
+            and f"model_choice_{_saved_provider}" not in st.session_state:
+        st.session_state[f"model_choice_{_saved_provider}"] = \
+            _saved_provider_cfg["model"]
+    if _saved_provider_cfg.get("base_url") \
+            and "custom_base_url" not in st.session_state:
+        st.session_state.custom_base_url = _saved_provider_cfg["base_url"]
 _initial_jobs = core.list_jobs()
 _pending_quality_job = next((
     job["job_id"] for job in _initial_jobs
@@ -40,22 +67,38 @@ if _pending_quality_job and "app_view" not in st.session_state:
     st.session_state.update(app_view="workspace", workspace_mode=True,
                             active_job_id=_pending_quality_job)
 
-# ================= 设计系统（Research IDE 国际蓝） =================
+# ================= 设计系统（TransPraxis Research IDE） =================
 _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
+ --mti-sidebar-width: 236px;
+ --mti-main-gutter: 80px;
+ --tp-navy: #001471;
+ --tp-brand-ink: #15379a;
+ --tp-logo-blue: #057afe;
+ --tp-primary: #1267e8;
+ --tp-primary-hover: #0d57ce;
+ --tp-primary-active: #0a49b4;
+ --tp-cyan: #09a7fd;
+ --tp-primary-soft: #eef5ff;
+ --tp-primary-soft-hover: #e5f0ff;
+ --tp-border: #bed7ff;
+ --tp-focus-ring: rgba(18,103,232,.22);
  --mti-canvas: #f7f8fa;
  --mti-surface: #ffffff;
- --mti-ink: #111827;
- --mti-sub: #6b7280;
- --mti-faint: #9ca3af;
- --mti-line: #e5e7eb;
- --mti-blue: #2563eb;
- --mti-blue-deep: #1d4ed8;
- --mti-blue-soft: #eff6ff;
- --mti-success: #16a34a;
+ --mti-ink: #131c2e;
+ --mti-sub: #667085;
+ --mti-faint: #8a94a6;
+ --mti-line: #dee3ea;
+ --mti-line-subtle: #ebeef3;
+ --mti-sidebar-line: #e7eaf0;
+ --mti-success: #22a06b;
  --mti-danger: #dc2626;
+ --mti-radius-sm: 6px;
+ --mti-radius-md: 8px;
+ --mti-radius-lg: 12px;
+ --action-bar-height: 80px;
 }
 
 html, body, [class*="css"], .stApp, button, input, textarea, select {
@@ -72,7 +115,7 @@ html, body, [class*="css"], .stApp, button, input, textarea, select {
 footer { visibility: hidden; }
 [data-testid="stMainBlockContainer"] {
  width: min(100%, 1152px); max-width: 1152px; margin-left: 0; margin-right: auto;
- padding: 1.5rem 3.5rem 4rem;
+ padding: 72px var(--mti-main-gutter) 40px;
 }
 
 /* ---------- Typography ---------- */
@@ -80,83 +123,128 @@ h1, h2, h3, h4, [data-testid="stHeadingWithActionElements"] {
  color: var(--mti-ink) !important;
  letter-spacing: -.02em; font-weight: 650;
 }
-h1 { font-size: 30px !important; line-height: 1.25 !important; }
-h2 { font-size: 20px !important; }
+h1 { font-size: 34px !important; line-height: 1.2 !important; font-weight: 700 !important; }
+h2 { font-size: 23px !important; }
 h3 { font-size: 16px !important; }
 p, label, input, textarea, [data-baseweb="select"] { font-size: 14px !important; }
 [data-testid="stCaptionContainer"], .stCaption { color: var(--mti-sub); }
-a { color: var(--mti-blue); }
+a { color: var(--tp-primary); text-decoration-color: var(--tp-border); text-underline-offset: 2px; }
+a:hover { color: var(--tp-primary-hover); text-decoration-color: var(--tp-logo-blue); }
 hr { border-color: var(--mti-line); }
-::selection { background: rgba(37,99,235,.16); }
+::selection { background: var(--tp-focus-ring); }
 
 /* ---------- Product shell ---------- */
 [data-testid="stSidebar"] {
- background: var(--mti-surface); border-right: 1px solid var(--mti-line);
- width: 236px !important; min-width: 236px !important;
+ background: var(--mti-surface); border-right: 1px solid var(--mti-sidebar-line);
+ width: var(--mti-sidebar-width) !important; min-width: var(--mti-sidebar-width) !important;
+ overflow-x: clip;
+ transform: none !important;
 }
-[data-testid="stSidebarContent"] { padding-top: 20px; padding-bottom: 82px; }
+[data-testid="stSidebarContent"] {
+ padding: 20px 24px 82px; position: relative;
+}
+[data-testid="stSidebarHeader"] { display: none !important; }
+[data-testid="stSidebarUserContent"] { padding-top: 0; }
 [data-testid="stSidebarContent"] [data-testid="stVerticalBlock"] { gap: .5rem; }
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { line-height: 1.5; }
+/* Streamlit 会给 markdown 容器默认注入 -16px 下边距（补偿段落默认边距），
+   品牌块没有段落默认边距，会被压缩导致副标题与下方按钮重叠，这里抵消掉。 */
+[data-testid="stSidebarContent"] [data-testid="stMarkdownContainer"]:has(.mti-brand) {
+ margin-bottom: 0;
+}
 [data-testid="stSidebar"] .stButton > button {
- min-height: 36px; justify-content: flex-start; border-color: transparent;
- background: transparent; color: #4b5563; font-weight: 500;
+ min-height: 44px; justify-content: flex-start; border-color: transparent;
+ background: transparent; color: #536176; font-size: 14px; font-weight: 400;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
- background: #f3f4f6; border-color: transparent; color: var(--mti-ink);
+ background: #f6f8fb; border-color: transparent; color: #202a3a;
 }
 [data-testid="stSidebar"] .stButton > button[kind="primary"] {
- background: var(--mti-blue-soft); border-color: transparent; color: var(--mti-blue-deep);
+ background: var(--tp-primary-soft); border-color: transparent;
+ color: var(--tp-brand-ink); font-weight: 500;
 }
-.mti-brand { padding: 2px 4px 18px; }
-.mti-brand strong { display: block; font-size: 18px; color: var(--mti-ink); letter-spacing: -.02em; }
-.mti-brand span { display: block; margin-top: 4px; font-size: 11px; color: #7b8493; line-height: 1.5; }
-.mti-nav-label { margin: 18px 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #7b8493; }
-.mti-nav-divider { height: 1px; margin: 14px 0 4px; background: var(--mti-line); }
+.mti-brand {
+ display: flex; flex-direction: column; align-items: center;
+ padding: 8px 0 0; margin-bottom: 14px; text-align: center;
+}
+.mti-brand-mark {
+ display: block; width: 116px; height: auto; object-fit: contain;
+ margin: 0 auto 4px;
+}
+.mti-brand-copy strong {
+ display: block; overflow: hidden; color: var(--tp-navy); font-size: 18px;
+ font-weight: 700; letter-spacing: -.025em; line-height: 1.12; text-overflow: ellipsis;
+ white-space: nowrap;
+}
+.mti-brand-copy b {
+ display: block; margin-top: 3px; color: var(--tp-brand-ink); font-size: 12px;
+ font-weight: 600; letter-spacing: .04em; line-height: 1.3;
+}
+.mti-brand > span {
+ display: block; margin-top: 8px; color: #7c8799; font-size: 10px;
+ font-weight: 400; line-height: 1.4; white-space: nowrap;
+}
+.mti-nav-label {
+ margin: 18px 0 6px; color: #7c8799; font-size: 12px;
+ font-weight: 500; letter-spacing: 0; line-height: 1.4;
+}
+.mti-nav-divider { height: 1px; margin: 24px 0; background: var(--mti-sidebar-line); }
 .st-key-new_task_action .stButton > button {
- border-color: var(--mti-line); background: #fff; color: var(--mti-ink); font-weight: 600;
+ min-height: 44px; border: 1px solid #dce2ea; border-radius: 9px;
+ background: #fff; color: #202a3a; font-size: 14px; font-weight: 500;
 }
+.st-key-new_task_action .stButton > button:hover { background: #f8fafc; border-color: #c9d2df; }
+.st-key-new_task_action .stButton > button:active { background: #f1f5f9; }
 .st-key-task_steps { position: relative; gap: 0 !important; margin: 0 0 6px; }
 .st-key-task_steps::before {
- content: ""; position: absolute; left: 17px; top: 21px; height: calc(100% - 42px);
- width: 1px; background: #d7dce3;
+ content: ""; position: absolute; left: 17px; top: 28px; height: calc(100% - 56px);
+ width: 1px; background: #dce2ea;
 }
 .st-key-task_steps .stButton { position: relative; z-index: 1; margin: 0; }
 .st-key-task_steps .stButton > button {
- min-height: 42px; padding: 0 8px; background: transparent; border-color: transparent;
+ min-height: 56px; height: 56px; padding: 0 8px; background: transparent;
+ border-color: transparent; border-radius: var(--mti-radius-md); font-size: 14px;
 }
 .st-key-task_steps .stButton > button > div { width: 100%; }
 .st-key-task_steps .stButton > button > div > span {
  display: grid !important; grid-template-columns: 18px minmax(0,1fr);
- column-gap: 8px; align-items: center; width: 100%;
+ column-gap: 6px; align-items: center; width: 100%;
 }
 .st-key-task_steps .stButton > button[kind="primary"] {
- background: transparent; border-color: transparent; color: var(--mti-blue-deep); font-weight: 650;
+ background: transparent; border-color: transparent; color: var(--tp-brand-ink); font-weight: 600;
 }
 .st-key-task_steps button[data-testid="stBaseButton-primary"] {
  background: transparent !important; border-color: transparent !important;
- color: var(--mti-blue-deep) !important;
+ color: var(--tp-brand-ink) !important;
 }
 .st-key-task_steps [data-testid="stIconMaterial"] {
  position: relative; z-index: 2; background: var(--mti-surface); border-radius: 50%;
+ font-size: 18px;
 }
 [class*="st-key-task_step_done_"] [data-testid="stIconMaterial"] { color: var(--mti-success); }
-[class*="st-key-task_step_current_"] [data-testid="stIconMaterial"] { color: var(--mti-blue); }
-[class*="st-key-task_step_pending_"] [data-testid="stIconMaterial"] { color: #a3aab5; }
-.mti-engine-row, .mti-summary, .mti-pipeline {
+[class*="st-key-task_step_current_"] [data-testid="stIconMaterial"] { color: var(--tp-logo-blue); }
+[class*="st-key-task_step_pending_"] [data-testid="stIconMaterial"] { color: #a8b2c1; }
+[class*="st-key-task_step_done_"] .stButton > button { color: #344054; font-weight: 500; }
+[class*="st-key-task_step_current_"] .stButton > button { color: var(--tp-brand-ink); font-weight: 600; }
+[class*="st-key-task_step_pending_"] .stButton > button { color: #536176; font-weight: 400; }
+.mti-engine-row, .mti-summary, .mti-pipeline, .mti-confirm-card {
  border: 1px solid var(--mti-line); border-radius: 10px; background: var(--mti-surface);
 }
 .mti-engine-row { padding: 12px 14px; margin: 6px 0 18px; }
 .mti-engine-row strong { font-size: 13px; color: var(--mti-ink); }
 .mti-engine-row span { display: block; margin-top: 3px; font-size: 12px; color: var(--mti-sub); }
 .st-key-provider_status {
- position: fixed; left: 16px; bottom: 12px; z-index: 30; width: 204px;
- margin: 0; padding: 11px 2px 0; border-top: 1px solid var(--mti-line);
+ position: fixed; left: 24px; bottom: 12px; z-index: 30;
+ width: calc(var(--mti-sidebar-width) - 48px);
+ margin: 0; padding: 20px 0 0; border-top: 1px solid var(--mti-sidebar-line);
  background: var(--mti-surface);
 }
 .st-key-provider_status [data-testid="stHorizontalBlock"] { align-items: center; gap: 6px; }
 .st-key-provider_status .stButton > button {
- min-height: 30px; padding: 2px 6px; justify-content: flex-end; color: var(--mti-blue-deep);
+ min-height: 30px; padding: 2px 0; justify-content: flex-end;
+ color: var(--tp-primary); font-size: 13px; font-weight: 500;
 }
+.st-key-provider_status .stButton > button:hover { color: var(--tp-primary-hover); background: transparent; }
 .mti-provider { position: relative; padding-left: 17px; }
 .mti-provider::before {
  content: ""; position: absolute; left: 2px; top: 5px; width: 8px; height: 8px;
@@ -164,17 +252,64 @@ hr { border-color: var(--mti-line); }
 }
 .mti-provider.is-connected::before { background: var(--mti-success); border-color: var(--mti-success); }
 .mti-provider.is-error::before { background: var(--mti-danger); border-color: var(--mti-danger); }
-.mti-provider strong { display: block; font-size: 13px; color: var(--mti-ink); font-weight: 600; }
-.mti-provider span { display: block; margin-top: 2px; color: var(--mti-sub); font-size: 11px; overflow-wrap: anywhere; }
-.mti-title { margin: 3px 0 20px; }
-.mti-title h1 { margin: 0; font-size: 30px; font-weight: 650; color: var(--mti-ink); letter-spacing: -.025em; }
-.mti-title p { margin: 6px 0 0; color: var(--mti-sub); font-size: 14px; }
-.mti-section-title { margin: 0 0 4px; font-size: 19px; font-weight: 650; color: var(--mti-ink); }
-.mti-section-sub { margin: 0 0 12px; font-size: 13px; color: #667085; }
+.mti-provider strong { display: block; color: #202a3a; font-size: 13px; font-weight: 600; }
+.mti-provider span {
+ display: block; margin-top: 3px; color: #7c8799; font-size: 11px; overflow-wrap: anywhere;
+}
+.mti-title { margin: 3px 0 24px; }
+.mti-title h1 {
+ margin: 0; color: var(--mti-ink); font-size: 34px; font-weight: 700;
+ line-height: 1.2; letter-spacing: -.025em;
+}
+.mti-title p {
+ margin: 16px 0 0; color: #707b8d; font-size: 15px !important; font-weight: 400;
+}
+.mti-section-title {
+ margin: 0 0 8px; color: #172033; font-size: 23px;
+ font-weight: 650; line-height: 1.3;
+}
+.mti-section-sub { margin: 0 0 16px; color: #718096; font-size: 14px; }
 .mti-summary { padding: 18px 20px; }
-.mti-summary-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px 28px; }
+.mti-summary-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 28px; }
+.mti-confirm-card .mti-summary-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .mti-summary-item span { display: block; font-size: 12px; color: var(--mti-sub); }
 .mti-summary-item strong { display: block; margin-top: 4px; font-size: 14px; color: var(--mti-ink); font-weight: 600; }
+.mti-summary-item.is-wide { grid-column: 1 / -1; }
+.mti-confirm-stack { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12px; }
+.mti-confirm-card { padding: 14px 16px; }
+.mti-confirm-head {
+ display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+ color: var(--mti-ink); font-size: 14px;
+}
+.mti-confirm-head .material-symbols-rounded {
+ color: var(--tp-primary); font-size: 18px; font-family: "Material Symbols Rounded" !important;
+ font-weight: normal; font-style: normal; line-height: 1; font-feature-settings: "liga";
+}
+.mti-artifact-list { display: grid; grid-template-columns: 1fr; gap: 7px; }
+.mti-artifact-row {
+ display: grid; grid-template-columns: 28px minmax(0,1fr) auto; align-items: center; gap: 8px;
+ min-height: 52px; padding: 7px 10px; border: 1px solid var(--mti-line);
+ border-radius: 8px; background: #fbfcfe;
+}
+.mti-artifact-row > .material-symbols-rounded {
+ color: var(--tp-primary); font-size: 19px; font-family: "Material Symbols Rounded" !important;
+ font-weight: normal; font-style: normal; line-height: 1; font-feature-settings: "liga";
+}
+.mti-artifact-row strong { display: block; color: var(--mti-ink); font-size: 13px; }
+.mti-artifact-row div span { display: block; margin-top: 2px; color: var(--mti-sub); font-size: 11px; }
+.mti-artifact-row b { color: var(--mti-sub); font-size: 10px; font-weight: 650; }
+.mti-runtime-card { margin-top: 10px; }
+.mti-runtime-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.mti-runtime-grid span { display: block; color: var(--mti-sub); font-size: 11px; }
+.mti-runtime-grid strong { display: block; margin-top: 4px; color: var(--mti-ink); font-size: 13px; }
+.mti-status { position: relative; padding-left: 13px; }
+.mti-status::before {
+ content: ""; position: absolute; left: 0; top: 5px; width: 7px; height: 7px;
+ border-radius: 50%; background: #98a2b3;
+}
+.mti-status.is-success::before { background: var(--mti-success); }
+.mti-status.is-warning::before { background: #d97706; }
+.mti-status.is-error::before { background: var(--mti-danger); }
 .mti-flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .mti-flow span { font-size: 12px; color: var(--mti-sub); }
 .mti-flow b { color: #c4c7ce; font-weight: 500; }
@@ -185,29 +320,34 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
  background: var(--mti-surface); box-shadow: none;
 }
 .stButton > button, [data-testid="stDownloadButton"] > button {
- min-height: 40px; border-radius: 8px; font-weight: 600; cursor: pointer;
+ min-height: 44px; border-radius: var(--mti-radius-md); font-weight: 500; cursor: pointer;
  border: 1px solid var(--mti-line); background: var(--mti-surface); color: var(--mti-ink);
  box-shadow: none; transition: border-color .15s ease, background .15s ease, color .15s ease;
 }
 .stButton > button:hover, [data-testid="stDownloadButton"] > button:hover {
- border-color: #bfdbfe; color: var(--mti-blue-deep); background: #f8fbff;
+ border-color: #c9d2df; color: #202a3a; background: #f7f9fc;
 }
 .stButton > button[kind="primary"],
 button[data-testid="stBaseButton-primary"] {
- background: var(--mti-blue); border: 1px solid var(--mti-blue); color: #fff; box-shadow: none;
+ background: var(--tp-primary); border: 1px solid var(--tp-primary); color: #fff;
+ border-radius: 9px; box-shadow: none;
 }
 .stButton > button[kind="primary"]:hover,
 button[data-testid="stBaseButton-primary"]:hover {
- background: var(--mti-blue-deep); border-color: var(--mti-blue-deep); color: #fff;
+ background: var(--tp-primary-hover); border-color: var(--tp-primary-hover); color: #fff;
+}
+.stButton > button[kind="primary"]:active,
+button[data-testid="stBaseButton-primary"]:active {
+ background: var(--tp-primary-active); border-color: var(--tp-primary-active); color: #fff;
 }
 .stButton > button:disabled,
 button[data-testid="stBaseButton-primary"]:disabled {
  opacity: 1; cursor: not-allowed; box-shadow: none;
- background: #dbe4f5 !important; border-color: #dbe4f5 !important; color: #8293b4 !important;
+ background: #d9e5f6 !important; border-color: #d9e5f6 !important; color: #8ca2c0 !important;
 }
 .stButton > button:focus-visible, [data-testid="stDownloadButton"] > button:focus-visible,
 button[data-baseweb="tab"]:focus-visible, summary:focus-visible {
- outline: 3px solid rgba(37,99,235,.28) !important;
+ outline: 3px solid var(--tp-focus-ring) !important;
  outline-offset: 2px;
 }
 
@@ -218,9 +358,9 @@ button[data-baseweb="tab"]:focus-visible, summary:focus-visible {
 button[data-baseweb="tab"] {
  border-radius: 0 !important; padding: 7px 0 9px; font-weight: 550; color: var(--mti-sub); background: transparent;
 }
-button[data-baseweb="tab"]:hover { color: var(--mti-blue-deep); }
+button[data-baseweb="tab"]:hover { color: var(--tp-primary-hover); }
 button[data-baseweb="tab"][aria-selected="true"] {
- background: transparent; color: var(--mti-blue-deep); box-shadow: inset 0 -2px var(--mti-blue);
+ background: transparent; color: var(--tp-primary-hover); box-shadow: inset 0 -2px var(--tp-primary);
 }
 div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: none !important; }
 
@@ -228,18 +368,22 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 [data-testid="stTextInput"] input,
 [data-testid="stNumberInput"] input,
 [data-testid="stTextArea"] textarea {
- border-radius: 8px !important; border-color: var(--mti-line) !important;
+ border-radius: var(--mti-radius-md) !important; border-color: #dce2ea !important;
+ background: var(--mti-surface) !important; color: var(--mti-ink) !important;
+ caret-color: var(--mti-ink) !important;
 }
+[data-testid="stTextArea"] textarea::placeholder { color: var(--mti-sub) !important; }
 [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input,
-[data-baseweb="select"] > div { min-height: 40px; }
+[data-baseweb="select"] > div { min-height: 44px; }
 [data-testid="stTextInput"] input:focus,
 [data-testid="stNumberInput"] input:focus,
 [data-testid="stTextArea"] textarea:focus {
- border-color: var(--mti-blue) !important;
- box-shadow: 0 0 0 3px rgba(37,99,235,.16) !important;
+ border-color: #69a7f8 !important;
+ box-shadow: 0 0 0 3px rgba(18,103,232,.14) !important;
 }
 .stSelectbox .react-aria-ComboBox > div {
- border-radius: 8px !important; border: 1px solid var(--mti-line) !important;
+ min-height: 44px; border-radius: var(--mti-radius-md) !important;
+ border: 1px solid #dce2ea !important;
  background: var(--mti-surface) !important; color: var(--mti-ink) !important;
  box-shadow: none !important;
 }
@@ -258,81 +402,174 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  color: var(--mti-ink) !important; fill: currentColor !important; visibility: visible !important;
 }
 [data-baseweb="select"] > div:focus-within {
- border-color: var(--mti-blue) !important;
- box-shadow: 0 0 0 3px rgba(37,99,235,.16) !important;
+ border-color: #69a7f8 !important;
+ box-shadow: 0 0 0 3px rgba(18,103,232,.14) !important;
 }
 .stSelectbox .react-aria-ComboBox > div:focus-within {
- border-color: var(--mti-blue) !important;
- box-shadow: 0 0 0 3px rgba(37,99,235,.16) !important;
+ border-color: #69a7f8 !important;
+ box-shadow: 0 0 0 3px rgba(18,103,232,.14) !important;
 }
 [data-testid="stFileUploaderDropzone"] {
- min-height: 148px; border-radius: 10px; border: 1px dashed #cbd5e1; background: #fff;
+ min-height: 148px; border-radius: var(--mti-radius-lg);
+ border: 1px dashed #c8d6ea; background: #fff;
  transition: all .15s ease;
 }
 [data-testid="stFileUploaderDropzone"]:hover {
- border-color: var(--mti-blue); background: var(--mti-blue-soft);
+ border-color: #79b4ff; background: #f7fbff;
 }
 .st-key-source_documents { position: relative; }
 .mti-source-label {
- margin: 0 0 8px; color: var(--mti-ink); font-size: 14px; font-weight: 600; line-height: 20px;
+ margin: 0 0 8px; color: #202a3a; font-size: 15px; font-weight: 600; line-height: 20px;
 }
 .st-key-source_documents .mti-upload-copy {
  position: absolute; z-index: 2; pointer-events: none; top: 80px; left: 0; right: 0;
  display: flex; flex-direction: column; align-items: center; text-align: center;
 }
 .mti-upload-copy .material-symbols-rounded {
- margin-bottom: 5px; color: var(--mti-blue); font-size: 20px;
+ margin-bottom: 5px; color: var(--tp-cyan); font-size: 24px;
  font-family: "Material Symbols Rounded" !important; font-weight: normal;
  font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none;
  white-space: nowrap; word-wrap: normal; direction: ltr;
  -webkit-font-feature-settings: "liga"; -webkit-font-smoothing: antialiased;
  font-feature-settings: "liga";
 }
-.mti-upload-copy span { color: var(--mti-ink); font-size: 14px; font-weight: 600; }
-.mti-upload-copy small { margin-top: 5px; color: #7b8493; font-size: 12px; }
+.mti-upload-copy span { color: #202a3a; font-size: 14px; font-weight: 600; }
+.mti-upload-copy small { margin-top: 7px; color: #8590a2; font-size: 12px; }
 .st-key-source_documents [data-testid="stFileUploaderDropzone"] {
  position: relative; padding: 0; align-items: stretch; justify-content: stretch; cursor: pointer;
 }
 .st-key-source_documents [data-testid="stFileUploaderDropzone"] > div { width: 100%; }
 .st-key-source_documents [data-testid="stFileUploaderDropzoneInstructions"] { display: none; }
-.st-key-source_documents [data-testid="stFileUploaderDropzone"] button[data-testid="stBaseButton-secondary"] {
+.st-key-source_documents:not(:has([data-testid="stFileChip"]))
+ [data-testid="stFileUploaderDropzone"] button[data-testid="stBaseButton-secondary"] {
  position: absolute; inset: 0; width: 100%; height: 100%; transform: none;
  border: 0 !important; background: transparent !important; color: transparent !important;
 }
-.st-key-source_documents [data-testid="stFileUploaderDropzone"] button[data-testid="stBaseButton-secondary"] p,
-.st-key-source_documents [data-testid="stFileUploaderDropzone"] button[data-testid="stBaseButton-secondary"] svg,
-.st-key-source_documents [data-testid="stFileUploaderDropzone"] button[data-testid="stBaseButton-secondary"] [data-testid="stIconMaterial"] {
+.st-key-source_documents:not(:has([data-testid="stFileChip"]))
+ [data-testid="stFileUploaderDropzone"] button[data-testid="stBaseButton-secondary"] p,
+.st-key-source_documents:not(:has([data-testid="stFileChip"]))
+ [data-testid="stFileUploaderDropzone"] button[data-testid="stBaseButton-secondary"] svg,
+.st-key-source_documents:not(:has([data-testid="stFileChip"]))
+ [data-testid="stFileUploaderDropzone"] button[data-testid="stBaseButton-secondary"] [data-testid="stIconMaterial"] {
  visibility: hidden;
 }
 .st-key-source_documents [data-testid="stFileUploaderDropzone"]:focus-within {
- border-color: var(--mti-blue); box-shadow: 0 0 0 3px rgba(37,99,235,.16);
+ border-color: var(--tp-primary); background: var(--tp-primary-soft);
+ box-shadow: inset 0 0 0 1px rgba(18,103,232,.08), 0 0 0 3px rgba(18,103,232,.14);
 }
-.st-key-source_documents [data-testid="stFileUploaderFile"] { display: none; }
+.st-key-source_documents:has([data-testid="stFileChip"]) .mti-upload-copy {
+ display: none !important;
+}
+.st-key-source_documents:has([data-testid="stFileChip"])
+ [data-testid="stFileUploaderDropzone"] {
+ min-height: 116px; padding: 14px 16px; cursor: default;
+ border-style: solid; border-color: var(--mti-line); background: var(--mti-surface);
+}
+.st-key-source_documents:has([data-testid="stFileChip"])
+ [data-testid="stFileUploaderDropzone"]:hover {
+ border-color: var(--mti-line); background: var(--mti-surface);
+}
+.st-key-source_documents [data-testid="stFileChips"] {
+ display: block; width: 100%; max-height: none; overflow: visible;
+}
+.st-key-source_documents [data-testid="stFileChips"] > div,
+.st-key-source_documents [data-testid="stFileChip"] {
+ width: 100%; max-width: none;
+}
+.st-key-source_documents [data-testid="stFileChip"] {
+ position: relative; display: flex !important; align-items: flex-start;
+ min-height: 86px; padding: 2px 0 32px; gap: 12px;
+ border-radius: 0; background: transparent !important; color: var(--mti-ink);
+}
+.st-key-source_documents [data-testid="stFileChip"] > div:first-child {
+ width: 36px; height: 36px; flex: 0 0 36px;
+ border-radius: 8px; background: var(--tp-primary-soft) !important;
+ color: var(--tp-primary) !important;
+}
+.st-key-source_documents [data-testid="stFileChipIconSpinner"] {
+ display: inline-flex !important; color: var(--tp-primary) !important;
+}
+.st-key-source_documents [data-testid="stFileChip"] > div:nth-child(2) {
+ min-width: 0; padding-top: 1px;
+}
+.st-key-source_documents [data-testid="stFileChipName"] {
+ display: block !important; overflow: hidden; color: var(--mti-ink) !important;
+ font-size: 0 !important; font-weight: 600; line-height: 20px;
+ text-overflow: ellipsis; white-space: nowrap;
+}
+.st-key-source_documents [data-testid="stFileChipName"]::before {
+ content: attr(title); display: block; overflow: hidden;
+ color: var(--mti-ink); font-size: 14px; line-height: 20px;
+ text-overflow: ellipsis; white-space: nowrap;
+}
+.st-key-source_documents [data-testid="stFileChip"] > div:nth-child(2) > div:last-child {
+ color: var(--mti-sub) !important; font-size: 12px !important;
+}
+.st-key-source_documents [data-testid="stFileChipDeleteBtn"] {
+ display: flex !important; position: absolute; top: 0; right: 0;
+}
+.st-key-source_documents [data-testid="stFileChipDeleteBtn"] button {
+ width: 30px !important; height: 30px !important; color: #7b8493 !important;
+}
+.st-key-source_documents [data-testid="stFileChipDeleteBtn"] button:hover {
+ color: var(--mti-danger) !important; background: #fef2f2 !important;
+}
+.st-key-source_documents [data-testid="stFileChip"]::before {
+ content: "上传中…"; position: absolute; left: 48px; bottom: 14px;
+ color: var(--tp-primary); font-size: 12px; font-weight: 600;
+}
+.st-key-source_documents [data-testid="stFileChip"]::after {
+ content: ""; position: absolute; left: 48px; right: 0; bottom: 2px;
+ height: 3px; overflow: hidden; border-radius: 999px;
+ background: linear-gradient(90deg, var(--tp-primary-soft) 0%, var(--tp-primary) 50%, var(--tp-primary-soft) 100%);
+ background-repeat: no-repeat; background-size: 42% 100%;
+ animation: mti-upload-bar 1.15s ease-in-out infinite;
+}
+.st-key-source_documents [data-testid="stFileUploaderDropzone"] [aria-label="Add files"] {
+ display: none !important;
+}
 .mti-source-file {
- display: flex; align-items: center; gap: 12px; min-height: 74px; padding: 12px 14px;
+ position: relative; display: flex; align-items: center; gap: 12px;
+ min-height: 82px; padding: 13px 14px;
  border: 1px solid var(--mti-line); border-radius: 10px; background: var(--mti-surface);
 }
 .mti-source-file .material-symbols-rounded {
- color: var(--mti-blue); font-size: 22px; font-family: "Material Symbols Rounded" !important;
+ color: var(--tp-primary); font-size: 22px; font-family: "Material Symbols Rounded" !important;
  font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal;
  text-transform: none; white-space: nowrap; font-feature-settings: "liga";
 }
+.mti-source-file .material-symbols-rounded.is-loading { animation: mti-spin .8s linear infinite; }
 .mti-source-file-copy { min-width: 0; flex: 1; }
-.mti-source-file-copy strong { display: block; color: var(--mti-ink); font-size: 14px; overflow-wrap: anywhere; }
+.mti-source-file-copy strong {
+ display: -webkit-box; overflow: hidden; color: var(--mti-ink); font-size: 14px;
+ line-height: 1.4; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
 .mti-source-file-copy span { display: block; margin-top: 3px; color: var(--mti-sub); font-size: 12px; }
-.mti-source-file-status { color: var(--mti-blue-deep); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.mti-source-file-status.is-parsing { color: #b45309; }
+.mti-source-file-copy .mti-source-file-status {
+ display: inline; margin: 0; color: var(--tp-primary-hover); font-size: 12px;
+ font-weight: 600; white-space: nowrap;
+}
+.mti-source-file-status.is-uploaded, .mti-source-file-status.is-parsing { color: var(--tp-primary); }
 .mti-source-file-status.is-parsed { color: var(--mti-success); }
 .mti-source-file-status.is-error { color: var(--mti-danger); }
+.mti-source-ready {
+ position: absolute; right: 14px; bottom: 13px; color: var(--mti-success);
+ font-size: 12px; font-weight: 650;
+}
+@keyframes mti-spin { to { transform: rotate(360deg); } }
+@keyframes mti-upload-bar {
+ from { background-position: -72% 0; }
+ to { background-position: 172% 0; }
+}
 .st-key-source_file_summary { margin-bottom: 8px; }
-.st-key-source_file_card { position: relative; min-height: 74px; }
-.st-key-source_file_card .mti-source-file { padding-right: 54px; }
+.st-key-source_file_card { position: relative; min-height: 82px; }
+.st-key-source_file_card .mti-source-file { padding-right: 82px; }
 .st-key-source_file_card > [data-testid="stElementContainer"]:has(.mti-source-file) {
  position: relative; z-index: 1;
 }
 .st-key-source_file_card > [data-testid="stElementContainer"]:has(.stButton) {
- position: absolute !important; right: 10px; top: 50%; z-index: 3;
- width: 36px !important; height: 36px !important; transform: translateY(-50%);
+ position: absolute !important; right: 8px; top: 8px; z-index: 3;
+ width: 36px !important; height: 36px !important;
 }
 .st-key-source_file_card .stButton {
  width: 36px; height: 36px; margin: 0;
@@ -353,18 +590,19 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 .st-key-target_language_field { max-width: 340px; margin-top: 12px; }
 .st-key-target_language_field label,
 .st-key-target_language_field [data-testid="stWidgetLabel"] {
- color: var(--mti-ink) !important; opacity: 1 !important; font-weight: 600 !important;
+ color: #202a3a !important; opacity: 1 !important;
+ font-size: 15px !important; font-weight: 600 !important;
 }
 .mti-field-head { margin-top: 14px; }
-.mti-field-head strong { display: block; color: var(--mti-ink); font-size: 14px; }
-.mti-field-head span { display: block; margin-top: 4px; color: #667085; font-size: 13px; }
+.mti-field-head strong { display: block; color: #202a3a; font-size: 15px; font-weight: 600; }
+.mti-field-head span { display: block; margin-top: 4px; color: #7c8799; font-size: 13px; }
 .st-key-termbase_attach { max-width: 340px; margin-top: 10px; }
 .st-key-termbase_attach .stButton > button {
  background: var(--mti-surface) !important; border-color: var(--mti-line) !important;
  color: var(--mti-ink) !important;
 }
 .st-key-termbase_attach .stButton > button:hover {
- background: #f8fbff !important; border-color: #bfdbfe !important; color: var(--mti-blue-deep) !important;
+ background: #f7f9fc !important; border-color: #c9d2df !important; color: #202a3a !important;
 }
 .st-key-termbase_picker { max-width: 620px; margin-top: 8px; }
 .st-key-termbase_picker [data-testid="stFileUploaderDropzone"] { min-height: 96px; }
@@ -377,109 +615,420 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 .st-key-termbase_attached { max-width: 620px; margin-top: 10px; }
 .st-key-termbase_attached [data-testid="stHorizontalBlock"] { align-items: center; }
 .st-key-termbase_attached .stButton > button { color: var(--mti-danger); }
+/* 操作栏参与正文流：sticky 固定在滚动区底部，滚动到底时停留在文档流末尾，
+   不再悬浮覆盖正文。sticky 必须设在包含操作栏的流式 wrapper 上，否则操作栏
+   会被自身的短包含块限制而无法吸附到滚动区底部。 */
+[data-testid="stMainBlockContainer"] [data-testid="stLayoutWrapper"]:has(.st-key-task_action_bar) {
+ position: sticky; bottom: 0; z-index: 20;
+}
 .st-key-task_action_bar {
- position: fixed; left: calc(236px + 3.5rem); bottom: 0; z-index: 20;
- width: min(calc(100vw - 236px - 7rem), 1040px); margin: 0; padding: 10px 0 8px;
- border-top: 1px solid var(--mti-line); background: rgba(247,248,250,.98);
+ /* margin-top 保证最后一个控件与操作栏之间始终有间距 */
+ margin: 48px 0 0; padding: 15px 0; min-height: var(--action-bar-height);
+ border-top: 1px solid #e3e8ef; background: rgba(247,248,250,.96);
+ -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
 .st-key-task_action_bar [data-testid="stHorizontalBlock"] { align-items: center; }
 .mti-autosave { color: #667085; font-size: 12px; }
 .mti-autosave.is-saved { color: var(--mti-success); }
 .st-key-task_action_bar button[data-testid="stBaseButton-primary"] {
- transition: background .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease;
+ min-width: 180px; min-height: 48px; height: 48px;
+ border-radius: 9px; font-size: 15px; font-weight: 500;
+ transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+.st-key-task_action_bar button[data-testid="stBaseButton-secondary"] {
+ min-height: 48px; height: 48px; border-radius: 9px; font-size: 15px; font-weight: 500;
 }
 .st-key-library_nav .stButton > button {
  display: flex; align-items: center; justify-content: flex-start;
- gap: 12px; padding-left: 9px; text-align: left;
+ min-height: 48px; height: 48px; gap: 14px; padding-inline: 10px;
+ border-radius: var(--mti-radius-md); color: #536176; font-size: 14px;
+ font-weight: 400; text-align: left;
 }
 .st-key-library_nav .stButton > button > div { width: 100%; }
-.st-key-library_nav .stButton > button [data-testid="stIconMaterial"] { flex: 0 0 32px; }
+.st-key-library_nav .stButton > button [data-testid="stIconMaterial"] { flex: 0 0 18px; }
 .st-key-library_nav .stButton > button [data-testid="stMarkdownContainer"] { flex: 1 1 auto; min-width: 0; }
 .st-key-library_nav .stButton > button > div > span {
- display: grid; grid-template-columns: 32px minmax(0,1fr); column-gap: 12px;
+ display: grid; grid-template-columns: 18px minmax(0,1fr); column-gap: 14px;
  align-items: center; width: 100%;
 }
 .st-key-library_nav .stButton > button [data-testid="stIconMaterial"] {
- width: 32px; margin: 0; color: #667085; font-size: 18px;
+ width: 18px; margin: 0; color: #667085; font-size: 18px;
+}
+.st-key-library_nav .stButton > button:hover { background: #f6f8fb; color: #202a3a; }
+.st-key-library_nav .stButton > button[kind="primary"] {
+ background: var(--tp-primary-soft); color: var(--tp-brand-ink); font-weight: 500;
 }
 .st-key-library_nav .stButton > button p { margin: 0; }
 /* ---------- Translation strategy ---------- */
-.st-key-preset_cards { margin-top: 8px; }
+.st-key-preset_cards { margin-top: 0; }
 .st-key-preset_cards [data-testid="stHorizontalBlock"] { align-items: stretch; gap: 12px; }
-[class*="st-key-preset_card_"] { position: relative; height: 180px; }
-.mti-preset-card {
- height: 180px; padding: 16px; border: 1px solid var(--mti-line); border-radius: 10px;
- background: var(--mti-surface); transition: border-color .18s ease, background .18s ease;
+/* 三张卡片等高：列容器已随行拉伸，这里让列内链撑满，避免窄屏下
+   流程链换行导致卡片参差。 */
+.st-key-preset_cards [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+ display: flex; flex-direction: column;
 }
-[class*="st-key-preset_card_"]:has(button:hover) .mti-preset-card {
- border-color: #bfdbfe; background: #f8fbff;
+.st-key-preset_cards [data-testid="stHorizontalBlock"] [data-testid="stLayoutWrapper"] {
+ flex: 1 1 auto;
+}
+[class*="st-key-preset_card_"] { position: relative; }
+[class*="st-key-preset_card_"] > [data-testid="stElementContainer"] { flex: 1 1 auto; }
+[class*="st-key-preset_card_"] [data-testid="stElementContainer"] > [data-testid="stMarkdown"],
+[class*="st-key-preset_card_"] [data-testid="stMarkdown"] > div,
+[class*="st-key-preset_card_"] [data-testid="stMarkdownContainer"] { height: 100%; }
+.mti-preset-card {
+ min-height: 182px; padding: 20px 20px 18px;
+ display: grid; grid-template-rows: auto 44px 46px auto; row-gap: 8px;
+ border: 1.5px solid #dce2ea; border-radius: 12px;
+ background: #ffffff; transition: border-color .18s ease, background .18s ease;
+}
+[class*="st-key-preset_card_"]:hover .mti-preset-card {
+ border-color: #c5d1e0; background: #fbfcfe;
 }
 [class*="st-key-preset_card_"][class*="_selected"] .mti-preset-card {
- border-color: var(--mti-blue); background: var(--mti-blue-soft);
+ border-color: #4e93f4; background: #f7fbff;
 }
-.mti-preset-head { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+/* header 行固定 22px：推荐 badge 的行高约 22px，若不固定会让选中卡
+   的头部行比其他卡高 2px，破坏三卡横向对齐。 */
+.mti-preset-head { display: flex; align-items: center; gap: 10px; min-height: 22px; }
 .mti-preset-head .material-symbols-rounded {
  color: #98a2b3; font-family: "Material Symbols Rounded" !important;
  font-size: 18px; font-weight: normal; line-height: 1; font-feature-settings: "liga";
 }
 [class*="st-key-preset_card_"][class*="_selected"] .mti-preset-head .material-symbols-rounded {
- color: var(--mti-blue);
+ color: var(--tp-primary);
 }
-.mti-preset-head strong { color: var(--mti-ink); font-size: 15px; font-weight: 650; }
+.mti-preset-head strong {
+ color: #172033; font-size: 16px; font-weight: 700; line-height: 1.25;
+}
+[class*="st-key-preset_card_"][class*="_selected"] .mti-preset-head strong {
+ color: #15379a;
+}
 .mti-preset-badge {
- margin-left: auto; padding: 2px 7px; border-radius: 999px; background: #dbeafe;
- color: var(--mti-blue-deep); font-size: 11px; font-weight: 650;
+ margin-left: auto; padding: 2px 8px; border-radius: 999px;
+ background: #eaf2ff; color: #1267e8;
+ font-size: 11px; font-weight: 600; line-height: 1.6;
 }
-.mti-preset-purpose { margin: 14px 0 0; color: #475467; font-size: 13px; }
-.mti-preset-flow { margin: 16px 0 0; color: var(--mti-ink); font-size: 13px; font-weight: 650; }
-.mti-preset-tradeoff { margin: 14px 0 0; color: var(--mti-sub); font-size: 12px; }
+/* 四个固定槽位：标题行 / 适用场景(两行) / 流程链(两行) / 标签行。
+   grid row-gap 负责间距，p 的内外边距清零（Streamlit 自带 p 规则
+   specificity 更高，这里用卡片内选择器覆盖）；flow 字号需要
+   !important 才能压过全局 p 字号规则。 */
+.mti-preset-card .mti-preset-purpose {
+ margin: 0; color: #667085; font-size: 14px; font-weight: 400; line-height: 1.55;
+}
+.mti-preset-card .mti-preset-flow {
+ margin: 0; color: #24324a; font-size: 15px !important;
+ font-weight: 600; line-height: 1.5;
+}
+[class*="st-key-preset_card_"][class*="_selected"] .mti-preset-flow {
+ color: #1e2f4d;
+}
+.mti-preset-tags {
+ display: flex; align-items: center; gap: 6px; min-height: 22px;
+}
+.mti-preset-tag {
+ padding: 4px 9px; border-radius: 6px;
+ background: #eef1f5; color: #5f6b7a;
+ font-size: 11px; font-weight: 500; line-height: 1.4;
+}
+[class*="st-key-preset_card_"][class*="_selected"] .mti-preset-tag {
+ background: #eaf2ff; color: #3c67a8;
+}
+/* ---------- Step 01 Quick Profiling（风格画像与建议） ---------- */
+.mti-style-card {
+ border: 1px solid #dce2ea; border-radius: 12px; background: #ffffff;
+ padding: 18px 20px 16px; margin: 18px 0 10px;
+}
+.mti-style-card.is-selected { border-color: #4e93f4; background: #f7fbff; }
+.mti-style-card-head { display: flex; align-items: center; gap: 8px; }
+.mti-style-card-head .material-symbols-rounded {
+ color: var(--tp-primary); font-size: 18px; line-height: 1;
+ font-family: "Material Symbols Rounded" !important;
+}
+.mti-style-card-head strong { font-size: 14px; font-weight: 600; color: #202a3a; }
+.mti-style-card-head b {
+ margin-left: auto; padding: 2px 8px; border-radius: 999px;
+ background: #eaf2ff; color: #1267e8; font-size: 12px; font-weight: 600;
+}
+.mti-style-card p { margin: 10px 0 0; color: #667085; font-size: 13px; line-height: 1.55; }
+.mti-style-name { margin-top: 12px; font-size: 20px; font-weight: 700; color: #172033; }
+.mti-style-summary { margin-top: 4px; font-size: 13px; color: #667085; }
+.mti-style-reasons { margin-top: 10px; }
+.mti-style-reasons span { font-size: 11px; font-weight: 600; color: #8a94a6; }
+.mti-style-reasons ul {
+ margin: 4px 0 0; padding-left: 16px; color: #5f6b7a;
+ font-size: 12.5px; line-height: 1.6;
+}
+.mti-style-source { margin-top: 10px; font-size: 12px; color: #1f8a57; }
+.mti-style-adjust-head { margin: 14px 0 4px; }
+.mti-style-adjust-head strong { font-size: 14px; font-weight: 600; color: #202a3a; }
+.mti-style-adjust-head span {
+ display: block; margin-top: 2px; font-size: 12px; color: #8a94a6;
+}
+/* “开始智能画像”入口：初始只保留按钮，点击后才出现风格建议卡。
+   白色描边 + 品牌蓝文字/图标，与页面次级操作保持一致。 */
+.st-key-run_quick_profile { max-width: 420px; }
+.st-key-run_quick_profile .stButton > button {
+ height: 44px; border: 1px solid var(--tp-border);
+ color: var(--tp-brand-ink); font-weight: 600;
+ background: var(--mti-surface);
+}
+.st-key-run_quick_profile .stButton > button:hover {
+ border-color: var(--tp-primary); background: var(--tp-primary-soft);
+ color: var(--tp-primary);
+}
+.st-key-run_quick_profile .stButton > button [data-testid="stIconMaterial"] {
+ color: var(--tp-primary); font-size: 18px;
+}
+/* ---------- 首次使用引导 ---------- */
+.mti-onboard-card {
+ border: 1px solid #dce2ea; border-radius: 12px; background: #ffffff;
+ padding: 16px 20px 14px; margin-bottom: 4px;
+}
+.mti-onboard-card .material-symbols-rounded {
+ color: var(--tp-primary); font-size: 18px; line-height: 1;
+ font-family: "Material Symbols Rounded" !important;
+}
+.mti-onboard-card p { margin: 10px 0 0; color: #667085; font-size: 13px; line-height: 1.6; }
+.mti-onboard-card ol {
+ margin: 6px 0 0; padding-left: 20px; color: #5f6b7a;
+ font-size: 13px; line-height: 1.8;
+}
 [class*="st-key-preset_card_"] .stButton {
  position: absolute; inset: 0; z-index: 3; margin: 0;
 }
+/* Streamlit 给按钮的 stElementContainer 默认 position: relative，
+   会让绝对定位的透明覆盖按钮以 16×22 的按钮容器为包含块，导致整卡
+   只有左侧一条窄带可点击。恢复 static 后包含块回到卡片列，按钮才能
+   覆盖整张卡片。 */
+[class*="st-key-preset_card_"] > [data-testid="stElementContainer"]:has(.stButton) {
+ position: static; flex: 0 1 auto;
+}
 [class*="st-key-preset_card_"] .stButton > button {
- width: 100%; height: 180px; min-height: 180px; padding: 0; border: 0 !important;
+ width: 100%; height: 100%; min-height: 0; padding: 0; border: 0 !important;
  background: transparent !important; color: transparent !important; box-shadow: none !important;
 }
 [class*="st-key-preset_card_"] .stButton > button:focus-visible {
- outline: 3px solid rgba(37,99,235,.28) !important; outline-offset: 2px;
+ outline: 3px solid var(--tp-focus-ring) !important; outline-offset: 2px;
 }
 .st-key-strategy_advanced { margin-top: 16px; }
 .st-key-strategy_advanced {
- border: 1px solid var(--mti-line); border-radius: 10px; background: var(--mti-surface);
- overflow: hidden;
+ position: relative; border: 1px solid var(--mti-line); border-radius: 10px;
+ background: var(--mti-surface); overflow: hidden;
+}
+.mti-advanced-trigger {
+ display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 18px;
+ height: 50px; min-height: 50px; padding: 0 14px;
+}
+.mti-advanced-title { display: inline-flex; align-items: center; gap: 8px; color: var(--mti-ink); }
+.mti-advanced-title .material-symbols-rounded {
+ color: #667085; font-family: "Material Symbols Rounded" !important; font-size: 18px;
+ font-weight: normal; line-height: 1; font-feature-settings: "liga";
+}
+.mti-advanced-title strong { font-size: 14px; font-weight: 600; }
+.st-key-strategy_advanced > [data-testid="stElementContainer"]:has(.stButton) {
+ position: absolute; inset: 0 0 auto; z-index: 3; height: 50px;
+}
+.st-key-strategy_advanced > [data-testid="stElementContainer"]:has(.mti-advanced-trigger) {
+ height: 50px;
+}
+.st-key-strategy_advanced .stButton, .st-key-strategy_advanced .stButton > button {
+ width: 100%; height: 50px; min-height: 50px; margin: 0;
 }
 .st-key-strategy_advanced .stButton > button {
- min-height: 44px; padding: 10px 14px; border: 0; border-radius: 0;
- background: var(--mti-surface); color: var(--mti-ink);
+ padding: 0; border: 0 !important; border-radius: 0; background: transparent !important;
+ color: transparent !important; box-shadow: none !important;
 }
-.st-key-strategy_advanced .stButton > button:hover { background: #f8fafc; }
-.st-key-strategy_advanced .stButton > button:focus { box-shadow: none !important; }
+.st-key-strategy_advanced:has(.stButton > button:hover) .mti-advanced-trigger { background: #f8fafc; }
+.st-key-strategy_advanced .stButton > button:focus-visible {
+ outline: 3px solid var(--tp-focus-ring) !important; outline-offset: -3px;
+}
 .mti-strategy-state {
- margin: -4px 14px 12px 44px; color: var(--mti-sub); font-size: 12px;
+ padding: 0; margin: 0 0 22px;
+ color: #7c8799; font-size: 12px; font-weight: 400; line-height: 1.5;
 }
-.mti-strategy-state strong { color: var(--mti-blue-deep); font-weight: 650; }
-.st-key-advanced_body { border-top: 1px solid var(--mti-line); padding: 4px 16px 14px; }
-.mti-advanced-group { margin: 14px 0 6px; color: #475467; font-size: 12px; font-weight: 700; }
-.st-key-strategy_advanced [data-testid="stToggle"] { margin: 0; }
-.st-key-strategy_advanced [data-testid="stToggle"] label {
- min-height: 42px; padding: 8px 0; color: var(--mti-ink) !important;
+.mti-strategy-state strong { color: var(--tp-primary-hover); font-weight: 650; }
+.st-key-advanced_body {
+ gap: 0 !important; border-top: 1px solid var(--mti-line);
+ padding: 20px 24px 24px;
 }
-.st-key-strategy_advanced [data-testid="stToggle"] [role="switch"] {
- background: #d0d5dd !important; border-color: #d0d5dd !important;
+/* 抵消 Streamlit 对 markdown 容器的 -16px 默认下边距，让上下文行与
+   分组标题的间距按声明值精确渲染，不出现文字行重叠。 */
+.st-key-advanced_body [data-testid="stMarkdownContainer"] { margin-bottom: 0; }
+/* 分组标题：上方 24px 与上一组分开，下方 10px 接本组第一个设置项；
+   第一组紧随「当前使用…」上下文行，不再额外加 24px。 */
+.mti-advanced-group {
+ margin: 24px 0 10px; padding: 0;
+ color: #6f7b8d; font-size: 12px; font-weight: 600; line-height: 1.4;
+ letter-spacing: 0.01em;
 }
-.st-key-strategy_advanced [data-testid="stToggle"] [role="switch"][aria-checked="true"] {
- background: var(--mti-blue) !important; border-color: var(--mti-blue) !important;
+.st-key-advanced_body > [data-testid="stElementContainer"]:nth-child(2) .mti-advanced-group {
+ margin-top: 0;
 }
-.st-key-strategy_advanced [data-testid="stToggle"] p { color: var(--mti-ink) !important; }
-.st-key-strategy_advanced [data-testid="stCheckbox"] p { color: var(--mti-ink) !important; }
-.st-key-strategy_advanced [data-testid="stCheckbox"] label > div:first-of-type {
+/* 设置行：单个视觉单元，文本列最宽 640px，开关固定在右侧列。 */
+[class*="st-key-strategy_"][class*="_row"] {
+ min-height: 62px; margin: 0; justify-content: center;
+}
+/* 行间细分隔线：设置行各自包在 stLayoutWrapper 里，选择器作用于
+   advanced_body 的直接子容器（行包装器 / 只读行容器）。 */
+.st-key-advanced_body > [data-testid="stLayoutWrapper"] + [data-testid="stLayoutWrapper"],
+.st-key-advanced_body > [data-testid="stElementContainer"]:has(.mti-readonly-setting) + [data-testid="stLayoutWrapper"] {
+ border-top: 1px solid #f0f2f5; padding-top: 14px;
+}
+[class*="st-key-strategy_"][class*="_row"] [data-testid="stHorizontalBlock"] {
+ display: grid; grid-template-columns: minmax(0, 640px) minmax(48px, auto);
+ justify-content: space-between; align-items: center; column-gap: 32px;
+}
+[class*="st-key-strategy_"][class*="_row"] [data-testid="stColumn"]:last-child {
+ display: flex; align-items: center; justify-content: flex-end; min-width: 48px;
+}
+[class*="st-key-strategy_"][class*="_row"] [data-testid="stColumn"]:last-child > [data-testid="stVerticalBlock"],
+[class*="st-key-strategy_"][class*="_row"] [data-testid="stColumn"]:last-child [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"],
+[class*="st-key-strategy_"][class*="_row"] [data-testid="stColumn"]:last-child [data-testid="stElementContainer"] > [data-testid="stCheckbox"] {
+ width: 100%;
+}
+[class*="st-key-strategy_"][class*="_row"] [data-testid="stColumn"]:last-child [data-testid="stCheckbox"] {
+ display: flex; justify-content: flex-end;
+}
+.mti-setting-copy { padding: 0; max-width: 640px; }
+.mti-setting-copy strong {
+ display: block; color: #202a3a; font-size: 14px; font-weight: 600; line-height: 1.35;
+}
+.mti-setting-copy span {
+ display: block; margin-top: 4px; color: #7a8699; font-size: 12.5px; line-height: 1.55;
+}
+.st-key-strategy_advanced [data-testid="stToggle"],
+.st-key-output_options [data-testid="stToggle"],
+.st-key-academic_output_options [data-testid="stToggle"] { margin: 0; }
+[class*="st-key-strategy_"][class*="_row"] [data-testid="stToggle"] {
+ display: flex; justify-content: flex-end;
+}
+[class*="st-key-strategy_"][class*="_row"] [data-testid="stToggle"] label {
+ min-height: 44px; padding: 0;
+}
+.st-key-strategy_advanced [data-testid="stToggle"] label,
+.st-key-output_options [data-testid="stToggle"] label,
+.st-key-academic_output_options [data-testid="stToggle"] label {
+ min-height: 38px; padding: 6px 0; color: var(--mti-ink) !important;
+}
+.st-key-strategy_advanced [data-testid="stToggle"] [role="switch"],
+.st-key-output_options [data-testid="stToggle"] [role="switch"],
+.st-key-academic_output_options [data-testid="stToggle"] [role="switch"] {
+ width: 36px !important; min-width: 36px !important; height: 20px !important;
+ background: #c6ceda !important; border-color: #c6ceda !important;
+}
+label:has(input[role="switch"]) > div:first-of-type {
+ width: 36px !important; min-width: 36px !important; height: 20px !important;
+ background: #c6ceda !important; border-color: #c6ceda !important;
+}
+label:has(input[role="switch"]) > div:first-of-type > div {
+ width: 16px !important; height: 16px !important;
+}
+label[data-selected="true"]:has(input[role="switch"]) > div:first-of-type {
+ background: var(--tp-primary) !important; border-color: var(--tp-primary) !important;
+}
+label:has(input[type="checkbox"]:not([role="switch"])) > div:first-of-type {
  background: var(--mti-surface) !important; border-color: #98a2b3 !important;
 }
-.st-key-strategy_advanced [data-testid="stCheckbox"] label[data-selected="true"] > div:first-of-type {
- background: var(--mti-blue) !important; border-color: var(--mti-blue) !important;
+label[data-selected="true"]:has(input[type="checkbox"]:not([role="switch"])) > div:first-of-type {
+ background: var(--tp-primary) !important; border-color: var(--tp-primary) !important;
 }
-.st-key-strategy_advanced [data-testid="stCheckbox"] label[data-selected="true"] svg {
+.st-key-strategy_advanced [data-testid="stToggle"] label[data-selected="true"] > div:first-of-type,
+.st-key-output_options [data-testid="stToggle"] label[data-selected="true"] > div:first-of-type,
+.st-key-academic_output_options [data-testid="stToggle"] label[data-selected="true"] > div:first-of-type,
+.st-key-output_report label[data-selected="true"] > div:first-of-type,
+.st-key-output_annotate label[data-selected="true"] > div:first-of-type,
+.st-key-strategy_auto_term label[data-selected="true"] > div:first-of-type,
+.st-key-strategy_use_tm label[data-selected="true"] > div:first-of-type,
+.st-key-strategy_review label[data-selected="true"] > div:first-of-type,
+.st-key-strategy_strict_terms label[data-selected="true"] > div:first-of-type {
+ background: var(--tp-primary) !important; border-color: var(--tp-primary) !important;
+}
+.st-key-strategy_advanced [data-testid="stToggle"] label:has(input:focus-visible) > div:first-of-type,
+.st-key-output_options [data-testid="stToggle"] label:has(input:focus-visible) > div:first-of-type,
+.st-key-academic_output_options [data-testid="stToggle"] label:has(input:focus-visible) > div:first-of-type,
+.st-key-strategy_advanced [data-testid="stCheckbox"] label:has(input:focus-visible) > div:first-of-type,
+.st-key-output_options [data-testid="stCheckbox"] label:has(input:focus-visible) > div:first-of-type,
+label:has(input[role="switch"]:focus-visible) > div:first-of-type,
+label:has(input[type="checkbox"]:not([role="switch"]):focus-visible) > div:first-of-type {
+ box-shadow: 0 0 0 3px var(--tp-focus-ring) !important;
+}
+.st-key-strategy_advanced [data-testid="stToggle"] p,
+.st-key-output_options [data-testid="stToggle"] p,
+.st-key-academic_output_options [data-testid="stToggle"] p { color: var(--mti-ink) !important; }
+.st-key-strategy_advanced [data-testid="stCheckbox"] p,
+.st-key-output_options [data-testid="stCheckbox"] p { color: var(--mti-ink) !important; }
+.st-key-strategy_advanced [data-testid="stCheckbox"] label > div:first-of-type,
+.st-key-output_options [data-testid="stCheckbox"] label > div:first-of-type {
+ background: var(--mti-surface) !important; border-color: #98a2b3 !important;
+}
+.st-key-strategy_advanced [data-testid="stCheckbox"] label[data-selected="true"] > div:first-of-type,
+.st-key-output_options [data-testid="stCheckbox"] label[data-selected="true"] > div:first-of-type {
+ background: var(--tp-primary) !important; border-color: var(--tp-primary) !important;
+}
+.st-key-strategy_advanced [data-testid="stCheckbox"] label[data-selected="true"] svg,
+.st-key-output_options [data-testid="stCheckbox"] label[data-selected="true"] svg {
  stroke: #fff !important;
+}
+.st-key-output_options [data-testid="stCaptionContainer"] {
+ margin: -8px 0 0; color: var(--mti-sub); font-size: 12px;
+}
+.mti-readonly-setting {
+ padding: 7px 0 7px;
+}
+.mti-readonly-head { display: flex; align-items: center; gap: 9px; }
+.mti-readonly-setting strong { color: var(--mti-ink); font-size: 14px; font-weight: 550; }
+.mti-readonly-setting span { display: block; margin-top: 3px; color: var(--mti-sub); font-size: 12px; }
+.mti-readonly-setting b {
+ flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; background: #ecfdf3;
+ color: #15803d; font-size: 11px; font-weight: 650;
+}
+/* 高级设置面板内的只读行（基础一致性检查）与开关行使用同一套行节奏；
+   Step 03 输出页的只读行保持原样式。 */
+.st-key-advanced_body .mti-readonly-setting {
+ min-height: 62px; padding: 0;
+}
+.st-key-advanced_body .mti-readonly-head { display: flex; align-items: center; gap: 8px; }
+.st-key-advanced_body .mti-readonly-setting strong {
+ color: #202a3a; font-size: 14px; font-weight: 600; line-height: 1.35;
+}
+.st-key-advanced_body .mti-readonly-setting span {
+ display: block; margin-top: 4px; color: #7a8699; font-size: 12.5px; line-height: 1.55;
+}
+.st-key-advanced_body .mti-readonly-setting b {
+ flex: 0 0 auto; padding: 2px 7px; border-radius: 999px;
+ background: #eaf8f0; color: #1f8a57;
+ font-size: 10.5px; font-weight: 600; line-height: 1.5;
+}
+.st-key-output_options { max-width: 760px; margin-top: 14px; }
+.mti-output-section { margin-top: 18px; }
+.mti-output-section-head { margin-bottom: 8px; }
+.mti-output-section-head strong { display: block; color: var(--mti-ink); font-size: 14px; }
+.mti-output-section-head span { display: block; margin-top: 3px; color: var(--mti-sub); font-size: 12px; }
+.st-key-style_output { max-width: 760px; }
+.st-key-style_output .stSelectbox { max-width: 340px; }
+.mti-style-note {
+ margin-top: 8px; padding: 12px 14px; border: 1px solid var(--mti-line);
+ border-radius: 8px; background: #fbfcfe;
+}
+.mti-style-note strong { display: block; margin-bottom: 6px; color: var(--mti-ink); font-size: 12px; }
+.mti-style-note ul { margin: 0; padding-left: 18px; }
+.mti-style-note li { margin: 3px 0; color: #475467; font-size: 12px; line-height: 1.5; }
+.st-key-academic_output_options {
+ max-width: 760px; margin-top: 16px; padding-top: 2px; border-top: 1px solid var(--mti-line);
+}
+.st-key-academic_output_options .stSelectbox { max-width: 520px; }
+.st-key-engine_setup_banner [data-testid="stAlert"] {
+ border: 1px solid #f6c66a !important; background: #fffbeb !important;
+ color: #78350f !important;
+}
+.st-key-engine_setup_banner [data-testid="stAlert"] p,
+.st-key-engine_setup_banner [data-testid="stAlert"] [data-testid="stMarkdownContainer"],
+.st-key-engine_setup_banner [data-testid="stAlert"] [data-testid="stIconMaterial"] {
+ color: #78350f !important; opacity: 1 !important; visibility: visible !important;
+}
+.st-key-engine_setup_banner [data-testid="stHorizontalBlock"] { align-items: center; gap: 12px; }
+.st-key-engine_setup_banner .stButton > button {
+ min-height: 36px; background: #fff; border-color: #f3c35c; color: #92400e;
 }
 .st-key-analysis_theory { max-width: 520px; margin-top: 8px; }
 .mti-report-helper { margin: 0 0 4px; color: var(--mti-sub); font-size: 12px; }
@@ -490,32 +1039,51 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  border-radius: 10px !important; background: #fff; box-shadow: none; overflow: hidden;
 }
 [data-testid="stExpander"] summary { font-weight: 600; color: var(--mti-ink); }
-[data-testid="stExpander"] summary:hover { color: var(--mti-blue-deep); }
+[data-testid="stExpander"] summary:hover { color: var(--tp-primary-hover); }
 [data-testid="stAlert"] { border-radius: 8px; }
 [data-testid="stDataFrame"] {
  border: 1px solid var(--mti-line); border-radius: 12px; overflow: hidden;
 }
-[data-testid="stProgress"] [role="progressbar"] > div { background: var(--mti-blue); }
+[data-testid="stProgress"] [role="progressbar"] > div { background: var(--tp-primary); }
 [data-testid="stStatusWidget"] {
  border-radius: 14px; border-color: var(--mti-line) !important;
 }
+.st-key-task_action_bar .stButton button > div > span {
+ display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.st-key-task_action_bar .stButton button [data-testid="stMarkdownContainer"] { order: 1; }
+.st-key-task_action_bar .stButton button [data-testid="stIconMaterial"] { order: 2; }
+.st-key-task_action_bar [class*="st-key-back_to_"] button [data-testid="stMarkdownContainer"] { order: 2; }
+.st-key-task_action_bar [class*="st-key-back_to_"] button [data-testid="stIconMaterial"] { order: 1; }
 
 /* ---------- 响应式与减少动态效果 ---------- */
+@media (max-width: 1439px) {
+ :root { --mti-main-gutter: 48px; }
+}
+
+@media (max-width: 1279px) {
+ :root { --mti-main-gutter: 32px; }
+}
+
 @media (max-width: 767px) {
- [data-testid="stSidebar"] { width: 236px !important; min-width: 236px !important; }
+ :root { --mti-main-gutter: 14px; }
+ [data-testid="stSidebar"] {
+  width: var(--mti-sidebar-width); min-width: var(--mti-sidebar-width);
+ }
  [data-testid="stMainBlockContainer"] { width: 100%; padding: 1rem .875rem 3rem; }
  .mti-title h1 { font-size: 26px; }
  .mti-summary-grid { grid-template-columns: 1fr; gap: 14px; }
+ .mti-confirm-card .mti-summary-grid { grid-template-columns: 1fr; }
+ .mti-summary-item.is-wide { grid-column: auto; }
+ .mti-confirm-stack { grid-template-columns: 1fr; }
+ .mti-artifact-list, .mti-runtime-grid { grid-template-columns: 1fr; }
  .st-key-preset_cards [data-testid="stHorizontalBlock"] { flex-direction: column; }
- [class*="st-key-preset_card_"], .mti-preset-card { height: 164px; }
+ .mti-advanced-trigger { grid-template-columns: 1fr; gap: 0; }
  [data-testid="stTabs"] [role="tablist"] { overflow-x: auto; scrollbar-width: none; }
  [data-testid="stTabs"] [role="tablist"]::-webkit-scrollbar { display: none; }
  button[data-baseweb="tab"] { min-height: 40px; white-space: nowrap; }
  .st-key-target_language_field, .st-key-termbase_attach, .st-key-termbase_picker,
  .st-key-termbase_attached { max-width: none; }
- .st-key-task_action_bar {
-  position: sticky; left: auto; bottom: 0; width: 100%; margin-top: 26px;
- }
  .st-key-provider_status { position: static; width: auto; }
 }
 
@@ -667,33 +1235,60 @@ def _reset_provider_connection():
     st.session_state.pop("provider_test_feedback", None)
 
 
+def _open_provider_settings():
+    st.session_state.app_view = "settings"
+
+
 _PRESET_CONFIGS = {
     "快速": {
         "auto_term": False, "use_tm": True,
-        "enable_review": False, "enable_annotate": False, "enable_report": False,
+        "enable_review": False, "strict_terminology_governance": False,
     },
     "标准": {
         "auto_term": True, "use_tm": True,
-        "enable_review": False, "enable_annotate": False, "enable_report": False,
+        "enable_review": False, "strict_terminology_governance": False,
     },
     "学术增强": {
         "auto_term": True, "use_tm": True,
-        "enable_review": True, "enable_annotate": True, "enable_report": True,
+        "enable_review": True, "strict_terminology_governance": True,
     },
+}
+
+def _default_output_config():
+    return {
+        "enable_annotate": False, "enable_report": False,
+        "deliver_plain_docx": True, "deliver_bilingual_docx": True,
+        "deliver_pdf": False, "deliver_terms_xlsx": True,
+        "deliver_tbx": False, "deliver_tmx": False, "deliver_jsonl": False,
+        "deliver_evidence": True, "deliver_cases": False,
+        "deliver_academic_workspace": False, "deliver_review_report": False,
+    }
+
+
+_PRESET_OUTPUTS = {
+    "快速": {**_default_output_config()},
+    "标准": {**_default_output_config()},
+    "学术增强": {**_default_output_config(), "enable_report": True},
 }
 
 
 def _apply_preset(label):
     for key in ("strategy_auto_term", "strategy_use_tm", "strategy_review",
-                "strategy_annotate", "strategy_report"):
+                "strategy_strict_terms", "output_annotate", "output_report"):
         st.session_state.pop(key, None)
     st.session_state.translation_preset = label
     st.session_state.strategy_config = dict(_PRESET_CONFIGS[label])
+    st.session_state.output_config = dict(_PRESET_OUTPUTS[label])
 
 
 def _strategy_is_adjusted(label, config):
     return any(config.get(key) != value
                for key, value in _PRESET_CONFIGS[label].items())
+
+
+def _output_is_adjusted(label, config):
+    return any(config.get(key) != value
+               for key, value in _PRESET_OUTPUTS[label].items())
 
 
 def _toggle_advanced_strategy():
@@ -707,6 +1302,243 @@ def _set_strategy_option(option, widget_key):
     st.session_state.strategy_config = config
 
 
+def _set_output_option(option, widget_key):
+    config = dict(st.session_state.output_config)
+    config[option] = bool(st.session_state[widget_key])
+    st.session_state.output_config = config
+
+
+# ---------------- 智能风格建议（Step 01 Quick Profiling） ----------------
+
+def _apply_style_selection(selection):
+    """把选中的 Style Profile 落成 style_rules / style_template。"""
+    from mti_tool.style_profile import STYLE_PROFILES, profile_to_rules
+    selection = selection or {}
+    rules = profile_to_rules(selection)
+    custom = (selection.get("custom_rules") or "").strip()
+    if custom:
+        rules = rules.rstrip("。") + "。" + custom + "。"
+    st.session_state.style_rules = rules
+    base = selection.get("selected") or "general"
+    st.session_state.style_template = STYLE_PROFILES.get(
+        base, STYLE_PROFILES["general"])["name"]
+    st.session_state.style_selection = selection
+
+
+def _accept_style_recommendation():
+    rec = st.session_state.get("style_recommendation") or {}
+    selection = {
+        "selected": rec.get("recommended_style", "general"),
+        "source": "accepted",
+        "adjustments": {},
+    }
+    _apply_style_selection(selection)
+
+
+def _run_quick_profile_with_progress():
+    """在脚本运行内执行 Quick Profiling，用 st.status 分步显示进度。
+
+    不放在按钮回调里：回调期间前端收不到任何更新会显得卡死/白屏。
+    改为点击后置 running 状态，在本轮运行内逐步渲染状态并执行，
+    完成后同一轮直接渲染结果卡片。
+    """
+    from mti_tool import models as _models
+    from mti_tool.style_profile import _fallback_recommendation, quick_profile
+    task_files = st.session_state.get("task_files") or []
+    if not task_files:
+        st.session_state.style_profiling_state = "idle"
+        return
+    source = task_files[0]
+    warnings = []
+    with st.status("正在生成智能风格建议…", expanded=True) as status:
+        status.update(label="正在提取文档文本…", state="running")
+        paragraphs, extract_warnings = core.extract_document_paragraphs(
+            source.get("name", ""), source.get("bytes", b""))
+        warnings.extend(extract_warnings)
+        provider = st.session_state.get("provider_choice",
+                                        next(iter(core.PROVIDERS)))
+        api_key = st.session_state.get(f"api_key_{provider}", "")
+        model = st.session_state.get(f"model_choice_{provider}", "")
+        target_lang = st.session_state.get("target_lang", "简体中文")
+        if not api_key or not model:
+            status.update(label="未配置 AI 引擎，请手动选择风格",
+                          state="complete")
+            warnings.append("未配置 AI 引擎，无法自动画像；可直接手动选择风格")
+            doc_profile = _models.default_document_profile()
+            style_rec = _fallback_recommendation()
+            st.session_state.style_profiling_needs_api = True
+        else:
+            status.update(label="正在抽取首/中/尾样本并分析文体…",
+                          state="running")
+            doc_profile, style_rec, llm_warnings = quick_profile(
+                paragraphs, provider, api_key, model, target_lang)
+            warnings.extend(llm_warnings)
+            status.update(label="风格建议已生成", state="complete")
+            st.session_state.style_profiling_needs_api = False
+    st.session_state.style_profiling_state = "done"
+    st.session_state.doc_profile = doc_profile
+    st.session_state.style_recommendation = style_rec
+    st.session_state.style_profile_warnings = warnings
+
+
+def _render_style_adjust_panel():
+    """基础风格 radio + 4 个微调滑块 + 高级规则；应用后覆盖系统建议。"""
+    from mti_tool.style_profile import STYLE_PROFILES
+    names = list(STYLE_PROFILES)
+    current = st.session_state.get("style_selection") or {}
+    rec = st.session_state.get("style_recommendation") or {}
+    base_id = current.get("selected") or rec.get("recommended_style") or "general"
+    if base_id not in names:
+        base_id = "general"
+    st.markdown(
+        '<div class="mti-style-adjust-head"><strong>调整风格</strong>'
+        '<span>修改后将覆盖系统建议，并记录为 user_override</span></div>',
+        unsafe_allow_html=True)
+    base = st.radio(
+        "基础风格", names, index=names.index(base_id),
+        format_func=lambda pid: STYLE_PROFILES[pid]["name"],
+        key="style_adjust_base", label_visibility="collapsed",
+        persist_state="session")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        formality = st.slider("表达正式度", 0, 100, 60, key="adj_formality",
+                              persist_state="session")
+        restructuring = st.slider("句法重构幅度", 0, 100, 40,
+                                  key="adj_restructuring",
+                                  persist_state="session")
+    with col_b:
+        terminology = st.slider("术语保守程度", 0, 100, 60, key="adj_terminology",
+                                persist_state="session")
+        form_preservation = st.slider("原文形式保留", 0, 100, 70,
+                                      key="adj_form_preservation",
+                                      persist_state="session")
+    custom_rules = st.text_area(
+        "高级规则（可选）", key="style_adjust_custom", persist_state="session",
+        placeholder="补充风格约束，例如：保留访谈口吻；飞机型号与引用标注保留原文。")
+    if st.button("应用风格", key="apply_style_adjust"):
+        selection = {
+            "selected": base,
+            "source": "user_override",
+            "adjustments": {
+                "formality": formality,
+                "terminology": terminology,
+                "restructuring": restructuring,
+                "form_preservation": form_preservation,
+            },
+            "custom_rules": custom_rules.strip(),
+        }
+        _apply_style_selection(selection)
+        st.session_state.style_adjust_open = False
+        st.rerun()
+
+
+def _render_style_profile_section():
+    """Step 01 的智能风格建议卡片：推荐 -> 接受 / 调整 / 查看分析。"""
+    from mti_tool.style_profile import STYLE_PROFILES
+    state = st.session_state.get("style_profiling_state", "idle")
+    rec = st.session_state.get("style_recommendation")
+    selection = st.session_state.get("style_selection")
+    with st.container(key="style_profile_section"):
+        if state == "idle":
+            if not st.button("开始智能画像",
+                             icon=":material/auto_awesome:",
+                             key="run_quick_profile"):
+                return
+            st.session_state.style_profiling_state = "running"
+            state = "running"
+        if state == "running":
+            _run_quick_profile_with_progress()
+            rec = st.session_state.get("style_recommendation")
+        if rec is None:
+            return
+        style_id = (selection or {}).get("selected") or rec.get("recommended_style") \
+            or "general"
+        meta = STYLE_PROFILES.get(style_id, STYLE_PROFILES["general"])
+        confidence = rec.get("confidence", 0.0)
+        reasons = rec.get("reasons") or []
+        source_text = ""
+        if selection:
+            source_text = "已接受系统推荐" if selection.get("source") == "accepted" \
+                else "已使用用户选择覆盖系统建议"
+        st.markdown(
+            f'<div class="mti-style-card{" is-selected" if selection else ""}">'
+            '<div class="mti-style-card-head">'
+            '<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>'
+            '<strong>智能风格建议</strong>'
+            f'<b>{round(confidence * 100)}%</b></div>'
+            f'<div class="mti-style-name">{meta["name"]}</div>'
+            f'<div class="mti-style-summary">{meta["summary"]}</div>'
+            '<div class="mti-style-reasons"><span>检测依据</span><ul>'
+            + "".join(f"<li>{escape(r)}</li>" for r in reasons)
+            + '</ul></div>'
+            + (f'<div class="mti-style-source">{source_text}</div>'
+               if source_text else "")
+            + '</div>', unsafe_allow_html=True)
+        for warn in st.session_state.get("style_profile_warnings", []):
+            st.warning(warn)
+        if st.session_state.get("style_profiling_needs_api"):
+            goto_col, retry_col, adjust_col = st.columns(3)
+            with goto_col:
+                if st.button("前往配置 API Key", key="goto_api_settings",
+                             type="primary", width="stretch"):
+                    st.session_state.app_view = "settings"
+                    st.rerun()
+            with retry_col:
+                if st.button("重试", key="retry_quick_profile",
+                             width="stretch"):
+                    st.session_state.style_profiling_state = "running"
+                    st.rerun()
+            with adjust_col:
+                if st.button("调整", key="open_style_adjust_api",
+                             width="stretch"):
+                    st.session_state.style_adjust_open = not st.session_state.get(
+                        "style_adjust_open", False)
+                    st.session_state.style_analysis_open = False
+                    st.rerun()
+        else:
+            accept_col, adjust_col, analyze_col = st.columns(3)
+            with accept_col:
+                if st.button("接受推荐", key="accept_style_rec",
+                             width="stretch"):
+                    _accept_style_recommendation()
+                    st.session_state.style_adjust_open = False
+                    st.session_state.style_analysis_open = False
+                    st.rerun()
+            with adjust_col:
+                if st.button("调整", key="open_style_adjust",
+                             width="stretch"):
+                    st.session_state.style_adjust_open = not st.session_state.get(
+                        "style_adjust_open", False)
+                    st.session_state.style_analysis_open = False
+                    st.rerun()
+            with analyze_col:
+                if st.button("查看分析", key="show_style_analysis",
+                             width="stretch"):
+                    st.session_state.style_analysis_open = not st.session_state.get(
+                        "style_analysis_open", False)
+                    st.session_state.style_adjust_open = False
+                    st.rerun()
+        if st.session_state.get("style_analysis_open"):
+            with st.expander("文档画像分析", expanded=True):
+                doc = st.session_state.get("doc_profile") or {}
+                rows = [
+                    ("领域", doc.get("domain") or "—"),
+                    ("细分领域", doc.get("subdomain") or "—"),
+                    ("文本类型", doc.get("genre") or "—"),
+                    ("目标读者", doc.get("audience") or "—"),
+                    ("语域", doc.get("register") or "—"),
+                    ("文体约束", doc.get("style_constraints") or "—"),
+                ]
+                st.markdown("<br>".join(
+                    f"<b>{k}</b>：{escape(str(v))}" for k, v in rows),
+                    unsafe_allow_html=True)
+                if rec.get("domain"):
+                    st.caption("领域标签：" + " · ".join(rec.get("domain", [])))
+                st.caption("样本策略：首 / 中 / 尾分布式采样，约 3000–6000 字符")
+        if st.session_state.get("style_adjust_open"):
+            _render_style_adjust_panel()
+
+
 def _render_task_actions(*, back_step=None, next_step=None, next_label="下一步",
                          next_disabled=False, run=False):
     with st.container(key="task_action_bar"):
@@ -717,7 +1549,8 @@ def _render_task_actions(*, back_step=None, next_step=None, next_label="下一�
         status_col.markdown(f'<span class="{save_class}">{save_text}</span>',
                             unsafe_allow_html=True)
         if back_step is not None:
-            back_col.button("上一步", width="stretch", on_click=_go_to_step,
+            back_col.button("上一步", icon=":material/arrow_back:", width="stretch",
+                            on_click=_go_to_step,
                             args=(back_step,), key=f"back_to_{back_step}")
         if run:
             return next_col.button(next_label, type="primary", width="stretch",
@@ -738,44 +1571,62 @@ def _remove_source_documents():
     st.session_state.pop("task_files", None)
     st.session_state.pop("source_parse_state", None)
     st.session_state.pop("step_gate_message", None)
+    for key in ("style_profiling_state", "doc_profile", "style_recommendation",
+                "style_selection", "style_profile_warnings",
+                "style_adjust_open", "style_analysis_open",
+                "style_profiling_needs_api"):
+        st.session_state.pop(key, None)
+    st.session_state.source_uploader_generation = \
+        st.session_state.get("source_uploader_generation", 0) + 1
 
 
 def _source_file_html(task_files):
     total_size = sum(len(item.get("bytes") or b"") for item in task_files)
     count = len(task_files)
-    first_name = escape(task_files[0].get("name") or "未命名文档")
+    raw_name = task_files[0].get("name") or "未命名文档"
+    first_name = escape(raw_name)
     name = first_name if count == 1 else f"{first_name} 等 {count} 个文件"
     parse_state = st.session_state.get("source_parse_state", "uploaded")
     page_total = sum(int(item.get("pages") or 0) for item in task_files)
-    parsed_detail = f"{_format_size(total_size)} · " \
-        f'{f"{page_total:,} 页 · " if page_total else ""}解析完成'
+    parsed_detail = f"{_format_size(total_size)}" \
+        f'{f" · {page_total:,} 页" if page_total else ""}'
     meta = {
-        "uploaded": (f"{_format_size(total_size)} · 已上传 · 等待解析", "已上传"),
-        "parsing": (f"{_format_size(total_size)} · 正在解析", "解析中"),
-        "parsed": (parsed_detail, "解析完成"),
-        "error": (f"{_format_size(total_size)} · 解析失败", "解析失败"),
+        "uploaded": (_format_size(total_size), "已上传，等待解析"),
+        "parsing": (_format_size(total_size), "正在解析…"),
+        "parsed": (parsed_detail, "文件已就绪"),
+        "error": (_format_size(total_size), "解析失败"),
     }
     detail, status = meta.get(parse_state, meta["uploaded"])
+    icon = "progress_activity" if parse_state == "parsing" else "description"
+    icon_class = "material-symbols-rounded is-loading" if parse_state == "parsing" \
+        else "material-symbols-rounded"
+    ready_badge = '<span class="mti-source-ready">已就绪</span>' \
+        if parse_state == "parsed" else ""
     return (
         '<div class="mti-source-file">'
-        '<span class="material-symbols-rounded" aria-hidden="true">description</span>'
-        f'<div class="mti-source-file-copy"><strong>{name}</strong>'
-        f'<span>{detail}</span></div>'
-        f'<span class="mti-source-file-status is-{parse_state}">{status}</span></div>'
+        f'<span class="{icon_class}" aria-hidden="true">{icon}</span>'
+        f'<div class="mti-source-file-copy"><strong title="{escape(raw_name, quote=True)}">'
+        f'{name}</strong>'
+        f'<span>{detail} · <b class="mti-source-file-status is-{parse_state}">'
+        f'{status}</b></span></div>{ready_badge}</div>'
     )
 
 
 def _preset_card_html(label):
     cards = {
-        "快速": ("快速获得可读初稿", "翻译", "最快 · 成本最低"),
-        "标准": ("适合大多数翻译任务", "翻译 → 质量检查", "平衡质量与成本"),
-        "学术增强": ("适合 MTI 实践报告", "翻译 → 独立审校 → 证据分析",
-                 "质量最高 · 耗时较长"),
+        "快速": ("快速生成可读初稿", "翻译 → 基础检查", ("最快", "成本最低")),
+        "标准": ("兼顾质量与效率", "术语增强 → 翻译 → 基础检查",
+                 ("术语更一致", "成本适中")),
+        "学术增强": ("适合需要完整过程证据的任务",
+                 "术语治理 → 翻译 → 独立审校 → 学术证据",
+                 ("证据最完整", "耗时较长")),
     }
-    purpose, workflow, tradeoff = cards[label]
+    purpose, workflow, tags = cards[label]
     badge = '<span class="mti-preset-badge">推荐</span>' if label == "标准" else ""
     icon = "radio_button_checked" if label == st.session_state.get(
         "translation_preset", "标准") else "radio_button_unchecked"
+    tag_html = "".join(
+        f'<span class="mti-preset-tag">{tag}</span>' for tag in tags)
     return (
         '<div class="mti-preset-card">'
         '<div class="mti-preset-head">'
@@ -783,8 +1634,20 @@ def _preset_card_html(label):
         f'<strong>{label}</strong>{badge}</div>'
         f'<p class="mti-preset-purpose">{purpose}</p>'
         f'<p class="mti-preset-flow">{workflow}</p>'
-        f'<p class="mti-preset-tradeoff">{tradeoff}</p></div>'
+        f'<div class="mti-preset-tags">{tag_html}</div></div>'
     )
+
+
+def _render_strategy_toggle(label, description, option, key, config):
+    with st.container(key=f"{key}_row"):
+        copy_col, switch_col = st.columns([9, 1], vertical_alignment="center")
+        copy_col.markdown(
+            f'<div class="mti-setting-copy"><strong>{label}</strong>'
+            f'<span>{description}</span></div>', unsafe_allow_html=True)
+        switch_col.toggle(label, value=config[option], key=key,
+                          label_visibility="collapsed",
+                          on_change=_set_strategy_option, args=(option, key),
+                          help=description, persist_state="session")
 
 
 def _format_size(size):
@@ -793,20 +1656,90 @@ def _format_size(size):
     return f"{max(1, round(size / 1024))} KB"
 
 
-def _summary_html(filename, target_lang, preset_label, glossary_name):
-    workflow = {
-        "快速": "翻译",
-        "标准": "翻译 → 质量检查",
-        "学术增强": "翻译 → 审校 → 证据分析 → 实践报告",
-    }[preset_label]
+def _summary_html(filename, target_lang, preset_label, glossary_name,
+                  strategy_config, output_config, style_template,
+                  style_source=""):
+    workflow = []
+    if strategy_config["strict_terminology_governance"]:
+        workflow.append("术语治理")
+    elif strategy_config["auto_term"]:
+        workflow.append("术语增强")
+    workflow.extend(["翻译", "基础检查"])
+    if strategy_config["enable_review"]:
+        workflow.append("独立审校")
+    if output_config["enable_annotate"]:
+        workflow.append("重点标注")
+    if output_config["enable_report"]:
+        workflow.extend(["学术证据", "实践报告"])
+    mode_label = preset_label
+    if _strategy_is_adjusted(preset_label, strategy_config) \
+            or _output_is_adjusted(preset_label, output_config):
+        mode_label += " · 已调整"
+    artifacts = []
+    if output_config.get("deliver_plain_docx"):
+        artifacts.append(("description", "纯译文", "仅含译文文本", "DOCX"))
+    if output_config.get("deliver_bilingual_docx"):
+        artifacts.append(("description", "双语译文", "原文与译文对照", "DOCX"))
+    if output_config.get("deliver_pdf"):
+        artifacts.append(("picture_as_pdf", "PDF 译文", "便携格式译文", "PDF"))
+    if output_config.get("deliver_terms_xlsx"):
+        artifacts.append(("table", "术语表", "自动抽取与锁定术语", "XLSX"))
+    for key, name in (("deliver_tbx", "TBX 术语库"),
+                      ("deliver_tmx", "TMX 翻译记忆"),
+                      ("deliver_jsonl", "JSONL 双语段落")):
+        if output_config.get(key):
+            artifacts.append(("code", name, "语言资产导出", "交换格式"))
+    if output_config["enable_annotate"]:
+        artifacts.append(("ink_highlighter", "重点标注版",
+                          "标出生僻词、专业术语和翻译难点句", "DOCX"))
+    if output_config["enable_report"]:
+        artifacts.append(("article", "翻译实践报告",
+                          "基于翻译过程证据生成", "DOCX / MD"))
+        if output_config.get("deliver_review_report"):
+            artifacts.append(("fact_check", "审校报告",
+                              "审校发现与处理记录", "MD"))
+    style_value = style_template + (f"（{style_source}）" if style_source else "")
+    artifact_rows = "".join(
+        '<div class="mti-artifact-row">'
+        f'<span class="material-symbols-rounded" aria-hidden="true">{icon}</span>'
+        f'<div><strong>{name}</strong><span>{detail}</span></div><b>{kind}</b></div>'
+        for icon, name, detail, kind in artifacts)
     return (
-        '<div class="mti-summary"><div class="mti-summary-grid">'
+        '<div class="mti-confirm-stack">'
+        '<section class="mti-confirm-card"><div class="mti-confirm-head">'
+        '<span class="material-symbols-rounded" aria-hidden="true">tune</span>'
+        '<strong>任务配置</strong></div><div class="mti-summary-grid">'
         f'<div class="mti-summary-item"><span>原文</span><strong>{filename}</strong></div>'
         f'<div class="mti-summary-item"><span>目标语言</span><strong>{target_lang}</strong></div>'
-        f'<div class="mti-summary-item"><span>模式</span><strong>{preset_label}</strong></div>'
+        f'<div class="mti-summary-item"><span>翻译模式</span><strong>{mode_label}</strong></div>'
+        f'<div class="mti-summary-item"><span>译文风格</span><strong>{style_value}</strong></div>'
         f'<div class="mti-summary-item"><span>术语库</span><strong>{glossary_name}</strong></div>'
-        '<div class="mti-summary-item" style="grid-column:1/-1"><span>工作流</span>'
-        f'<strong>{workflow}</strong></div></div></div>')
+        '<div class="mti-summary-item is-wide"><span>工作流</span>'
+        f'<strong>{" → ".join(workflow)}</strong></div></div></section>'
+        '<section class="mti-confirm-card"><div class="mti-confirm-head">'
+        '<span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>'
+        '<strong>将生成</strong></div><div class="mti-artifact-list">'
+        f'{artifact_rows}</div></section></div>')
+
+
+def _runtime_html(provider, model, connection_status, can_start):
+    connection = {
+        "connected": ("已连接", "is-success"),
+        "error": ("连接失败", "is-error"),
+        "unverified": ("未验证", "is-neutral"),
+    }.get(connection_status, ("未验证", "is-neutral"))
+    readiness = ("可启动", "is-success") if can_start else ("需要配置", "is-warning")
+    return (
+        '<section class="mti-confirm-card mti-runtime-card">'
+        '<div class="mti-confirm-head"><span class="material-symbols-rounded" '
+        'aria-hidden="true">memory</span><strong>运行环境</strong></div>'
+        '<div class="mti-runtime-grid">'
+        f'<div><span>AI 引擎</span><strong>{provider}</strong></div>'
+        f'<div><span>模型</span><strong>{model or "未配置"}</strong></div>'
+        f'<div><span>连接状态</span><strong class="mti-status {connection[1]}">'
+        f'{connection[0]}</strong></div>'
+        f'<div><span>启动状态</span><strong class="mti-status {readiness[1]}">'
+        f'{readiness[0]}</strong></div></div></section>')
 
 
 def _render_profile_editor(job_id, state, box=None):
@@ -923,7 +1856,10 @@ app_view = st.session_state.get("app_view", "new")
 workspace_mode = st.session_state.get("workspace_mode", False)
 
 with st.sidebar:
-    st.markdown('<div class="mti-brand"><strong>MTI Tool</strong>'
+    st.markdown(
+                '<div class="mti-brand" aria-label="TransPraxis 译践">'
+                f'<img class="mti-brand-mark" src="{_BRAND_MARK_URI}" alt="">'
+                '<div class="mti-brand-copy"><strong>TransPraxis</strong><b>译践</b></div>'
                 '<span>Translation Practice Workspace</span></div>',
                 unsafe_allow_html=True)
     with st.container(key="new_task_action"):
@@ -939,7 +1875,8 @@ with st.sidebar:
                     '<div class="mti-nav-label">当前任务</div>', unsafe_allow_html=True)
         with st.container(key="task_steps"):
             current_step = st.session_state.task_step
-            for number, label in ((1, "文档"), (2, "翻译策略"), (3, "输出"), (4, "确认运行")):
+            for number, label in ((1, "文档与画像"), (2, "翻译策略"),
+                                  (3, "交付内容"), (4, "确认运行")):
                 status = "done" if number < current_step else "current" if number == current_step else "pending"
                 icon = ":material/check_circle:" if status == "done" \
                     else ":material/radio_button_checked:" if status == "current" \
@@ -980,14 +1917,16 @@ if preset_label not in _PRESET_CONFIGS:
     preset_label = "标准"
 if "strategy_config" not in st.session_state:
     st.session_state.strategy_config = dict(_PRESET_CONFIGS[preset_label])
+if "output_config" not in st.session_state:
+    st.session_state.output_config = dict(_PRESET_OUTPUTS[preset_label])
 strategy_config = st.session_state.strategy_config
+output_config = st.session_state.output_config
 auto_term = strategy_config["auto_term"]
 use_tm = strategy_config["use_tm"]
 enable_review = strategy_config["enable_review"]
-enable_annotate = strategy_config["enable_annotate"]
-enable_report = strategy_config["enable_report"]
-mode = "quality" if preset_label == "学术增强" or enable_report else "quick"
-quality = mode == "quality"
+strict_terminology_governance = strategy_config["strict_terminology_governance"]
+enable_annotate = output_config["enable_annotate"]
+enable_report = output_config["enable_report"]
 target_lang = st.session_state.get("target_lang", "简体中文")
 user_glossary = st.session_state.get("task_glossary", [])
 uploaded_files = []
@@ -999,12 +1938,12 @@ style_rules = st.session_state.get(
     "style_rules", "保持学术书面语；专有名词、作者姓名、机构名、引用标注、URL 等保留原文；标点遵循目标语言规范。")
 annotation_colors = st.session_state.get("annotation_colors", {
     "rare": "C00000", "domain": "BF8F00", "hard": "008080"})
-theory_choice = st.session_state.get("translation_theory_choice", "自动推荐")
+theory_choice = st.session_state.get("translation_theory_choice", "自动推荐（建议）")
 if theory_choice == "自定义":
     translation_theory = st.session_state.get("custom_translation_theory", "").strip() \
         or "自定义理论框架"
-elif theory_choice == "自动推荐":
-    translation_theory = "基于文本类型与可用文献证据自动选择理论框架"
+elif theory_choice in ("自动推荐", "自动推荐（建议）"):
+    translation_theory = "基于文本特征、案例证据与可用文献自动推荐理论框架"
 else:
     translation_theory = theory_choice
 literature_sources = st.session_state.get("literature_sources")
@@ -1019,10 +1958,13 @@ setup_placeholder = st.empty()
 with setup_placeholder.container():
     if app_view == "settings":
         _page_title("AI 引擎", "配置一次，所有新任务自动使用当前连接")
+        if not core.is_onboarded():
+            st.caption("首次使用：选择服务商 → 填写 API 密钥与模型 → 保存配置 → 点击「测试连接」通过后即可开始翻译。")
         pc1, pc2 = st.columns(2)
         ai_provider = pc1.selectbox("服务商", providers,
                                     index=providers.index(ai_provider), key="provider_choice",
-                                    on_change=_reset_provider_connection)
+                                    on_change=_reset_provider_connection,
+                                    persist_state="session")
         provider_cfg = core.PROVIDERS[ai_provider]
         model_opts = sorted(provider_cfg.get("models") or [], key=str.casefold)
         if model_opts:
@@ -1031,27 +1973,45 @@ with setup_placeholder.container():
                                      index=model_opts.index(st.session_state.get(
                                          f"model_choice_{ai_provider}", default_model)),
                                      key=f"model_choice_{ai_provider}",
-                                     on_change=_reset_provider_connection)
+                                     on_change=_reset_provider_connection,
+                                     persist_state="session")
         else:
             ai_model = pc2.text_input("模型", key=f"model_choice_{ai_provider}",
                                      placeholder=provider_cfg.get("model_hint") or "model-name",
-                                     on_change=_reset_provider_connection)
+                                     on_change=_reset_provider_connection,
+                                     persist_state="session")
         api_key = st.text_input("API 密钥", type="password", key=f"api_key_{ai_provider}",
-                                on_change=_reset_provider_connection)
+                                on_change=_reset_provider_connection,
+                                persist_state="session")
         if provider_cfg.get("custom_base_url"):
             api_base = st.text_input("API 地址", key="custom_base_url",
                                      placeholder="https://your-relay.example.com/v1",
-                                     on_change=_reset_provider_connection)
+                                     on_change=_reset_provider_connection,
+                                     persist_state="session")
         else:
             api_base = None
         st.caption(f"接口地址：{provider_cfg.get('base_url') or '由服务商管理'}")
-        if st.button("测试连接", type="primary", disabled=not (api_key and ai_model)):
-            with st.spinner("正在验证连接…"):
-                ok, msg = core.test_provider(ai_provider, api_key, ai_model, base_url=api_base)
-            st.session_state.provider_configured = ok
-            st.session_state.provider_connection_status = "connected" if ok else "error"
-            st.session_state.provider_test_feedback = (ok, msg)
-            st.rerun()
+        save_btn, test_btn = st.columns(2)
+        with save_btn:
+            if st.button("保存配置", width="stretch",
+                         disabled=not (api_key and ai_model),
+                         help="把服务商、模型与 API 密钥写入本地，重启应用后仍会保留"):
+                core.save_provider_config(ai_provider, ai_model, api_key,
+                                          api_base)
+                st.toast("AI 引擎配置已保存，重启应用后仍会保留")
+        with test_btn:
+            if st.button("测试连接", type="primary", width="stretch",
+                         disabled=not (api_key and ai_model)):
+                with st.spinner("正在验证连接…"):
+                    ok, msg = core.test_provider(ai_provider, api_key,
+                                                 ai_model, base_url=api_base)
+                if ok:
+                    core.mark_onboarded()
+                st.session_state.provider_configured = ok
+                st.session_state.provider_connection_status = \
+                    "connected" if ok else "error"
+                st.session_state.provider_test_feedback = (ok, msg)
+                st.rerun()
         if feedback := st.session_state.get("provider_test_feedback"):
             ok, msg = feedback
             (st.success if ok else st.error)(msg)
@@ -1059,6 +2019,30 @@ with setup_placeholder.container():
     elif app_view == "new" and not workspace_mode:
         _page_title("新建翻译任务", "上传文档并配置翻译工作流")
         step = st.session_state.task_step
+        if not core.is_onboarded() \
+                and not st.session_state.get("onboarding_dismissed") \
+                and not api_key:
+            with st.container(key="onboarding_guide"):
+                guide_col, action_col = st.columns([3, 1])
+                guide_col.markdown(
+                    '<div class="mti-onboard-card">'
+                    '<div class="mti-style-card-head">'
+                    '<span class="material-symbols-rounded" aria-hidden="true">rocket_launch</span>'
+                    '<strong>首次使用 TransPraxis</strong></div>'
+                    '<p>配置 AI 引擎后即可开始翻译。三步完成：</p>'
+                    '<ol><li>选择服务商（DeepSeek / OpenAI / Gemini / 中转站…）</li>'
+                    '<li>填写 API 密钥并选择模型</li>'
+                    '<li>点击「测试连接」验证通过</li></ol></div>',
+                    unsafe_allow_html=True)
+                with action_col:
+                    if st.button("前往设置", key="goto_settings_onboard",
+                                 type="primary", width="stretch"):
+                        st.session_state.app_view = "settings"
+                        st.rerun()
+                    if st.button("暂不配置", key="dismiss_onboarding",
+                                 width="stretch"):
+                        st.session_state.onboarding_dismissed = True
+                        st.rerun()
 
         if step == 1:
             _step_title(1, "文档", "配置本次翻译任务的输入材料")
@@ -1089,6 +2073,8 @@ with setup_placeholder.container():
                                 unsafe_allow_html=True)
                     uploaded_files = st.file_uploader("原文", type=["pdf", "docx"],
                                                       accept_multiple_files=True,
+                                                      key=f"source_documents_"
+                                                          f"{st.session_state.get('source_uploader_generation', 0)}",
                                                       label_visibility="collapsed",
                                                       help="支持 PDF 和 DOCX，可一次添加多个文件")
                 if uploaded_files:
@@ -1101,7 +2087,8 @@ with setup_placeholder.container():
                 target_lang = st.selectbox(
                     "目标语言", ["简体中文", "繁体中文", "English", "日本語", "한국어",
                     "Deutsch", "Français", "Español", "Русский", "Português",
-                                 "Italiano", "العربية"], key="target_lang")
+                                 "Italiano", "العربية"], key="target_lang",
+                    persist_state="session")
             term_label = st.session_state.get("task_glossary_name", "未添加")
             st.markdown('<div class="mti-field-head"><strong>术语库</strong>'
                         '<span>可选 · 用于保持术语与专名一致</span></div>',
@@ -1146,6 +2133,8 @@ with setup_placeholder.container():
                         st.rerun()
                     except ValueError as exc:
                         st.warning(str(exc))
+            if task_files:
+                _render_style_profile_section()
             _render_task_actions(next_step=2,
                                  next_disabled=not st.session_state.get("task_files"))
 
@@ -1166,140 +2155,265 @@ with setup_placeholder.container():
             with st.container(key="strategy_advanced"):
                 advanced_open = st.session_state.get("strategy_advanced_open", False)
                 state_text = f'<strong>{preset_label} · 已调整</strong>' if adjusted \
-                    else f'当前使用“{preset_label}”的默认配置'
-                st.button("高级设置", icon=":material/expand_less:" if advanced_open
-                          else ":material/chevron_right:", key="toggle_strategy_advanced",
+                    else f'当前使用「{preset_label}」默认配置'
+                trigger_icon = "expand_less" if advanced_open else "chevron_right"
+                st.markdown(
+                    '<div class="mti-advanced-trigger">'
+                    '<span class="mti-advanced-title">'
+                    f'<span class="material-symbols-rounded" aria-hidden="true">'
+                    f'{trigger_icon}</span><strong>高级设置</strong></span></div>',
+                    unsafe_allow_html=True)
+                st.button("切换高级设置", key="toggle_strategy_advanced",
                           on_click=_toggle_advanced_strategy, width="stretch")
-                st.markdown(f'<div class="mti-strategy-state">{state_text}</div>',
-                            unsafe_allow_html=True)
                 if advanced_open:
                     with st.container(key="advanced_body"):
+                        st.markdown(f'<div class="mti-strategy-state">{state_text}</div>',
+                                    unsafe_allow_html=True)
                         st.markdown('<div class="mti-advanced-group">翻译辅助</div>',
                                     unsafe_allow_html=True)
-                        st.toggle("术语抽取", value=strategy_config["auto_term"],
-                                  key="strategy_auto_term", on_change=_set_strategy_option,
-                                  args=("auto_term", "strategy_auto_term"))
-                        st.toggle("使用翻译记忆", value=strategy_config["use_tm"],
-                                  key="strategy_use_tm", on_change=_set_strategy_option,
-                                  args=("use_tm", "strategy_use_tm"),
-                                  help="精确复用已通过审校的历史译文")
+                        _render_strategy_toggle(
+                            "自动术语抽取", "从全文识别候选术语并用于翻译",
+                            "auto_term", "strategy_auto_term", strategy_config)
+                        _render_strategy_toggle(
+                            "复用翻译记忆", "精确复用已审校通过的历史译文",
+                            "use_tm", "strategy_use_tm", strategy_config)
                         st.markdown('<div class="mti-advanced-group">质量控制</div>',
                                     unsafe_allow_html=True)
-                        st.toggle("独立审校", value=strategy_config["enable_review"],
-                                  key="strategy_review", on_change=_set_strategy_option,
-                                  args=("enable_review", "strategy_review"))
-                        st.toggle("标记值得分析的翻译案例",
-                                  value=strategy_config["enable_annotate"],
-                                  key="strategy_annotate", on_change=_set_strategy_option,
-                                  args=("enable_annotate", "strategy_annotate"))
-                        st.markdown('<div class="mti-advanced-group">学术工作流</div>',
+                        st.markdown(
+                            '<div class="mti-readonly-setting">'
+                            '<div class="mti-readonly-head">'
+                            '<strong>基础一致性检查</strong><b>始终开启</b></div>'
+                            '<span>自动检查漏译、保留项、源语残留和锁定术语</span>'
+                            '</div>', unsafe_allow_html=True)
+                        _render_strategy_toggle(
+                            "独立审校", "使用独立模型阶段复核语义与术语，并保存审校证据",
+                            "enable_review", "strategy_review", strategy_config)
+                        st.markdown('<div class="mti-advanced-group">术语治理</div>',
                                     unsafe_allow_html=True)
-                        st.toggle("生成实践报告", value=strategy_config["enable_report"],
-                                  key="strategy_report", on_change=_set_strategy_option,
-                                  args=("enable_report", "strategy_report"))
-                        if strategy_config["enable_report"]:
-                            st.markdown('<p class="mti-report-helper">仅在生成实践报告时使用</p>',
-                                        unsafe_allow_html=True)
-                            with st.container(key="analysis_theory"):
-                                theory_choice = st.selectbox("案例分析理论", [
-                                    "自动推荐", "目的论 (Skopos Theory)",
-                                    "交际翻译与语义翻译 (Newmark)", "功能对等理论 (Nida)",
-                                    "文本类型理论 (Reiss)", "生态翻译学 (Hu Gengshen)",
-                                    "自定义"], key="translation_theory_choice")
-                                if theory_choice == "自定义":
-                                    custom_theory = st.text_input(
-                                        "自定义理论框架", key="custom_translation_theory",
-                                        placeholder="输入理论名称或分析框架")
-                                    translation_theory = custom_theory.strip() \
-                                        or "自定义理论框架"
-                                elif theory_choice == "自动推荐":
-                                    translation_theory = \
-                                        "基于文本类型与可用文献证据自动选择理论框架"
-                                else:
-                                    translation_theory = theory_choice
+                        _render_strategy_toggle(
+                            "审核并冻结候选术语", "翻译前建立文档画像，并审核自动提取的候选术语",
+                            "strict_terminology_governance", "strategy_strict_terms",
+                            strategy_config)
             _render_task_actions(back_step=1, next_step=3)
 
         elif step == 3:
-            _step_title(3, "输出", "选择译文风格；学术报告将在翻译与证据阶段完成后生成")
-            _STYLE_TEMPLATES = {
-                "学术书面语": "保持学术书面语；专有名词、作者姓名、机构名、引用标注、URL 等保留原文；标点遵循目标语言规范。",
-                "文学叙事": "保留原文叙事语气、人物口吻与意象；对话不要书面化；人名地名采用通行译法。",
-                "技术文档": "术语与术语表严格一致；句式简洁；数字、单位、代码、命令和路径原样保留。",
-                "自定义": "",
-            }
-            style_template = st.selectbox("译文风格", list(_STYLE_TEMPLATES), key="style_template")
-            if style_template == "自定义":
-                style_rules = st.text_area("风格与保留规则", key="style_rules",
-                                           placeholder="说明语气、强制保留内容和标点规范")
-            else:
-                style_rules = st.text_area("风格与保留规则", value=_STYLE_TEMPLATES[style_template],
-                                           key=f"style_rules_{style_template}")
-                st.session_state.style_rules = style_rules
-            if enable_report:
-                with st.expander("报告证据（可选）", expanded=False):
-                    literature_registry_file = st.file_uploader(
-                        "文献证据注册表（可选）", type=["json"], key="literature_registry")
-                    if literature_registry_file:
-                        loaded_literature = json.load(literature_registry_file)
-                        if isinstance(loaded_literature, dict):
-                            loaded_literature = loaded_literature.get("sources") or []
-                        st.session_state.literature_sources = loaded_literature
+            _step_title(3, "交付内容", "选择要生成的文件与附加成果")
+            output_config = st.session_state.output_config
+            with st.container(key="deliver_translation"):
+                st.markdown('<div class="mti-output-section-head"><strong>译文</strong>'
+                            '<span>选择要生成的译文文件</span></div>',
+                            unsafe_allow_html=True)
+                trans_a, trans_b = st.columns(2)
+                with trans_a:
+                    st.checkbox(
+                        "纯译文 DOCX",
+                        value=output_config.get("deliver_plain_docx", True),
+                        key="deliver_plain_docx", on_change=_set_output_option,
+                        args=("deliver_plain_docx", "deliver_plain_docx"),
+                        help="仅含译文的 Word 文档", persist_state="session")
+                    st.checkbox(
+                        "双语对照 DOCX",
+                        value=output_config.get("deliver_bilingual_docx", True),
+                        key="deliver_bilingual_docx", on_change=_set_output_option,
+                        args=("deliver_bilingual_docx", "deliver_bilingual_docx"),
+                        help="原文与译文对照的 Word 文档", persist_state="session")
+                with trans_b:
+                    st.checkbox(
+                        "PDF 译文", value=output_config.get("deliver_pdf", False),
+                        key="deliver_pdf", on_change=_set_output_option,
+                        args=("deliver_pdf", "deliver_pdf"),
+                        help="将译文导出为 PDF", persist_state="session")
+                    st.toggle("重点标注版", value=output_config["enable_annotate"],
+                              key="output_annotate", on_change=_set_output_option,
+                              args=("enable_annotate", "output_annotate"),
+                              help="在双语文档中标出生僻词、专业术语和翻译难点句",
+                              persist_state="session")
+                st.caption("重点标注版在双语文档中标出生僻词、专业术语和翻译难点句")
+            with st.container(key="deliver_assets"):
+                st.markdown('<div class="mti-output-section-head"><strong>语言资产</strong>'
+                            '<span>术语与翻译记忆的导出格式</span></div>',
+                            unsafe_allow_html=True)
+                asset_a, asset_b = st.columns(2)
+                with asset_a:
+                    st.checkbox(
+                        "术语表 XLSX",
+                        value=output_config.get("deliver_terms_xlsx", True),
+                        key="deliver_terms_xlsx", on_change=_set_output_option,
+                        args=("deliver_terms_xlsx", "deliver_terms_xlsx"),
+                        help="自动抽取与锁定术语的 Excel 表", persist_state="session")
+                    st.checkbox(
+                        "TBX", value=output_config.get("deliver_tbx", False),
+                        key="deliver_tbx", on_change=_set_output_option,
+                        args=("deliver_tbx", "deliver_tbx"),
+                        help="ISO 标准术语交换格式", persist_state="session")
+                with asset_b:
+                    st.checkbox(
+                        "TMX", value=output_config.get("deliver_tmx", False),
+                        key="deliver_tmx", on_change=_set_output_option,
+                        args=("deliver_tmx", "deliver_tmx"),
+                        help="翻译记忆交换格式", persist_state="session")
+                    st.checkbox(
+                        "JSONL", value=output_config.get("deliver_jsonl", False),
+                        key="deliver_jsonl", on_change=_set_output_option,
+                        args=("deliver_jsonl", "deliver_jsonl"),
+                        help="双语段落 JSONL，便于后续处理", persist_state="session")
+            enable_annotate = output_config["enable_annotate"]
+            with st.container(key="deliver_academic"):
+                st.markdown('<div class="mti-output-section-head"><strong>研究资产</strong>'
+                            '<span>学术增强模式的过程证据与写作产物</span></div>',
+                            unsafe_allow_html=True)
+                st.toggle("生成实践报告", value=output_config["enable_report"],
+                          key="output_report", on_change=_set_output_option,
+                          args=("enable_report", "output_report"),
+                          help="启动证据约束的学术写作工作流",
+                          persist_state="session")
+                st.caption("仅使用可追溯案例、项目数据与已导入文献证据")
+                enable_report = output_config["enable_report"]
+                if enable_report:
+                    theory_choice = st.selectbox("理论框架", [
+                        "自动推荐（建议）", "目的论 (Skopos Theory)",
+                        "交际翻译与语义翻译 (Newmark)", "功能对等理论 (Nida)",
+                        "文本类型理论 (Reiss)", "生态翻译学 (Hu Gengshen)",
+                        "自定义"], key="translation_theory_choice",
+                        persist_state="session")
+                    st.caption("根据文本特征、案例证据与可用文献确定；仅在证据支持时使用。")
+                    if theory_choice == "自定义":
+                        custom_theory = st.text_input(
+                            "自定义理论框架", key="custom_translation_theory",
+                            placeholder="输入理论名称或分析框架")
+                        translation_theory = custom_theory.strip() or "自定义理论框架"
+                    elif theory_choice == "自动推荐（建议）":
+                        translation_theory = \
+                            "基于文本特征、案例证据与可用文献自动推荐理论框架"
+                    else:
+                        translation_theory = theory_choice
+                    with st.expander("文献证据（可选）", expanded=False):
+                        st.caption("可导入已有证据注册表；系统不会在缺少证据时强行套用理论。")
+                        literature_registry_file = st.file_uploader(
+                            "文献证据注册表（可选）", type=["json"], key="literature_registry")
+                        if literature_registry_file:
+                            loaded_literature = json.load(literature_registry_file)
+                            if isinstance(loaded_literature, dict):
+                                loaded_literature = loaded_literature.get("sources") or []
+                            st.session_state.literature_sources = loaded_literature
+                    study_a, study_b = st.columns(2)
+                    with study_a:
+                        st.checkbox(
+                            "翻译过程证据",
+                            value=output_config.get("deliver_evidence", True),
+                            key="deliver_evidence", on_change=_set_output_option,
+                            args=("deliver_evidence", "deliver_evidence"),
+                            help="批次翻译、审校与修订的可追溯证据",
+                            persist_state="session")
+                        st.checkbox(
+                            "案例候选",
+                            value=output_config.get("deliver_cases", False),
+                            key="deliver_cases", on_change=_set_output_option,
+                            args=("deliver_cases", "deliver_cases"),
+                            help="符合资格的真实修订案例", persist_state="session")
+                    with study_b:
+                        st.checkbox(
+                            "学术写作工作区",
+                            value=output_config.get("deliver_academic_workspace", False),
+                            key="deliver_academic_workspace",
+                            on_change=_set_output_option,
+                            args=("deliver_academic_workspace",
+                                  "deliver_academic_workspace"),
+                            help="论证大纲与写作素材包", persist_state="session")
+                        st.checkbox(
+                            "审校报告",
+                            value=output_config.get("deliver_review_report", False),
+                            key="deliver_review_report", on_change=_set_output_option,
+                            args=("deliver_review_report", "deliver_review_report"),
+                            help="审校发现与处理记录", persist_state="session")
             _render_task_actions(back_step=2, next_step=4)
 
         else:
-            _step_title(4, "确认运行", "检查本次任务配置，然后开始工作流")
+            _step_title(4, "确认运行", "核对任务、输出内容与运行环境")
             task_files = st.session_state.get("task_files") or []
             filename_summary = task_files[0]["name"] if len(task_files) == 1 \
                 else f"{len(task_files)} 个文档"
             glossary_name = st.session_state.get("task_glossary_name", "未添加")
+            style_template = st.session_state.get("style_template", "学术书面语")
+            style_source = ""
+            style_sel = st.session_state.get("style_selection")
+            if style_sel:
+                style_source = "接受系统推荐" if style_sel.get("source") == "accepted" \
+                    else "用户调整"
+            connection_status = st.session_state.get(
+                "provider_connection_status", "unverified")
+            can_start = bool(task_files and api_key and ai_model)
             st.markdown(_summary_html(filename_summary, target_lang, preset_label,
-                                      glossary_name), unsafe_allow_html=True)
-            st.markdown('<div class="mti-engine-row"><strong>AI 引擎</strong>'
-                        f'<span>{ai_provider} · {ai_model or "未配置"}</span></div>',
+                                      glossary_name, strategy_config, output_config,
+                                      style_template, style_source),
                         unsafe_allow_html=True)
+            st.markdown(_runtime_html(ai_provider, ai_model, connection_status,
+                                      can_start), unsafe_allow_html=True)
             if not api_key:
-                st.warning("开始前请前往“设置”配置 AI 服务商和 API 密钥。")
+                with st.container(key="engine_setup_banner"):
+                    message_col, action_col = st.columns([4, 1])
+                    message_col.warning(
+                        "尚未配置 AI 引擎。开始任务前，请先完成服务商与 API 密钥设置。",
+                        icon=":material/warning:")
+                    action_col.button("前往设置", key="open_engine_settings",
+                                      on_click=_open_provider_settings,
+                                      width="stretch")
             run_clicked = _render_task_actions(
                 back_step=3, next_label="开始任务", run=True,
-                next_disabled=not (task_files and api_key and ai_model))
+                next_disabled=not can_start)
 
     elif app_view == "workspace" or workspace_mode:
-        _page_title("任务工作区", "任务进度、质量状态与交付资产")
-        active_state = core.load_job_state(st.session_state.get("active_job_id")) \
+        # If a processing loop is about to resume (pending_continue_job), skip the
+        # static pipeline rendering — the processing loop below handles progress UI.
+        will_process = bool(st.session_state.get("pending_continue_job"))
+        if not will_process:
+            _page_title("任务工作区", "任务进度、质量状态与交付资产")
+            active_state = core.load_job_state(st.session_state.get("active_job_id")) \
             if st.session_state.get("active_job_id") else None
-        stage_label = core.progress_label(active_state) if active_state else "等待任务开始"
-        done_profile = bool(active_state and active_state.get("p1_done"))
-        done_translation = bool(active_state and active_state.get("p2_done"))
-        done_report = bool(active_state and active_state.get("p3_done"))
-        evidence_done = bool(done_report or (active_state and active_state.get("p2_done")
-                                             and active_state.get("findings") is not None))
-        pipeline_items = [
-            ("done" if done_profile else "active", "文档解析"),
-            ("done" if done_profile else "pending", "段落重建"),
-            ("done" if active_state and active_state.get("auto_terms") else "pending", "术语抽取"),
-            ("done" if done_translation else "pending", "批次翻译"),
-            ("done" if done_translation and active_state.get("review_stats") else "pending", "独立审校"),
-            ("done" if evidence_done else "pending", "Evidence"),
-            ("done" if done_report else "active" if evidence_done and active_state \
-                and active_state.get("report_enabled") else "pending", "实践报告"),
-        ]
-        pleft, pright = st.columns([1, 2.5])
-        with pleft:
-            rows = "".join(
-                f'<div style="padding:6px 0;color:{"#111827" if state == "active" else "#16a34a" if state == "done" else "#9ca3af"}">'
-                f'{"●" if state == "active" else "✓" if state == "done" else "○"}&nbsp;&nbsp;{label}</div>'
-                for state, label in pipeline_items)
-            st.markdown(f'<div class="mti-pipeline" style="padding:16px 18px">'
-                        f'<div class="mti-section-sub" style="margin-bottom:8px">处理流程</div>{rows}</div>',
-                        unsafe_allow_html=True)
-        with pright:
-            st.subheader(stage_label)
-            if active_state:
-                progress_steps = sum((done_profile, done_translation, done_report))
-                st.progress(progress_steps / 3)
-                st.caption(f"当前阶段 {active_state.get('stage') or 'PREPARE'}")
-            else:
-                st.caption("从“新建任务”开始，或在“历史任务”中继续已有任务。")
+            stage_label = core.progress_label(active_state) if active_state else "等待任务开始"
+            done_profile = bool(active_state and active_state.get("p1_done"))
+            done_translation = bool(active_state and active_state.get("p2_done"))
+            done_report = bool(active_state and active_state.get("p3_done"))
+            evidence_done = bool(done_report or (active_state and active_state.get("p2_done")
+                                                 and active_state.get("findings") is not None))
+            stage = active_state.get("stage") if active_state else ""
+            translating_or_queued = stage in ("TRANSLATING", "GLOSSARY_FROZEN") and not done_translation
+            pipeline_items = [
+                ("done" if done_profile else "active", "文档解析"),
+                ("done" if done_profile else "pending", "段落重建"),
+                ("done" if active_state and active_state.get("auto_terms") else "pending", "术语抽取"),
+                ("done" if done_translation else "active" if translating_or_queued else "pending", "批次翻译"),
+                ("done" if done_translation and active_state.get("review_stats") else "pending", "独立审校"),
+                ("done" if evidence_done else "pending", "Evidence"),
+                ("done" if done_report else "active" if evidence_done and active_state                 and active_state.get("report_enabled") else "pending", "实践报告"),
+            ]
+            pleft, pright = st.columns([1, 2.5])
+            with pleft:
+                rows = "".join(
+                    f'<div style="padding:6px 0;color:{"#111827" if state == "active" else "#16a34a" if state == "done" else "#9ca3af"}">'
+                    f'{"●" if state == "active" else "✓" if state == "done" else "○"}&nbsp;&nbsp;{label}</div>'
+                    for state, label in pipeline_items)
+                st.markdown(f'<div class="mti-pipeline" style="padding:16px 18px">'
+                            f'<div class="mti-section-sub" style="margin-bottom:8px">处理流程</div>{rows}</div>',
+                            unsafe_allow_html=True)
+            with pright:
+                st.subheader(stage_label)
+                if active_state:
+                    p_completed = sum(1 for s, _ in pipeline_items if s == "done")
+                    p_total = len(pipeline_items)
+                    st.progress(p_completed / p_total)
+                    _stage_map = {
+                        "INGESTED": "文档导入", "PROFILED": "文档画像", "TERMS_PREPARED": "术语准备",
+                        "GLOSSARY_FROZEN": "术语已冻结", "TRANSLATING": "翻译中", "TRANSLATED": "翻译完成",
+                        "ANNOTATED": "标注完成", "ACADEMIC_WRITING": "学术写作中",
+                        "ACADEMIC_REVIEW_REQUIRED": "等待学术复核",
+                        "ACADEMIC_FAILED": "学术写作失败", "REPORT_GENERATED": "已完成",
+                        "REVIEW_REQUIRED": "待审校处理", "FINAL": "已交付",
+                    }
+                    _raw = active_state.get("stage") or "PREPARE"
+                    st.caption(f"当前阶段：{_stage_map.get(_raw, _raw)}")
+                else:
+                    st.caption("从“新建任务”开始，或在“历史任务”中继续已有任务。")
     elif app_view == "history":
         _page_title("历史任务", "继续任务或查看已经生成的交付资产")
     elif app_view == "library":
@@ -1403,6 +2517,18 @@ if tasks:
             continue
 
         try:
+            # Step 01 的 Quick Profiling 产物：落盘为版本化 artifact，
+            # 并把文档画像注入任务状态，让管线跳过重复画像。
+            style_selection = st.session_state.get("style_selection")
+            doc_profile = st.session_state.get("doc_profile")
+            if style_selection:
+                core.write_profile_artifacts(job_id, doc_profile, style_selection)
+                if doc_profile and doc_profile.get("domain"):
+                    job_state = core.load_job_state(job_id) or {}
+                    if not job_state.get("profile_done"):
+                        job_state["document_profile"] = doc_profile
+                        job_state["profile_done"] = True
+                        core.save_job_state(job_id, job_state)
             if task["file_bytes"] is not None:
                 st.session_state.source_parse_state = "parsing"
             with st.status(f"正在处理：{filename}", expanded=True) as status:
@@ -1413,7 +2539,8 @@ if tasks:
                     enable_report=enable_report, translation_theory=translation_theory,
                     user_glossary=user_glossary,
                     style_rules=style_rules, enable_review=enable_review,
-                    enable_annotate=enable_annotate, use_tm=use_tm, mode=mode,
+                    enable_annotate=enable_annotate, use_tm=use_tm,
+                    strict_terminology_governance=strict_terminology_governance,
                     research_settings=research_settings,
                     literature_sources=literature_sources,
                     on_status=lambda label: (
@@ -1486,7 +2613,8 @@ st.session_state.active_job_id = active
 if active:
     astate = core.load_job_state(active)
     if astate and astate.get("p1_done") and not astate.get("p2_done") \
-            and astate.get("quality_mode") and astate.get("glossary") is not None:
+            and astate.get("quality_mode") and astate.get("glossary") is not None \
+            and astate.get("stage") not in ("TRANSLATING", "TRANSLATED", "ACADEMIC_WRITING", "REPORT_GENERATED", "REVIEW_REQUIRED"):
         box = st.container(border=True)
         box.subheader(f"术语准备与审核：{astate.get('filename', '?')}")
         _render_profile_editor(active, astate, box)
@@ -1989,7 +3117,7 @@ with tab_academic:
                     total_global = len((argument_artifact or {}).get("claims") or [])
                     total_sections = len((outline_artifact or {}).get("sections") or [])
                     st.markdown(_chain_flow([
-                        ("文献来源", len(lit_sources), "已登记", "#2563eb"),
+                        ("文献来源", len(lit_sources), "已登记", "#1267e8"),
                         ("文献证据", len(lit_evidence_items), "逐字+位置+hash", "#0d9488"),
                         ("文献主张", len(lit_claim_items), f"已落地 {grounded_count}", "#7c3aed"),
                         ("全局论点", total_global, "", "#db2777"),

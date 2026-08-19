@@ -92,6 +92,7 @@ def _tmp_output_dir():
 
 def test_p0_glossary_staleness():
     tmp, old = _tmp_output_dir()
+    old_llm = core.call_llm
     try:
         jid = "st0000000000000001"
         docx_bytes = _make_docx([
@@ -152,6 +153,7 @@ def test_p0_glossary_staleness():
         print("  ✓ P0 glossary staleness：v2 冻结后受影响段失效 + TM 清除 + 交付回退")
     finally:
         core.OUTPUT_DIR = old
+        core.call_llm = old_llm
         shutil.rmtree(tmp, ignore_errors=True)
 
 
@@ -254,6 +256,7 @@ def test_glossary_hash_order_independence():
 
 def test_freeze_gate_backend_enforced():
     tmp, old = _tmp_output_dir()
+    old_llm = core.call_llm
     try:
         jid = "fg0000000000000001"
         state = core.new_job_state("f.docx")
@@ -488,6 +491,7 @@ def test_manifest_asset_consistency():
 
 def test_crash_recovery_no_duplicate_tm():
     tmp, old = _tmp_output_dir()
+    old_llm = core.call_llm
     try:
         jid = "cr0000000000000001"
         texts = [f"第{i}段，内容足够长以通过过滤检查。" for i in range(9)]
@@ -546,6 +550,7 @@ def test_crash_recovery_no_duplicate_tm():
         print("  ✓ 崩溃恢复：残留 tmp/中断批次 -> 恢复不丢段、TM 不重复")
     finally:
         core.OUTPUT_DIR = old
+        core.call_llm = old_llm
         shutil.rmtree(tmp, ignore_errors=True)
 
 
@@ -739,6 +744,7 @@ def _synthetic_segments(n=400):
 
 def test_long_document_simulation_and_performance():
     tmp, old = _tmp_output_dir()
+    old_llm = core.call_llm
     try:
         segs = _synthetic_segments(400)
         docx_bytes = _make_docx(segs)
@@ -818,6 +824,7 @@ def test_long_document_simulation_and_performance():
         print(f"  ✓ 长文模拟（synthetic 400 段）：quick={q} quality={ql}")
     finally:
         core.OUTPUT_DIR = old
+        core.call_llm = old_llm
         shutil.rmtree(tmp, ignore_errors=True)
 
 
