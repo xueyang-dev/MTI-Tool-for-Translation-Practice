@@ -1,8 +1,8 @@
 """任务状态机与旧 state.json 迁移。
 
 阶段（stage）：
-    INGESTED -> PROFILED -> TERMS_PREPARED -> GLOSSARY_FROZEN -> TRANSLATED
-    -> ANNOTATED -> REPORT_GENERATED -> REVIEW_REQUIRED / FINAL
+    INGESTED -> PROFILED -> TERMS_PREPARED -> GLOSSARY_FROZEN -> TRANSLATING -> TRANSLATED
+    -> ANNOTATED -> ACADEMIC_WRITING -> REPORT_GENERATED -> REVIEW_REQUIRED / FINAL
 
 兼容性：
 - 旧任务只有 p1_done / p2_done / p3_done / annotations_done；
@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any, Dict
 
 STAGES = (
-    "INGESTED", "PROFILED", "TERMS_PREPARED", "GLOSSARY_FROZEN", "TRANSLATED",
+    "INGESTED", "PROFILED", "TERMS_PREPARED", "GLOSSARY_FROZEN", "TRANSLATING", "TRANSLATED",
     "ANNOTATED", "ACADEMIC_WRITING", "ACADEMIC_REVIEW_REQUIRED",
     "ACADEMIC_FAILED", "REPORT_GENERATED", "REVIEW_REQUIRED", "FINAL",
 )
@@ -54,14 +54,24 @@ def derive_stage(state: Dict[str, Any]) -> str:
     """由现有里程碑标志推导当前阶段（不修改状态）。"""
     if not state.get("p1_done"):
         return "INGESTED"
-    if not state.get("profile_done") and not state.get("p2_done"):
+
+    # 1) 翻译已开始但尚未完成 → TRANSLATING
+    if state.get("p1_done") and not state.get("p2_done"):
+        pairs = state.get("pairs") or []
+        if pairs and (state.get("glossary_frozen") or state.get("quality_bypass")):
+            return "TRANSLATING"
+    # 2) 术语表已冻结 → GLOSSARY_FROZEN
+    if not state.get("p2_done") and state.get("glossary_frozen"):
+        return "GLOSSARY_FROZEN"
+    # 3) 术语已提取但未冻结 → TERMS_PREPARED（优先于 profile_done 检查）
+    if not state.get("p2_done") and (state.get("auto_term_entries") or state.get("auto_terms") \
+            or state.get("glossary") or state.get("glossary_draft")):
+        return "TERMS_PREPARED"
+    # 4) 画像完成 → PROFILED
+    if not state.get("p2_done") and state.get("profile_done"):
         return "PROFILED"
+    # 5) p1 完成但画像未完成 → PROFILED（仍可进入术语准备）
     if not state.get("p2_done"):
-        if state.get("glossary_frozen"):
-            return "GLOSSARY_FROZEN"
-        if state.get("auto_term_entries") or state.get("auto_terms") or \
-                state.get("glossary") or state.get("glossary_draft"):
-            return "TERMS_PREPARED"
         return "PROFILED"
     if state.get("has_blocking"):
         return "REVIEW_REQUIRED"

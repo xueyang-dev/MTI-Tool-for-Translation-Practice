@@ -8,6 +8,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import gui
 
 
+def test_brand_title():
+    assert gui.APP_TITLE == "TransPraxis / 译践"
+    print("  ✓ 桌面窗口品牌标题")
+
+
 def test_server_args():
     args = gui.server_args(8501, lan=False)
     assert args[:4] == ["-m", "streamlit", "run", "app.py"]
@@ -48,6 +53,7 @@ def test_lan_ip_is_ipv4():
 
 
 def main():
+    test_brand_title()
     test_server_args()
     test_pick_port()
     test_url_for()

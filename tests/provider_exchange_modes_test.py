@@ -174,6 +174,7 @@ def test_mode_semantics():
     core.OUTPUT_DIR = tmp
     prompts = []
     original_llm = core.call_llm
+    original_report = core.generate_mti_report
     try:
         def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
             prompts.append(system_prompt)
@@ -182,17 +183,18 @@ def test_mode_semantics():
         core.call_llm = llm
         docx_bytes = _make_docx(["The Skopos theory is important.", "Fidelity matters."])
 
-        # 快速模式：跳过画像，直接翻译完成
+        # 关闭严格术语治理：跳过画像，直接翻译完成
         jid = "qm000000000000001"
         state = core.run_job_pipeline(
             jid, "q.docx", docx_bytes, provider="DeepSeek", api_key="k",
             model="deepseek-chat", target_lang="简体中文", auto_term=False,
             enable_report=False, enable_review=False, enable_annotate=False,
             translation_theory="目的论 (Skopos Theory)", user_glossary=[],
-            mode="quick")
-        assert state["p2_done"] and not state["profile_done"], "快速模式应跳过文档画像"
+            strict_terminology_governance=False)
+        assert state["p2_done"] and not state["profile_done"], \
+            "关闭严格术语治理时应跳过文档画像"
 
-        # 高质量模式 + 导入锁定术语 + 无自动候选：无需冻结直接翻译
+        # 严格术语治理 + 导入锁定术语 + 无自动候选：无需冻结直接翻译
         jid2 = "qm000000000000002"
         user_glossary = [{"source": "Skopos theory", "target": "目的论",
                           "status": "locked", "behavior": "translate"}]
@@ -200,15 +202,30 @@ def test_mode_semantics():
             jid2, "q.docx", docx_bytes, provider="DeepSeek", api_key="k",
             model="deepseek-chat", target_lang="简体中文", auto_term=False,
             enable_report=False, enable_review=False, enable_annotate=False,
-            translation_theory="目的论 (Skopos Theory)",
-            user_glossary=user_glossary, mode="quality")
+            translation_theory="目的论 (Skopos Theory)", user_glossary=user_glossary,
+            strict_terminology_governance=True)
         assert state2["p2_done"], "导入锁定术语后不应被冻结门禁卡住"
-        assert state2["profile_done"], "高质量模式应执行文档画像"
+        assert state2["profile_done"], "严格术语治理应执行文档画像"
+
+        # 实践报告属于输出配置，不能隐式开启画像或术语冻结门禁。
+        core.generate_mti_report = lambda *args, **kwargs: "# 测试实践报告"
+        jid3 = "qm000000000000003"
+        state3 = core.run_job_pipeline(
+            jid3, "q.docx", docx_bytes, provider="DeepSeek", api_key="k",
+            model="deepseek-chat", target_lang="简体中文", auto_term=False,
+            enable_report=True, enable_review=False, enable_annotate=False,
+            translation_theory="自动推荐", user_glossary=[],
+            strict_terminology_governance=False)
+        assert state3["p2_done"] and state3["p3_done"], \
+            "开启实践报告后应完成翻译与报告"
+        assert not state3["profile_done"] and not state3["quality_mode"], \
+            "实践报告不能隐式开启文档画像或严格术语治理"
     finally:
         core.call_llm = original_llm
+        core.generate_mti_report = original_report
         core.OUTPUT_DIR = old_dir
         shutil.rmtree(tmp, ignore_errors=True)
-    print("  ✓ 模式语义（快速省画像；高质量+导入锁定术语免冻结）")
+    print("  ✓ 术语治理语义（与实践报告解耦；仅有锁定术语时免冻结）")
 
 
 def test_translation_memory_switch():
