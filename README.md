@@ -1,10 +1,13 @@
-# 🎓 MTI 翻译实践小助手 (Translation & Report Copilot)
+# 🎓 MTI 翻译实践小助手 — TransPraxis / 译践 (Translation & Report Copilot)
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-green.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-Ready-red.svg)
 
 **MTI 翻译实践小助手** 是一款专为 MTI（翻译硕士）与专职译员打造的、基于大语言模型（LLMs）的本地化工作流引擎。致力于解决传统翻译实践中 **“PDF断句稀烂、术语极难统一、实践报告难写”** 的三大痛点。
+
+**TransPraxis / 译践** 是它的完整产品名称，在启动器和界面中统一使用。
+
 
 ## ✨ 核心特性 (Features)
 
