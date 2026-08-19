@@ -288,6 +288,7 @@ def test_freeze_gate_backend_enforced():
         print("  ✓ freeze gate：backend translate_stage 强制（UI 禁用 ≠ 后端拒绝）")
     finally:
         core.OUTPUT_DIR = old
+        core.call_llm = old_llm
         shutil.rmtree(tmp, ignore_errors=True)
 
 
