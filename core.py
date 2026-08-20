@@ -29,27 +29,26 @@ OUTPUT_DIR = Path("outputs")
 
 # 提供商注册表：kind=openai_compat 走 OpenAI SDK 兼容接口（官方与中转站通用）。
 # base_url 为 None 表示使用官方 SDK 默认路由；custom_base_url 表示地址由用户在
-# UI 中填写（通用中转站）。OpenCode Go 模型列表来自官方 /v1/models 目录。
+# UI 中填写（通用中转站）。OpenCode Go 只列出官方标记为
+# /chat/completions 的模型；/messages 与 /responses 模型不走此路由。
 PROVIDERS = {
     "OpenCode Go": {
         "kind": "openai_compat",
         "base_url": "https://opencode.ai/zen/go/v1",
         "proxy_bypass": True,
+        "default_model": "glm-5.2",
         "models": [
-            "glm-5.2", "glm-5.1", "glm-5",
+            "glm-5.2", "glm-5.1",
             "deepseek-v4-pro", "deepseek-v4-flash",
-            "kimi-k3", "kimi-k2.7-code", "kimi-k2.6", "kimi-k2.5",
-            "qwen3.8-max", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-plus",
-            "qwen3.5-plus",
-            "minimax-m3", "minimax-m2.7", "minimax-m2.5",
-            "mimo-v2-pro", "mimo-v2-omni", "mimo-v2.5-pro", "mimo-v2.5",
-            "hy3", "hy3-preview", "gpt-5.6-luna", "grok-4.5",
+            "kimi-k3", "kimi-k2.7-code", "kimi-k2.6",
+            "mimo-v2.5-pro", "mimo-v2.5", "hy3", "grok-4.5",
         ],
     },
     "DeepSeek": {
         "kind": "openai_compat",
         "base_url": "https://api.deepseek.com",
-        "models": ["deepseek-v4-flash", "deepseek-chat", "deepseek-reasoner"],
+        "default_model": "deepseek-v4-flash",
+        "models": ["deepseek-v4-flash", "deepseek-v4-pro"],
     },
     "OpenAI": {
         "kind": "openai",
@@ -57,7 +56,9 @@ PROVIDERS = {
     },
     "Gemini": {
         "kind": "gemini",
-        "models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+        "default_model": "gemini-3.6-flash",
+        "models": ["gemini-3.6-flash", "gemini-3.5-flash",
+                   "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"],
     },
     "OpenRouter": {
         "kind": "openai_compat",

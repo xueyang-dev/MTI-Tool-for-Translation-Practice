@@ -99,7 +99,7 @@ def main() -> int:
     ap.add_argument("--mock", action="store_true")
     ap.add_argument("--code-ref", default="unknown")
     ap.add_argument("--provider", default="DeepSeek")
-    ap.add_argument("--model", default="deepseek-chat")
+    ap.add_argument("--model", default="deepseek-v4-flash")
     ap.add_argument("--target-lang", default="简体中文")
     ap.add_argument("--theory", default="目的论 (Skopos Theory)")
     ap.add_argument("--style-rules", default="保持学术书面语；专有名词、作者姓名、机构名、"

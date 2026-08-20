@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mti-tool"
-version = "0.1.1"
+version = "0.1.2"
 description = "MTI 翻译实践小助手 — Translation & Report Copilot"
 readme = "README.md"
 license = {text = "MIT"}

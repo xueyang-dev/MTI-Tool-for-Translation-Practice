@@ -222,6 +222,7 @@ def main():
                        for s in at.selectbox), "模型配置不应占据新建任务首屏"
 
         # Provider 设置是独立页面，模型目录仍按 A-Z 排序并支持中转站。
+        at.session_state["model_choice_DeepSeek"] = "deepseek-chat"
         next(b for b in at.sidebar.button if b.label == "设置").click()
         at.run()
         assert not at.exception, f"打开设置页异常：{at.exception}"
@@ -229,10 +230,12 @@ def main():
         assert engine_select.value == "DeepSeek"
         assert "自定义中转站" in engine_select.options
         model_select = next(s for s in at.selectbox if s.label == "模型")
+        assert model_select.value == "deepseek-v4-flash", \
+            "已退役的历史模型配置应回落到当前默认模型"
         model_opts = [o for o in model_select.options if o is not None]
         assert model_opts == sorted(model_opts, key=str.casefold)
         # API 配置必须跨页面保留（persist_state="session"）
-        model_select.select("deepseek-reasoner")
+        model_select.select("deepseek-v4-pro")
         at.run()
         next(t for t in at.text_input if t.label == "API 密钥").set_value("sk-persist")
         at.run()
@@ -241,14 +244,14 @@ def main():
         next(b for b in at.sidebar.button if b.label == "设置").click()
         at.run()
         assert next(s for s in at.selectbox if s.label == "模型").value == \
-            "deepseek-reasoner", "切换页面后模型选择必须保留"
+            "deepseek-v4-pro", "切换页面后模型选择必须保留"
         assert next(t for t in at.text_input if t.label == "API 密钥").value == \
             "sk-persist", "切换页面后 API 密钥必须保留"
         next(b for b in at.button if b.label == "保存配置").click()
         at.run()
         saved_cfg = core.load_provider_config()
         assert saved_cfg and saved_cfg["provider"] == "DeepSeek" \
-            and saved_cfg["model"] == "deepseek-reasoner" \
+            and saved_cfg["model"] == "deepseek-v4-pro" \
             and saved_cfg["api_key"] == "sk-persist", \
             "保存配置应把服务商/模型/密钥写入本地配置文件"
 

@@ -63,7 +63,7 @@ def main() -> int:
         "glossary": str(glossary_path),
         "tm_seed": "",
         "run": {
-            "provider": "DeepSeek", "model": "deepseek-chat",
+            "provider": "DeepSeek", "model": "deepseek-v4-flash",
             "target_lang": "简体中文",
             "translation_theory": "目的论 (Skopos Theory)",
             "style_rules": "", "enable_review": True,

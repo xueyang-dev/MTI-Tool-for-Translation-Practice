@@ -24,7 +24,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "tm_seed": "outputs/translation_memory.json",
     "run": {
         "provider": "DeepSeek",
-        "model": "deepseek-chat",
+        "model": "deepseek-v4-flash",
         "target_lang": "简体中文",
         "translation_theory": "目的论 (Skopos Theory)",
         "style_rules": "保持学术书面语；专有名词、作者姓名、机构名、引用标注、URL 等保留原文；"

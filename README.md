@@ -22,7 +22,7 @@
 - 🎨 **三色自动标注 (Auto-Marking)**：翻译完成后自动标注学习重点并在双语对照表中同时高亮原文与译文——生僻词/难词、专业名词（特殊译法，含术语表确定性覆盖）、翻译难点句（语序调整、拆合句、文化负载词处理等特别译法）三类颜色可在界面自定义。标注经过确定性过滤：14k 常用词表 + 词形还原、全书词频、单 token 限制、称谓/全常用词短语拦截，避免常用词被滥标为"生僻词"。
 - 🧠 **翻译记忆 (Translation Memory)**：审校通过的段落自动入库，后续任务精确命中直接复用，保证跨任务术语与表达一致。
 - 📝 **可恢复、可重生成的论文工作区**：研究问题、理论框架、论点、案例、提纲、章节、验证与审稿结果均作为版本化 JSON artifact 落盘；支持整篇、规划、单节、验证和审稿的独立重生成，无需重跑翻译。
-- 🛡️ **断点续传和稳定性 (Robustness)**：任务进度实时落盘到本地 `outputs/` 目录，浏览器刷新、电脑重启后都能从断点继续；内置 API 防崩限流策略与重试机制。支持 OpenCode Go（全量模型目录）、DeepSeek、OpenAI、Gemini、OpenRouter、SiliconFlow、Moonshot、Zhipu、Qwen 及任意 OpenAI 兼容中转站，模型可切换并支持连通性测试。
+- 🛡️ **断点续传和稳定性 (Robustness)**：任务进度实时落盘到本地 `outputs/` 目录，浏览器刷新、电脑重启后都能从断点继续；内置 API 防崩限流策略与重试机制。支持 OpenCode Go（Chat Completions 模型）、DeepSeek、OpenAI、Gemini、OpenRouter、SiliconFlow、Moonshot、Zhipu、Qwen 及任意 OpenAI 兼容中转站，模型可切换并支持连通性测试。
 - 🖋️ **产出排版 (Typography)**：生成的 Word 文档默认西文 Times New Roman、中文宋体，可直接用于 MTI 练习排版。
 
 > 📚 实战经验与内部规约（含多次真实事故的根因与防线）见 [docs/经验总结.md](docs/经验总结.md)，改动代码前建议先读。

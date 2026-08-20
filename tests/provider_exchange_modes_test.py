@@ -18,8 +18,15 @@ def test_provider_registry_sane():
         if cfg.get("custom_base_url"):
             assert cfg["base_url"] is None and name == "自定义中转站"
         if name == "OpenCode Go":
-            assert "glm-5.2" in cfg["models"] and "deepseek-v4-pro" in cfg["models"]
-            assert len(cfg["models"]) >= 20, "OpenCode Go 模型目录应完整"
+            assert cfg["models"] == [
+                "glm-5.2", "glm-5.1", "deepseek-v4-pro", "deepseek-v4-flash",
+                "kimi-k3", "kimi-k2.7-code", "kimi-k2.6",
+                "mimo-v2.5-pro", "mimo-v2.5", "hy3", "grok-4.5",
+            ], "OpenCode Go 只能列出 /chat/completions 模型"
+        if name == "DeepSeek":
+            assert cfg["models"] == ["deepseek-v4-flash", "deepseek-v4-pro"]
+        if name == "Gemini":
+            assert "gemini-2.0-flash" not in cfg["models"]
     print("  ✓ PROVIDERS 注册表（openai_compat / 模型目录完整）")
 
 
@@ -81,7 +88,7 @@ def test_provider_probe():
     original = core.OpenAI
     core.OpenAI = FakeOpenAI
     try:
-        ok, msg = core.test_provider("DeepSeek", "k", "deepseek-chat")
+        ok, msg = core.test_provider("DeepSeek", "k", "deepseek-v4-flash")
         assert ok and "OK" in msg
     finally:
         core.OpenAI = original
@@ -92,7 +99,7 @@ def test_provider_probe():
 
     core.OpenAI = Boom
     try:
-        ok, msg = core.test_provider("DeepSeek", "bad", "deepseek-chat")
+        ok, msg = core.test_provider("DeepSeek", "bad", "deepseek-v4-flash")
         assert not ok and "401" in msg
     finally:
         core.OpenAI = original

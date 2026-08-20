@@ -49,10 +49,12 @@ if _saved_provider_cfg:
             and f"api_key_{_saved_provider}" not in st.session_state:
         st.session_state[f"api_key_{_saved_provider}"] = \
             _saved_provider_cfg["api_key"]
-    if _saved_provider_cfg.get("model") \
+    _saved_model = _saved_provider_cfg.get("model")
+    _saved_models = core.PROVIDERS.get(_saved_provider, {}).get("models") or []
+    if _saved_model and (not _saved_models or _saved_model in _saved_models) \
             and f"model_choice_{_saved_provider}" not in st.session_state:
         st.session_state[f"model_choice_{_saved_provider}"] = \
-            _saved_provider_cfg["model"]
+            _saved_model
     if _saved_provider_cfg.get("base_url") \
             and "custom_base_url" not in st.session_state:
         st.session_state.custom_base_url = _saved_provider_cfg["base_url"]
@@ -1845,9 +1847,13 @@ if ai_provider not in core.PROVIDERS:
     ai_provider = default_provider
 provider_cfg = core.PROVIDERS[ai_provider]
 model_opts = sorted(provider_cfg.get("models") or [], key=str.casefold)
-default_model = "deepseek-v4-flash" if "deepseek-v4-flash" in model_opts \
-    else (model_opts[0] if model_opts else "")
+default_model = provider_cfg.get("default_model")
+if default_model not in model_opts:
+    default_model = model_opts[0] if model_opts else ""
 ai_model = st.session_state.get(f"model_choice_{ai_provider}", default_model)
+if model_opts and ai_model not in model_opts:
+    ai_model = default_model
+    st.session_state[f"model_choice_{ai_provider}"] = default_model
 api_key = st.session_state.get(f"api_key_{ai_provider}", "")
 api_base = st.session_state.get("custom_base_url", "") \
     if provider_cfg.get("custom_base_url") else None
@@ -1968,11 +1974,16 @@ with setup_placeholder.container():
         provider_cfg = core.PROVIDERS[ai_provider]
         model_opts = sorted(provider_cfg.get("models") or [], key=str.casefold)
         if model_opts:
-            default_model = "deepseek-v4-flash" if "deepseek-v4-flash" in model_opts else model_opts[0]
+            default_model = provider_cfg.get("default_model")
+            if default_model not in model_opts:
+                default_model = model_opts[0]
+            model_key = f"model_choice_{ai_provider}"
+            if st.session_state.get(model_key, default_model) not in model_opts:
+                st.session_state[model_key] = default_model
             ai_model = pc2.selectbox("模型", model_opts,
                                      index=model_opts.index(st.session_state.get(
-                                         f"model_choice_{ai_provider}", default_model)),
-                                     key=f"model_choice_{ai_provider}",
+                                         model_key, default_model)),
+                                     key=model_key,
                                      on_change=_reset_provider_connection,
                                      persist_state="session")
         else:

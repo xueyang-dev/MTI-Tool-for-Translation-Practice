@@ -10,7 +10,7 @@ Usage:
         --job-id ec100d8686d3891e \
         --theory "功能对等理论" \
         --research-questions "如何解释?" --research-questions "如何评价?" \
-        --provider DeepSeek --api-key sk-... --model deepseek-chat \
+        --provider DeepSeek --api-key sk-... --model deepseek-v4-flash \
         --out-dir eval/academic-quality/ec100d8686d3891e
 """
 from __future__ import annotations
