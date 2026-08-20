@@ -36,7 +36,7 @@ def pick_port(preferred: int = DEFAULT_PORT) -> int:
 
 def server_args(port: int, lan: bool) -> list[str]:
     """构造 streamlit 服务启动参数（headless，由本启动器负责打开界面）。"""
-    args = ["-m", "streamlit", "run", "app.py",
+    args = ["-m", "streamlit", "run", str(ROOT / "app.py"),
             "--server.headless", "true",
             "--server.port", str(port),
             "--browser.gatherUsageStats", "false"]
@@ -117,8 +117,7 @@ def main(argv=None) -> int:
         return 1
 
     port = pick_port(args.port)
-    proc = subprocess.Popen(
-        [sys.executable, *server_args(port, args.lan)], cwd=ROOT)
+    proc = subprocess.Popen([sys.executable, *server_args(port, args.lan)])
     url = url_for(port, args.lan)
     try:
         if not wait_ready(url):

@@ -1,17 +1,35 @@
 [build-system]
 requires = ["setuptools>=64"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "mti-tool"
-version = "0.1.0"
+version = "0.1.1"
 description = "MTI 翻译实践小助手 — Translation & Report Copilot"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
+dynamic = ["dependencies"]
 authors = [
   {name = "Xue Yang"}
 ]
 
+[project.optional-dependencies]
+desktop = ["pywebview>=5.0"]
+test = ["pytest>=8,<9"]
+
+[project.scripts]
+transpraxis = "gui:main"
+
+[tool.setuptools]
+py-modules = ["app", "core", "gui"]
+include-package-data = true
+
 [tool.setuptools.packages.find]
-include = ["mti_tool*", "eval*"]
+include = ["mti_tool*"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.package-data]
+mti_tool = ["resources/*.txt", "resources/brand/*.png"]

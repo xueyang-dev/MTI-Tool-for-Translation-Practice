@@ -943,7 +943,7 @@ ANNOT_BATCH_SIZE = 10
 ANNOT_MAX_PER_SEG = {"rare": 3, "domain": 3, "hard": 2}
 
 # 常用英语词表（en_50k 字幕语料前 14000 词），用于把 LLM 滥标的"生僻词"挡回去
-_DATA_DIR = Path(__file__).resolve().parent / "data"
+_DATA_DIR = Path(_models.__file__).resolve().parent / "resources"
 _COMMON_WORDS = None
 
 

@@ -15,7 +15,8 @@ def test_brand_title():
 
 def test_server_args():
     args = gui.server_args(8501, lan=False)
-    assert args[:4] == ["-m", "streamlit", "run", "app.py"]
+    assert args[:3] == ["-m", "streamlit", "run"]
+    assert Path(args[3]) == gui.ROOT / "app.py"
     assert "--server.headless" in args and "true" in args
     assert "--server.port" in args and "8501" in args
     assert "--server.address" not in args, "非 lan 模式不应绑定 0.0.0.0"

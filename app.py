@@ -19,7 +19,7 @@ from mti_tool import report_evidence as _report_evidence
 
 # ================= 页面全局设置 =================
 _APP_ROOT = Path(__file__).resolve().parent
-_BRAND_DIR = _APP_ROOT / "assets" / "brand"
+_BRAND_DIR = Path(_assets.__file__).resolve().parent / "resources" / "brand"
 _BRAND_MARK = _BRAND_DIR / "transpraxis-mark.png"
 _BRAND_FAVICON = _BRAND_DIR / "transpraxis-favicon.png"
 _BRAND_MARK_URI = "data:image/png;base64," + base64.b64encode(
