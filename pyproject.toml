@@ -3,9 +3,9 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mti-tool"
-version = "0.1.2"
-description = "MTI 翻译实践小助手 — Translation & Report Copilot"
+name = "transpraxis"
+version = "0.2.0"
+description = "TransPraxis / 译践 — Translation & Report Copilot"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
@@ -26,10 +26,10 @@ py-modules = ["app", "core", "gui"]
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["mti_tool*"]
+include = ["transpraxis*"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.package-data]
-mti_tool = ["resources/*.txt", "resources/brand/*.png"]
+transpraxis = ["resources/*.txt", "resources/brand/*.png"]

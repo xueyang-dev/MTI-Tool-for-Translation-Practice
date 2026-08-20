@@ -52,9 +52,9 @@ def build_tbx(glossary: List[models.GlossaryEntry],
     header = ET.SubElement(root, "martifHeader")
     filedesc = ET.SubElement(header, "fileDesc")
     srcd = ET.SubElement(filedesc, "sourceDesc")
-    ET.SubElement(srcd, "p").text = "MTI-Tool glossary export"
+    ET.SubElement(srcd, "p").text = "TransPraxis / 译践 glossary export"
     enc = ET.SubElement(header, "encodingDesc")
-    ET.SubElement(enc, "p", {"type": "XCSURI"}).text = "MTI-Tool default XCS"
+    ET.SubElement(enc, "p", {"type": "XCSURI"}).text = "TransPraxis / 译践 default XCS"
     text = ET.SubElement(root, "text")
     body = ET.SubElement(text, "body")
 
@@ -69,7 +69,7 @@ def build_tbx(glossary: List[models.GlossaryEntry],
         if e["behavior"] == "preserve":
             tig_tgt = ET.SubElement(langset_tgt, "tig")
             ET.SubElement(tig_tgt, "term").text = e["source"]
-            ET.SubElement(tig_tgt, "termNote", {"type": "mti:behavior"}).text = "preserve"
+            ET.SubElement(tig_tgt, "termNote", {"type": "transpraxis:behavior"}).text = "preserve"
         else:
             tig_tgt = ET.SubElement(langset_tgt, "tig")
             ET.SubElement(tig_tgt, "term").text = e["preferred"] or e["target"]
@@ -84,13 +84,13 @@ def build_tbx(glossary: List[models.GlossaryEntry],
         if e.get("domain"):
             ET.SubElement(descrip_grp, "descrip", {"type": "subjectField"}).text = e["domain"]
         if e.get("scope"):
-            ET.SubElement(descrip_grp, "descrip", {"type": "mti:scope"}).text = e["scope"]
+            ET.SubElement(descrip_grp, "descrip", {"type": "transpraxis:scope"}).text = e["scope"]
         if e.get("note"):
             ET.SubElement(descrip_grp, "descrip", {"type": "definition"}).text = e["note"]
         ev = (e.get("evidence") or [{}])[0]
         if ev.get("evidence_type"):
             ET.SubElement(descrip_grp, "descrip",
-                          {"type": "mti:evidence_type"}).text = ev["evidence_type"]
+                          {"type": "transpraxis:evidence_type"}).text = ev["evidence_type"]
     return (XML_DECL + ET.tostring(root, encoding="unicode")).encode("utf-8")
 
 
@@ -146,7 +146,7 @@ def build_tmx(state: Dict[str, Any],
     """双语对照 -> TMX 1.4 风格 XML（仅合格段落）。"""
     root = ET.Element("tmx", {"version": "1.4"})
     header = ET.SubElement(root, "header", {
-        "creationtool": "MTI-Tool",
+        "creationtool": "TransPraxis / 译践",
         "segtype": "paragraph",
         "adminlang": "en",
         "srclang": src_lang,
@@ -159,9 +159,9 @@ def build_tmx(state: Dict[str, Any],
         if not tmx_eligible(state, i, pair):
             continue
         tu = ET.SubElement(body, "tu", {"segid": segment_id(job_id, i)})
-        ET.SubElement(tu, "prop", {"type": "mti:segment_id"}).text = str(i)
-        ET.SubElement(tu, "prop", {"type": "mti:job_id"}).text = job_id
-        ET.SubElement(tu, "prop", {"type": "mti:from_tm"}).text = str(
+        ET.SubElement(tu, "prop", {"type": "transpraxis:segment_id"}).text = str(i)
+        ET.SubElement(tu, "prop", {"type": "transpraxis:job_id"}).text = job_id
+        ET.SubElement(tu, "prop", {"type": "transpraxis:from_tm"}).text = str(
             bool(pair.get("from_tm"))).lower()
         tuv_src = ET.SubElement(tu, "tuv", {"xml:lang": src_lang})
         ET.SubElement(tuv_src, "seg").text = pair["source"]

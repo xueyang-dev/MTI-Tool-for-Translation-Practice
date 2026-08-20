@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import academic_writer
+from transpraxis import academic_writer
 from scripts.prepare_closeout_literature import DEFAULT_OUT, prepare
 
 

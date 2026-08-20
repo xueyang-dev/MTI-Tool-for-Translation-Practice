@@ -9,8 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import academic_evidence, academic_quality, academic_validator
-from mti_tool import academic_writer, case_analysis, human_evidence
+from transpraxis import academic_evidence, academic_quality, academic_validator
+from transpraxis import academic_writer, case_analysis, human_evidence
 
 
 JOB = "revisionfixture"

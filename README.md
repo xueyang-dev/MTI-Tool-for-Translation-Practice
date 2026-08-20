@@ -1,12 +1,12 @@
-# 🎓 MTI 翻译实践小助手 — TransPraxis / 译践 (Translation & Report Copilot)
+# 🎓 TransPraxis / 译践 (Translation & Report Copilot)
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-green.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-Ready-red.svg)
 
-**MTI 翻译实践小助手** 是一款专为 MTI（翻译硕士）与专职译员打造的、基于大语言模型（LLMs）的本地化工作流引擎。致力于解决传统翻译实践中 **“PDF断句稀烂、术语极难统一、实践报告难写”** 的三大痛点。
+**TransPraxis / 译践** 是一款专为 MTI（翻译硕士）与专职译员打造的、基于大语言模型（LLMs）的本地化工作流引擎。致力于解决传统翻译实践中 **“PDF断句稀烂、术语极难统一、实践报告难写”** 的三大痛点。
 
-**TransPraxis / 译践** 是它的完整产品名称，在启动器和界面中统一使用。
+产品名称固定为 **TransPraxis / 译践**；GitHub 仓库使用 `TransPraxis`，Python 发行包、导入命名空间与启动命令统一使用 `transpraxis`。
 
 
 ## ✨ 核心特性 (Features)
@@ -87,7 +87,7 @@ python gui.py --lan
 ### 命令行
 命令行默认使用 OpenCode Go，并开启自动术语、独立审校、自动标注和实践报告；`--quality` 额外开启严格术语治理：
 ```bash
-export MTI_API_KEY="你的 API Key"
+export TRANSPRAXIS_API_KEY="你的 API Key"
 python scripts/translate_pdf.py "文档.pdf" --target-lang 简体中文 --quality
 ```
 

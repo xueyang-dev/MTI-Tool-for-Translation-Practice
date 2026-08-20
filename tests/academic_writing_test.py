@@ -10,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import academic_evidence, academic_validator, academic_writer, literature_evidence
-from mti_tool import thesis_constraints
+from transpraxis import academic_evidence, academic_validator, academic_writer, literature_evidence
+from transpraxis import thesis_constraints
 from scripts.run_chapter3_composition_pilot import _has_invalid_0272_count_claim
 import core
 from docx import Document

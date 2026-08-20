@@ -16,8 +16,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import academic_evidence, academic_quality, academic_validator
-from mti_tool import academic_writer, thesis_constraints
+from transpraxis import academic_evidence, academic_quality, academic_validator
+from transpraxis import academic_writer, thesis_constraints
 
 
 JOB_ID = "ec100d8686d3891e"

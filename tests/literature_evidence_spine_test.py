@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from docx import Document
 
-from mti_tool import academic_evidence, academic_validator, academic_writer
-from mti_tool import literature_evidence
+from transpraxis import academic_evidence, academic_validator, academic_writer
+from transpraxis import literature_evidence
 from tests.academic_writing_test import JOB, _state
 
 

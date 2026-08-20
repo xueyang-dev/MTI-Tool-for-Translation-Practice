@@ -1,8 +1,8 @@
-"""命令行翻译器：使用 MTI-Tool 核心流水线翻译 PDF/DOCX（含批次翻译、确定性检查、独立审校、翻译记忆）。
+"""命令行翻译器：使用 TransPraxis / 译践 核心流水线翻译 PDF/DOCX（含批次翻译、确定性检查、独立审校、翻译记忆）。
 
 用法：
   # 环境变量提供 API Key（DeepSeek/OpenCode Go/OpenAI/Gemini 任一）
-  export MTI_API_KEY=sk-xxx
+  export TRANSPRAXIS_API_KEY=sk-xxx
   # 翻译整个文档
   python scripts/translate_pdf.py "文档.pdf" --target-lang 简体中文
   # 只翻译前 40 页
@@ -10,7 +10,7 @@
   # 关闭审校（更快，但无翻译记忆与质量保障）
   python scripts/translate_pdf.py "文档.pdf" --no-review
 
-结果输出到 --out 目录（默认 ~/Downloads/MTI-翻译输出/）：
+结果输出到 --out 目录（默认 ~/Downloads/TransPraxis-翻译输出/）：
   阶段1_清洗原文.docx / 阶段2_双语对照.docx / 审查报告.md
 任务进度保存在项目 outputs/ 目录，中断后重新运行同一条命令即可继续。
 """
@@ -31,17 +31,17 @@ import core
 
 def resolve_key_and_model(provider, model):
     env_keys = {
-        "DeepSeek": ("MTI_API_KEY", "DEEPSEEK_API_KEY"),
-        "OpenCode Go": ("MTI_API_KEY", "OPENCODE_GO_API_KEY"),
-        "OpenAI": ("MTI_API_KEY", "OPENAI_API_KEY"),
-        "Gemini": ("MTI_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"),
+        "DeepSeek": ("TRANSPRAXIS_API_KEY", "DEEPSEEK_API_KEY"),
+        "OpenCode Go": ("TRANSPRAXIS_API_KEY", "OPENCODE_GO_API_KEY"),
+        "OpenAI": ("TRANSPRAXIS_API_KEY", "OPENAI_API_KEY"),
+        "Gemini": ("TRANSPRAXIS_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"),
     }
-    key = next((os.environ.get(k) for k in env_keys.get(provider, ["MTI_API_KEY"])
+    key = next((os.environ.get(k) for k in env_keys.get(provider, ["TRANSPRAXIS_API_KEY"])
                 if os.environ.get(k)), None)
     if not key:
         raise SystemExit(
             f"未找到 {provider} API Key。请先设置环境变量，例如：\n"
-            f"  export MTI_API_KEY=你的Key\n"
+            f"  export TRANSPRAXIS_API_KEY=你的Key\n"
             f"（或 DEEPSEEK_API_KEY / OPENCODE_GO_API_KEY / OPENAI_API_KEY / "
             f"GEMINI_API_KEY）")
     if not model:
@@ -72,14 +72,14 @@ def load_document(path, pages=None):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="MTI-Tool 命令行翻译器")
+    ap = argparse.ArgumentParser(description="TransPraxis / 译践 命令行翻译器")
     ap.add_argument("document", help="PDF 或 DOCX 路径")
     ap.add_argument("--provider", default="OpenCode Go", choices=list(core.MODELS))
     ap.add_argument("--model", default=None, help="默认取该 provider 第一个模型")
     ap.add_argument("--target-lang", default="简体中文",
                     choices=["简体中文", "English", "日本語"])
     ap.add_argument("--pages", default=None, help="仅 PDF：如 1-40，默认全部")
-    ap.add_argument("--out", default=str(Path.home() / "Downloads" / "MTI-翻译输出"))
+    ap.add_argument("--out", default=str(Path.home() / "Downloads" / "TransPraxis-翻译输出"))
     ap.add_argument("--no-review", action="store_true", help="关闭独立审校与翻译记忆")
     ap.add_argument("--no-report", action="store_true", help="不生成实践报告（默认生成）")
     ap.add_argument("--no-annotate", action="store_true",

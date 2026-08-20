@@ -27,7 +27,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
-from mti_tool import academic_evidence, academic_writer
+from transpraxis import academic_evidence, academic_writer
 
 
 def main() -> int:
@@ -48,9 +48,9 @@ def main() -> int:
     args = parser.parse_args()
     env_key = {"OpenCode Go": "OPENCODE_GO_API_KEY",
                "DeepSeek": "DEEPSEEK_API_KEY", "OpenAI": "OPENAI_API_KEY",
-               "Gemini": "GEMINI_API_KEY"}.get(args.provider, "MTI_API_KEY")
+               "Gemini": "GEMINI_API_KEY"}.get(args.provider, "TRANSPRAXIS_API_KEY")
     args.api_key = args.api_key or os.environ.get(env_key) or os.environ.get(
-        "MTI_API_KEY") or getpass.getpass("Provider API key: ")
+        "TRANSPRAXIS_API_KEY") or getpass.getpass("Provider API key: ")
     if not args.api_key:
         parser.error("API key is required")
 

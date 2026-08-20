@@ -16,8 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from docx import Document
 
 import core
-from mti_tool import academic_evidence, academic_quality, academic_validator, academic_writer
-from mti_tool import case_analysis, human_evidence, synthetic_cases
+from transpraxis import academic_evidence, academic_quality, academic_validator, academic_writer
+from transpraxis import case_analysis, human_evidence, synthetic_cases
 
 
 JOB = "syntheticfixture"

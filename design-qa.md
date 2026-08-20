@@ -128,7 +128,7 @@ final result: passed
 
 ### Interaction and responsive evidence
 
-- Browser title is `TransPraxis / 译践`; no visible `MTI Tool` product-brand text remains in the rendered shell.
+- Browser title and all visible product-brand text use `TransPraxis / 译践`.
 - Selected Standard preset renders with `#062b9a` border and `#eef3ff` tint; active workflow steps and enabled toggles use the same deep-blue family.
 - At 1280px and 900px viewport widths, document width equals viewport width with no horizontal page overflow.
 - At 900px, the sidebar remains 236px wide, the 46 × 24px mark and `TransPraxis` lockup remain fully visible, and horizontal overflow is clipped within the sidebar shell.
@@ -193,7 +193,7 @@ final result: passed
 
 ## Output and confirmation polish — 2026-08-13
 
-- Source visual truth: the user's prioritized Step 02–04 refinement specification in this task, grounded in the existing frozen MTI Tool shell.
+- Source visual truth: the user's prioritized Step 02–04 refinement specification in this task, grounded in the existing frozen TransPraxis / 译践 shell.
 - Implementation screenshots: `tmp/polish-step02-final.jpg`, `tmp/polish-step03.jpg`, `tmp/polish-step03-academic-final2.jpg`, and `tmp/polish-step04-final3.jpg`.
 - Viewport and density: 1280 × 720 CSS px; screenshots are 1280 × 720 encoded pixels; browser device pixel ratio 2. Source truth is a structural/text specification rather than a raster mock, so no image-density normalization was required.
 - States: Step 02 Standard preset with Advanced Settings expanded; Step 03 default output; Step 03 Practice Report enabled; Step 04 with an unconfigured AI engine.
@@ -338,7 +338,7 @@ final result: passed
 - Step 01 keeps the frozen structure and now shows one coherent state: `已上传 · 等待解析` with the right-side state `已上传`. The remove action is an icon-only control inside the file card.
 - Step 02 presents three equal workflow cards. Each card states intended use, concrete pipeline, and relative speed/cost trade-off; Standard has a distinct light-blue `推荐` badge.
 - Selected state uses an international-blue radio node, blue border, and subtle blue surface. Unselected cards remain white with neutral borders and readable dark text; no red selection semantics remain.
-- Advanced Settings is a white bordered continuation of the workspace, not a black console panel. Its grouped controls use the same blue interaction tokens as the rest of MTI Tool.
+- Advanced Settings is a white bordered continuation of the workspace, not a black console panel. Its grouped controls use the same blue interaction tokens as the rest of TransPraxis / 译践.
 
 ### Focused region comparison evidence
 
@@ -413,7 +413,7 @@ final result: passed
    - Post-fix evidence: file-state capture shows `ui-state-sample.docx`, `36 KB · 已添加，等待解析`, `文件已就绪`, `已保存`, and enabled Next.
 3. P2 — Provider status was visually truthful only by convention.
    - Fix: status now starts unverified, resets on credential/model/base changes, turns connected only after a successful test, and uses error semantics on failure.
-   - Post-fix evidence: browser reports `.mti-provider.is-unverified` in the untouched state; AppTest asserts it is not green by default.
+   - Post-fix evidence: browser reports `.tp-provider.is-unverified` in the untouched state; AppTest asserts it is not green by default.
 4. P2 — Users could attempt to jump to later steps without actionable feedback.
    - Fix: sidebar step requests are gated by source completion and show `请先上传原文。`; the completed node appears only after a file exists.
    - Post-fix evidence: AppTest verifies blocked and completed flows, and browser verification confirms the Step 01 completed node on Step 02.
@@ -600,7 +600,7 @@ final result: passed
     (now 932 × 414px), so the visible mark fills the element.
   - The mark is displayed at 116 × 52px (previously ~64 × 27px visible).
   - The brand markdown container's negative bottom margin is neutralized with
-    `:has(.mti-brand)`, and the brand block adds a 14px bottom margin,
+    `:has(.tp-brand)`, and the brand block adds a 14px bottom margin,
     producing a 22px gap between the subtitle and the New Task button.
   - Sidebar width is pinned to the 236px design token with `!important` so it
     no longer varies by frontend default (300px in some runs).
@@ -680,7 +680,7 @@ final result: passed
     flow 15px/600 `#24324A` (selected `#1E2F4D`); meta 13px/400 `#8A94A6`.
     Summary and meta stay neutral in the selected state.
   - Badge is a pill (`999px`, `#EAF2FF` on `#1267E8`) pushed to the header end.
-  - Card-internal rules use `.mti-preset-card .mti-preset-*` selectors with
+  - Card-internal rules use `.tp-preset-card .tp-preset-*` selectors with
     `!important` on flow/meta font sizes, because Streamlit's
     `[data-testid="stMarkdownContainer"] p` rule zeroes `margin-top` and the
     global `p { font-size: 14px !important }` rule would flatten the hierarchy.
@@ -709,19 +709,19 @@ final result: passed
   compact tags) so the three cards can be compared row by row, and replacing
   the long gray metadata sentence with two pill tags.
 - Changes:
-  - `.mti-preset-card` is now a CSS grid: `min-height: 182px`,
+  - `.tp-preset-card` is now a CSS grid: `min-height: 182px`,
     `padding: 20px 20px 18px`, `grid-template-rows: auto 44px 46px auto`,
     `row-gap: 8px`. All `p` margins are zeroed; the grid gap owns the rhythm,
     and the summary/flow rows are fixed two-line slots (44px / 46px) so rows
     align horizontally across all three cards at every width.
-  - Header row is fixed at 22px (`min-height` on `.mti-preset-head`): the
+  - Header row is fixed at 22px (`min-height` on `.tp-preset-head`): the
     `推荐` badge is ~22px tall, and without the fixed row the selected card
     was 2px taller than its siblings, breaking row alignment.
   - All cards use the same 1.5px border width (selected card only changes the
     border color), so border-box outer heights are identical; `height: 100%`
     was removed from the card so the grid sizes to its content instead of
     collapsing to `min-height` and squeezing the tag row against the bottom.
-  - Metadata is now two pill tags (`.mti-preset-tag`): 3px 8px padding, 6px
+  - Metadata is now two pill tags (`.tp-preset-tag`): 3px 8px padding, 6px
     radius, `#F1F4F8` on `#667085`, 11px/500; the selected card tints them
     `#EAF2FF` on `#3C67A8` only.
   - Copy normalized per spec: 快速 `快速生成可读初稿` + `最快 / 成本最低`;
@@ -751,8 +751,8 @@ final result: passed
     summary (`术语治理 · 翻译记忆 · 独立审校 · 基础检查`); only the
     left-aligned `高级设置` trigger remains. The now-unused
     `_strategy_summary()` helper and its CSS were removed.
-  - Vertical rhythm tightened: `.mti-title` bottom margin 36 → 24px,
-    `.mti-section-sub` bottom margin 24 → 16px, preset-card row top margin
+  - Vertical rhythm tightened: `.tp-title` bottom margin 36 → 24px,
+    `.tp-section-sub` bottom margin 24 → 16px, preset-card row top margin
     8 → 0. Measured title-to-section gap is 24px (was 36px).
 - Verified in headless Chrome at 1440 × 900: new copy on the academic card,
   4px 9px chips in `#EEF1F5`/`#5F6B7A`, advanced trigger text is only
@@ -804,7 +804,7 @@ final result: passed
   lightweight Quick Profiling step that recommends a style from predefined
   profiles (never free-form), a user-override path, versioned profile
   artifacts, and a deliverables-only Step 03.
-- New module `mti_tool/style_profile.py`:
+- New module `transpraxis/style_profile.py`:
   - Seven predefined profiles (academic / technical / professional / literary
     / legal / publicity / general) with Chinese display names, parameter maps,
     and translation rule texts; `profile_to_rules()` renders the selected

@@ -1,4 +1,4 @@
-"""受控 A/B/C/D 评测编排器（MTI Tool Evaluation Harness 入口）。
+"""受控 A/B/C/D 评测编排器（TransPraxis / 译践 Evaluation Harness 入口）。
 
 实验矩阵（Governance × Reviewed TM）：
     A = pre-governance（b4ae9ac）          + 无 reviewed TM
@@ -161,7 +161,7 @@ def run_arm(arm: str, *, code_root: Path, run_dir: Path, corpus_docx: Path,
     env = dict(os.environ)
     env["PYTHONPATH"] = str(code_root)
     if api_key:
-        env["MTI_EVAL_API_KEY"] = api_key
+        env["TRANSPRAXIS_EVAL_API_KEY"] = api_key
     proc = subprocess.run(cmd, cwd=str(code_root), env=env,
                           capture_output=True, text=True, timeout=8 * 3600)
     if proc.returncode != 0:
@@ -288,7 +288,7 @@ def _finalize(out_dir: Path, states: Dict[str, Dict[str, Any]],
 # ---------------- 主流程 ----------------
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="MTI Tool 受控 A/B/C/D 评测")
+    ap = argparse.ArgumentParser(description="TransPraxis / 译践 受控 A/B/C/D 评测")
     ap.add_argument("--config", default=None)
     ap.add_argument("--arms", default=None, help="如 ABCD 或 AB")
     ap.add_argument("--segments", default=None, help="如 0:300 或 all")
@@ -384,7 +384,7 @@ def main(argv=None) -> int:
     baseline_ref = cfg["code"]["baseline_ref"]
     baseline_wt = ensure_baseline_worktree(baseline_ref)
     current_ref = _git_head(ROOT)
-    api_key = os.environ.get("MTI_EVAL_API_KEY", "")
+    api_key = os.environ.get("TRANSPRAXIS_EVAL_API_KEY", "")
     tm_seed = Path(cfg["tm_seed"]).resolve() if cfg.get("tm_seed") else None
     if tm_seed is not None and not tm_seed.is_file():
         raise FileNotFoundError(f"TM 种子不存在：{tm_seed}")

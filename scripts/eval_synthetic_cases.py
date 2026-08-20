@@ -14,7 +14,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
-from mti_tool import academic_evidence, academic_writer, synthetic_cases
+from transpraxis import academic_evidence, academic_writer, synthetic_cases
 
 
 def _sha256(path: Path) -> str:
@@ -46,9 +46,9 @@ def main() -> int:
         "OpenCode Go": "OPENCODE_GO_API_KEY",
         "OpenAI": "OPENAI_API_KEY",
         "Gemini": "GEMINI_API_KEY",
-    }.get(args.provider, "MTI_API_KEY")
+    }.get(args.provider, "TRANSPRAXIS_API_KEY")
     api_key = args.api_key or os.environ.get(env_key) or os.environ.get(
-        "MTI_API_KEY") or getpass.getpass("Provider API key: ")
+        "TRANSPRAXIS_API_KEY") or getpass.getpass("Provider API key: ")
     if not api_key:
         parser.error("API key is required")
 

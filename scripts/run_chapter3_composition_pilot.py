@@ -23,8 +23,8 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 import core
-from mti_tool import academic_evidence, academic_quality, academic_validator
-from mti_tool import academic_writer, case_analysis
+from transpraxis import academic_evidence, academic_quality, academic_validator
+from transpraxis import academic_writer, case_analysis
 
 
 JOB = "ec100d8686d3891e"

@@ -26,7 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
-from mti_tool import state_migration
+from transpraxis import state_migration
 
 # 已知 failure modes（docs/经验总结.md）-> 回归测试覆盖
 KNOWN_FAILURE_MODES = [

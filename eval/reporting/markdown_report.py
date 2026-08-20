@@ -10,7 +10,7 @@ def write_markdown_report(report: Dict[str, Any], out_dir: Path) -> Path:
     p = out_dir / "evaluation-report.md"
     meta = report["meta"]
     lines = [
-        "# MTI Tool 评测报告（Evaluation Report）",
+        "# TransPraxis / 译践 评测报告（Evaluation Report）",
         "",
         f"- 语料：{meta.get('corpus', {}).get('job_id', '?')} "
         f"子集 {meta.get('corpus', {}).get('subset', '?')}",

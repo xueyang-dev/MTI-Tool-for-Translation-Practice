@@ -12,9 +12,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
-from mti_tool import document_profile, models, state_migration, terminology
-from mti_tool import assets, delivery
-from mti_tool import report_evidence
+from transpraxis import document_profile, models, state_migration, terminology
+from transpraxis import assets, delivery
+from transpraxis import report_evidence
 
 
 def test_document_profile_normalize_validate():
@@ -231,7 +231,7 @@ def test_state_migration_old_job():
 
 
 def test_core_load_job_state_migrates():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-mig-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-mig-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -346,7 +346,7 @@ def _make_docx(texts):
 
 
 def test_review_state_persist_and_restore():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-termstate-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-termstate-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -432,7 +432,7 @@ def _numbered(user_prompt):
 
 def test_apptest_term_review_panel():
     from streamlit.testing.v1 import AppTest
-    tmp = Path(tempfile.mkdtemp(prefix="mti-apptest-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-apptest-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -587,7 +587,7 @@ def test_conflict_detection():
 
 
 def test_batch_injection_log_and_prompt():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-inject-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-inject-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -690,7 +690,7 @@ def test_mark_fixed_then_final():
 
 
 def test_retranslate_segments():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-rt-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-rt-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -742,7 +742,7 @@ def test_retranslate_segments():
 
 
 def test_retranslate_keeps_postcheck_findings():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-rt-postcheck-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-rt-postcheck-"))
     old_dir = core.OUTPUT_DIR
     old_call = core.call_llm
     core.OUTPUT_DIR = tmp
@@ -774,7 +774,7 @@ def test_retranslate_keeps_postcheck_findings():
 
 
 def test_pipeline_blocking_delivery_status():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-deliv-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-deliv-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -1014,7 +1014,7 @@ def test_segment_evidence_bundle():
 
 
 def test_report_prompt_evidence_contract():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-rep-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-rep-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -1083,7 +1083,7 @@ def test_report_prompt_evidence_contract():
 
 
 def test_initial_target_recorded():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-init-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-init-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -1145,7 +1145,7 @@ def test_evidence_provider_interface():
 
 
 def test_unfreeze_back_to_edit():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-unfreeze-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-unfreeze-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:

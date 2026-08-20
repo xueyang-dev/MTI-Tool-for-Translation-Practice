@@ -4,8 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import models
-from mti_tool import style_profile
+from transpraxis import models
+from transpraxis import style_profile
 
 
 def test_profiles_are_predefined_and_closed():

@@ -13,9 +13,9 @@ import pandas as pd
 import streamlit as st
 
 import core
-from mti_tool import assets as _assets
-from mti_tool import delivery as _delivery
-from mti_tool import report_evidence as _report_evidence
+from transpraxis import assets as _assets
+from transpraxis import delivery as _delivery
+from transpraxis import report_evidence as _report_evidence
 
 # ================= 页面全局设置 =================
 _APP_ROOT = Path(__file__).resolve().parent
@@ -74,8 +74,8 @@ _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
- --mti-sidebar-width: 236px;
- --mti-main-gutter: 80px;
+ --tp-sidebar-width: 236px;
+ --tp-main-gutter: 80px;
  --tp-navy: #001471;
  --tp-brand-ink: #15379a;
  --tp-logo-blue: #057afe;
@@ -87,19 +87,19 @@ _CSS = """
  --tp-primary-soft-hover: #e5f0ff;
  --tp-border: #bed7ff;
  --tp-focus-ring: rgba(18,103,232,.22);
- --mti-canvas: #f7f8fa;
- --mti-surface: #ffffff;
- --mti-ink: #131c2e;
- --mti-sub: #667085;
- --mti-faint: #8a94a6;
- --mti-line: #dee3ea;
- --mti-line-subtle: #ebeef3;
- --mti-sidebar-line: #e7eaf0;
- --mti-success: #22a06b;
- --mti-danger: #dc2626;
- --mti-radius-sm: 6px;
- --mti-radius-md: 8px;
- --mti-radius-lg: 12px;
+ --tp-canvas: #f7f8fa;
+ --tp-surface: #ffffff;
+ --tp-ink: #131c2e;
+ --tp-sub: #667085;
+ --tp-faint: #8a94a6;
+ --tp-line: #dee3ea;
+ --tp-line-subtle: #ebeef3;
+ --tp-sidebar-line: #e7eaf0;
+ --tp-success: #22a06b;
+ --tp-danger: #dc2626;
+ --tp-radius-sm: 6px;
+ --tp-radius-md: 8px;
+ --tp-radius-lg: 12px;
  --action-bar-height: 80px;
 }
 
@@ -110,35 +110,35 @@ html, body, [class*="css"], .stApp, button, input, textarea, select {
 }
 
 .stApp {
- background: var(--mti-canvas);
+ background: var(--tp-canvas);
 }
 [data-testid="stHeader"] { display: none; }
 [data-testid="stDecoration"] { display: none; }
 footer { visibility: hidden; }
 [data-testid="stMainBlockContainer"] {
  width: min(100%, 1152px); max-width: 1152px; margin-left: 0; margin-right: auto;
- padding: 72px var(--mti-main-gutter) 40px;
+ padding: 72px var(--tp-main-gutter) 40px;
 }
 
 /* ---------- Typography ---------- */
 h1, h2, h3, h4, [data-testid="stHeadingWithActionElements"] {
- color: var(--mti-ink) !important;
+ color: var(--tp-ink) !important;
  letter-spacing: -.02em; font-weight: 650;
 }
 h1 { font-size: 34px !important; line-height: 1.2 !important; font-weight: 700 !important; }
 h2 { font-size: 23px !important; }
 h3 { font-size: 16px !important; }
 p, label, input, textarea, [data-baseweb="select"] { font-size: 14px !important; }
-[data-testid="stCaptionContainer"], .stCaption { color: var(--mti-sub); }
+[data-testid="stCaptionContainer"], .stCaption { color: var(--tp-sub); }
 a { color: var(--tp-primary); text-decoration-color: var(--tp-border); text-underline-offset: 2px; }
 a:hover { color: var(--tp-primary-hover); text-decoration-color: var(--tp-logo-blue); }
-hr { border-color: var(--mti-line); }
+hr { border-color: var(--tp-line); }
 ::selection { background: var(--tp-focus-ring); }
 
 /* ---------- Product shell ---------- */
 [data-testid="stSidebar"] {
- background: var(--mti-surface); border-right: 1px solid var(--mti-sidebar-line);
- width: var(--mti-sidebar-width) !important; min-width: var(--mti-sidebar-width) !important;
+ background: var(--tp-surface); border-right: 1px solid var(--tp-sidebar-line);
+ width: var(--tp-sidebar-width) !important; min-width: var(--tp-sidebar-width) !important;
  overflow-x: clip;
  transform: none !important;
 }
@@ -151,7 +151,7 @@ hr { border-color: var(--mti-line); }
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { line-height: 1.5; }
 /* Streamlit 会给 markdown 容器默认注入 -16px 下边距（补偿段落默认边距），
    品牌块没有段落默认边距，会被压缩导致副标题与下方按钮重叠，这里抵消掉。 */
-[data-testid="stSidebarContent"] [data-testid="stMarkdownContainer"]:has(.mti-brand) {
+[data-testid="stSidebarContent"] [data-testid="stMarkdownContainer"]:has(.tp-brand) {
  margin-bottom: 0;
 }
 [data-testid="stSidebar"] .stButton > button {
@@ -165,32 +165,32 @@ hr { border-color: var(--mti-line); }
  background: var(--tp-primary-soft); border-color: transparent;
  color: var(--tp-brand-ink); font-weight: 500;
 }
-.mti-brand {
+.tp-brand {
  display: flex; flex-direction: column; align-items: center;
  padding: 8px 0 0; margin-bottom: 14px; text-align: center;
 }
-.mti-brand-mark {
+.tp-brand-mark {
  display: block; width: 116px; height: auto; object-fit: contain;
  margin: 0 auto 4px;
 }
-.mti-brand-copy strong {
+.tp-brand-copy strong {
  display: block; overflow: hidden; color: var(--tp-navy); font-size: 18px;
  font-weight: 700; letter-spacing: -.025em; line-height: 1.12; text-overflow: ellipsis;
  white-space: nowrap;
 }
-.mti-brand-copy b {
+.tp-brand-copy b {
  display: block; margin-top: 3px; color: var(--tp-brand-ink); font-size: 12px;
  font-weight: 600; letter-spacing: .04em; line-height: 1.3;
 }
-.mti-brand > span {
+.tp-brand > span {
  display: block; margin-top: 8px; color: #7c8799; font-size: 10px;
  font-weight: 400; line-height: 1.4; white-space: nowrap;
 }
-.mti-nav-label {
+.tp-nav-label {
  margin: 18px 0 6px; color: #7c8799; font-size: 12px;
  font-weight: 500; letter-spacing: 0; line-height: 1.4;
 }
-.mti-nav-divider { height: 1px; margin: 24px 0; background: var(--mti-sidebar-line); }
+.tp-nav-divider { height: 1px; margin: 24px 0; background: var(--tp-sidebar-line); }
 .st-key-new_task_action .stButton > button {
  min-height: 44px; border: 1px solid #dce2ea; border-radius: 9px;
  background: #fff; color: #202a3a; font-size: 14px; font-weight: 500;
@@ -205,7 +205,7 @@ hr { border-color: var(--mti-line); }
 .st-key-task_steps .stButton { position: relative; z-index: 1; margin: 0; }
 .st-key-task_steps .stButton > button {
  min-height: 56px; height: 56px; padding: 0 8px; background: transparent;
- border-color: transparent; border-radius: var(--mti-radius-md); font-size: 14px;
+ border-color: transparent; border-radius: var(--tp-radius-md); font-size: 14px;
 }
 .st-key-task_steps .stButton > button > div { width: 100%; }
 .st-key-task_steps .stButton > button > div > span {
@@ -220,26 +220,26 @@ hr { border-color: var(--mti-line); }
  color: var(--tp-brand-ink) !important;
 }
 .st-key-task_steps [data-testid="stIconMaterial"] {
- position: relative; z-index: 2; background: var(--mti-surface); border-radius: 50%;
+ position: relative; z-index: 2; background: var(--tp-surface); border-radius: 50%;
  font-size: 18px;
 }
-[class*="st-key-task_step_done_"] [data-testid="stIconMaterial"] { color: var(--mti-success); }
+[class*="st-key-task_step_done_"] [data-testid="stIconMaterial"] { color: var(--tp-success); }
 [class*="st-key-task_step_current_"] [data-testid="stIconMaterial"] { color: var(--tp-logo-blue); }
 [class*="st-key-task_step_pending_"] [data-testid="stIconMaterial"] { color: #a8b2c1; }
 [class*="st-key-task_step_done_"] .stButton > button { color: #344054; font-weight: 500; }
 [class*="st-key-task_step_current_"] .stButton > button { color: var(--tp-brand-ink); font-weight: 600; }
 [class*="st-key-task_step_pending_"] .stButton > button { color: #536176; font-weight: 400; }
-.mti-engine-row, .mti-summary, .mti-pipeline, .mti-confirm-card {
- border: 1px solid var(--mti-line); border-radius: 10px; background: var(--mti-surface);
+.tp-engine-row, .tp-summary, .tp-pipeline, .tp-confirm-card {
+ border: 1px solid var(--tp-line); border-radius: 10px; background: var(--tp-surface);
 }
-.mti-engine-row { padding: 12px 14px; margin: 6px 0 18px; }
-.mti-engine-row strong { font-size: 13px; color: var(--mti-ink); }
-.mti-engine-row span { display: block; margin-top: 3px; font-size: 12px; color: var(--mti-sub); }
+.tp-engine-row { padding: 12px 14px; margin: 6px 0 18px; }
+.tp-engine-row strong { font-size: 13px; color: var(--tp-ink); }
+.tp-engine-row span { display: block; margin-top: 3px; font-size: 12px; color: var(--tp-sub); }
 .st-key-provider_status {
  position: fixed; left: 24px; bottom: 12px; z-index: 30;
- width: calc(var(--mti-sidebar-width) - 48px);
- margin: 0; padding: 20px 0 0; border-top: 1px solid var(--mti-sidebar-line);
- background: var(--mti-surface);
+ width: calc(var(--tp-sidebar-width) - 48px);
+ margin: 0; padding: 20px 0 0; border-top: 1px solid var(--tp-sidebar-line);
+ background: var(--tp-surface);
 }
 .st-key-provider_status [data-testid="stHorizontalBlock"] { align-items: center; gap: 6px; }
 .st-key-provider_status .stButton > button {
@@ -247,83 +247,83 @@ hr { border-color: var(--mti-line); }
  color: var(--tp-primary); font-size: 13px; font-weight: 500;
 }
 .st-key-provider_status .stButton > button:hover { color: var(--tp-primary-hover); background: transparent; }
-.mti-provider { position: relative; padding-left: 17px; }
-.mti-provider::before {
+.tp-provider { position: relative; padding-left: 17px; }
+.tp-provider::before {
  content: ""; position: absolute; left: 2px; top: 5px; width: 8px; height: 8px;
- border-radius: 50%; background: var(--mti-surface); border: 1px solid #98a2b3;
+ border-radius: 50%; background: var(--tp-surface); border: 1px solid #98a2b3;
 }
-.mti-provider.is-connected::before { background: var(--mti-success); border-color: var(--mti-success); }
-.mti-provider.is-error::before { background: var(--mti-danger); border-color: var(--mti-danger); }
-.mti-provider strong { display: block; color: #202a3a; font-size: 13px; font-weight: 600; }
-.mti-provider span {
+.tp-provider.is-connected::before { background: var(--tp-success); border-color: var(--tp-success); }
+.tp-provider.is-error::before { background: var(--tp-danger); border-color: var(--tp-danger); }
+.tp-provider strong { display: block; color: #202a3a; font-size: 13px; font-weight: 600; }
+.tp-provider span {
  display: block; margin-top: 3px; color: #7c8799; font-size: 11px; overflow-wrap: anywhere;
 }
-.mti-title { margin: 3px 0 24px; }
-.mti-title h1 {
- margin: 0; color: var(--mti-ink); font-size: 34px; font-weight: 700;
+.tp-title { margin: 3px 0 24px; }
+.tp-title h1 {
+ margin: 0; color: var(--tp-ink); font-size: 34px; font-weight: 700;
  line-height: 1.2; letter-spacing: -.025em;
 }
-.mti-title p {
+.tp-title p {
  margin: 16px 0 0; color: #707b8d; font-size: 15px !important; font-weight: 400;
 }
-.mti-section-title {
+.tp-section-title {
  margin: 0 0 8px; color: #172033; font-size: 23px;
  font-weight: 650; line-height: 1.3;
 }
-.mti-section-sub { margin: 0 0 16px; color: #718096; font-size: 14px; }
-.mti-summary { padding: 18px 20px; }
-.mti-summary-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 28px; }
-.mti-confirm-card .mti-summary-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
-.mti-summary-item span { display: block; font-size: 12px; color: var(--mti-sub); }
-.mti-summary-item strong { display: block; margin-top: 4px; font-size: 14px; color: var(--mti-ink); font-weight: 600; }
-.mti-summary-item.is-wide { grid-column: 1 / -1; }
-.mti-confirm-stack { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12px; }
-.mti-confirm-card { padding: 14px 16px; }
-.mti-confirm-head {
+.tp-section-sub { margin: 0 0 16px; color: #718096; font-size: 14px; }
+.tp-summary { padding: 18px 20px; }
+.tp-summary-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 28px; }
+.tp-confirm-card .tp-summary-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.tp-summary-item span { display: block; font-size: 12px; color: var(--tp-sub); }
+.tp-summary-item strong { display: block; margin-top: 4px; font-size: 14px; color: var(--tp-ink); font-weight: 600; }
+.tp-summary-item.is-wide { grid-column: 1 / -1; }
+.tp-confirm-stack { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12px; }
+.tp-confirm-card { padding: 14px 16px; }
+.tp-confirm-head {
  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
- color: var(--mti-ink); font-size: 14px;
+ color: var(--tp-ink); font-size: 14px;
 }
-.mti-confirm-head .material-symbols-rounded {
+.tp-confirm-head .material-symbols-rounded {
  color: var(--tp-primary); font-size: 18px; font-family: "Material Symbols Rounded" !important;
  font-weight: normal; font-style: normal; line-height: 1; font-feature-settings: "liga";
 }
-.mti-artifact-list { display: grid; grid-template-columns: 1fr; gap: 7px; }
-.mti-artifact-row {
+.tp-artifact-list { display: grid; grid-template-columns: 1fr; gap: 7px; }
+.tp-artifact-row {
  display: grid; grid-template-columns: 28px minmax(0,1fr) auto; align-items: center; gap: 8px;
- min-height: 52px; padding: 7px 10px; border: 1px solid var(--mti-line);
+ min-height: 52px; padding: 7px 10px; border: 1px solid var(--tp-line);
  border-radius: 8px; background: #fbfcfe;
 }
-.mti-artifact-row > .material-symbols-rounded {
+.tp-artifact-row > .material-symbols-rounded {
  color: var(--tp-primary); font-size: 19px; font-family: "Material Symbols Rounded" !important;
  font-weight: normal; font-style: normal; line-height: 1; font-feature-settings: "liga";
 }
-.mti-artifact-row strong { display: block; color: var(--mti-ink); font-size: 13px; }
-.mti-artifact-row div span { display: block; margin-top: 2px; color: var(--mti-sub); font-size: 11px; }
-.mti-artifact-row b { color: var(--mti-sub); font-size: 10px; font-weight: 650; }
-.mti-runtime-card { margin-top: 10px; }
-.mti-runtime-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
-.mti-runtime-grid span { display: block; color: var(--mti-sub); font-size: 11px; }
-.mti-runtime-grid strong { display: block; margin-top: 4px; color: var(--mti-ink); font-size: 13px; }
-.mti-status { position: relative; padding-left: 13px; }
-.mti-status::before {
+.tp-artifact-row strong { display: block; color: var(--tp-ink); font-size: 13px; }
+.tp-artifact-row div span { display: block; margin-top: 2px; color: var(--tp-sub); font-size: 11px; }
+.tp-artifact-row b { color: var(--tp-sub); font-size: 10px; font-weight: 650; }
+.tp-runtime-card { margin-top: 10px; }
+.tp-runtime-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.tp-runtime-grid span { display: block; color: var(--tp-sub); font-size: 11px; }
+.tp-runtime-grid strong { display: block; margin-top: 4px; color: var(--tp-ink); font-size: 13px; }
+.tp-status { position: relative; padding-left: 13px; }
+.tp-status::before {
  content: ""; position: absolute; left: 0; top: 5px; width: 7px; height: 7px;
  border-radius: 50%; background: #98a2b3;
 }
-.mti-status.is-success::before { background: var(--mti-success); }
-.mti-status.is-warning::before { background: #d97706; }
-.mti-status.is-error::before { background: var(--mti-danger); }
-.mti-flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.mti-flow span { font-size: 12px; color: var(--mti-sub); }
-.mti-flow b { color: #c4c7ce; font-weight: 500; }
+.tp-status.is-success::before { background: var(--tp-success); }
+.tp-status.is-warning::before { background: #d97706; }
+.tp-status.is-error::before { background: var(--tp-danger); }
+.tp-flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tp-flow span { font-size: 12px; color: var(--tp-sub); }
+.tp-flow b { color: #c4c7ce; font-weight: 500; }
 
 /* ---------- Controls & cards ---------- */
 div[data-testid="stVerticalBlockBorderWrapper"] {
- border: 1px solid var(--mti-line); border-radius: 10px;
- background: var(--mti-surface); box-shadow: none;
+ border: 1px solid var(--tp-line); border-radius: 10px;
+ background: var(--tp-surface); box-shadow: none;
 }
 .stButton > button, [data-testid="stDownloadButton"] > button {
- min-height: 44px; border-radius: var(--mti-radius-md); font-weight: 500; cursor: pointer;
- border: 1px solid var(--mti-line); background: var(--mti-surface); color: var(--mti-ink);
+ min-height: 44px; border-radius: var(--tp-radius-md); font-weight: 500; cursor: pointer;
+ border: 1px solid var(--tp-line); background: var(--tp-surface); color: var(--tp-ink);
  box-shadow: none; transition: border-color .15s ease, background .15s ease, color .15s ease;
 }
 .stButton > button:hover, [data-testid="stDownloadButton"] > button:hover {
@@ -355,10 +355,10 @@ button[data-baseweb="tab"]:focus-visible, summary:focus-visible {
 
 /* ---------- Tabs ---------- */
 [data-testid="stTabs"] [role="tablist"] {
- background: transparent; border-bottom: 1px solid var(--mti-line); padding: 0; gap: 22px;
+ background: transparent; border-bottom: 1px solid var(--tp-line); padding: 0; gap: 22px;
 }
 button[data-baseweb="tab"] {
- border-radius: 0 !important; padding: 7px 0 9px; font-weight: 550; color: var(--mti-sub); background: transparent;
+ border-radius: 0 !important; padding: 7px 0 9px; font-weight: 550; color: var(--tp-sub); background: transparent;
 }
 button[data-baseweb="tab"]:hover { color: var(--tp-primary-hover); }
 button[data-baseweb="tab"][aria-selected="true"] {
@@ -370,11 +370,11 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 [data-testid="stTextInput"] input,
 [data-testid="stNumberInput"] input,
 [data-testid="stTextArea"] textarea {
- border-radius: var(--mti-radius-md) !important; border-color: #dce2ea !important;
- background: var(--mti-surface) !important; color: var(--mti-ink) !important;
- caret-color: var(--mti-ink) !important;
+ border-radius: var(--tp-radius-md) !important; border-color: #dce2ea !important;
+ background: var(--tp-surface) !important; color: var(--tp-ink) !important;
+ caret-color: var(--tp-ink) !important;
 }
-[data-testid="stTextArea"] textarea::placeholder { color: var(--mti-sub) !important; }
+[data-testid="stTextArea"] textarea::placeholder { color: var(--tp-sub) !important; }
 [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input,
 [data-baseweb="select"] > div { min-height: 44px; }
 [data-testid="stTextInput"] input:focus,
@@ -384,24 +384,24 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  box-shadow: 0 0 0 3px rgba(18,103,232,.14) !important;
 }
 .stSelectbox .react-aria-ComboBox > div {
- min-height: 44px; border-radius: var(--mti-radius-md) !important;
+ min-height: 44px; border-radius: var(--tp-radius-md) !important;
  border: 1px solid #dce2ea !important;
- background: var(--mti-surface) !important; color: var(--mti-ink) !important;
+ background: var(--tp-surface) !important; color: var(--tp-ink) !important;
  box-shadow: none !important;
 }
 .stSelectbox [role="combobox"] {
  border: 0 !important; border-radius: 8px !important; background: transparent !important;
- color: var(--mti-ink) !important; box-shadow: none !important;
+ color: var(--tp-ink) !important; box-shadow: none !important;
 }
 .stSelectbox [role="combobox"] *,
-.stSelectbox [role="combobox"] svg { color: var(--mti-ink) !important; fill: currentColor !important; }
+.stSelectbox [role="combobox"] svg { color: var(--tp-ink) !important; fill: currentColor !important; }
 .stSelectbox .react-aria-ComboBox button {
- background: transparent !important; border: 0 !important; color: var(--mti-ink) !important;
+ background: transparent !important; border: 0 !important; color: var(--tp-ink) !important;
  box-shadow: none !important;
 }
 .stSelectbox .react-aria-ComboBox button svg,
 .stSelectbox .react-aria-ComboBox button [data-testid="stIconMaterial"] {
- color: var(--mti-ink) !important; fill: currentColor !important; visibility: visible !important;
+ color: var(--tp-ink) !important; fill: currentColor !important; visibility: visible !important;
 }
 [data-baseweb="select"] > div:focus-within {
  border-color: #69a7f8 !important;
@@ -412,7 +412,7 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  box-shadow: 0 0 0 3px rgba(18,103,232,.14) !important;
 }
 [data-testid="stFileUploaderDropzone"] {
- min-height: 148px; border-radius: var(--mti-radius-lg);
+ min-height: 148px; border-radius: var(--tp-radius-lg);
  border: 1px dashed #c8d6ea; background: #fff;
  transition: all .15s ease;
 }
@@ -420,14 +420,14 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  border-color: #79b4ff; background: #f7fbff;
 }
 .st-key-source_documents { position: relative; }
-.mti-source-label {
+.tp-source-label {
  margin: 0 0 8px; color: #202a3a; font-size: 15px; font-weight: 600; line-height: 20px;
 }
-.st-key-source_documents .mti-upload-copy {
+.st-key-source_documents .tp-upload-copy {
  position: absolute; z-index: 2; pointer-events: none; top: 80px; left: 0; right: 0;
  display: flex; flex-direction: column; align-items: center; text-align: center;
 }
-.mti-upload-copy .material-symbols-rounded {
+.tp-upload-copy .material-symbols-rounded {
  margin-bottom: 5px; color: var(--tp-cyan); font-size: 24px;
  font-family: "Material Symbols Rounded" !important; font-weight: normal;
  font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none;
@@ -435,8 +435,8 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  -webkit-font-feature-settings: "liga"; -webkit-font-smoothing: antialiased;
  font-feature-settings: "liga";
 }
-.mti-upload-copy span { color: #202a3a; font-size: 14px; font-weight: 600; }
-.mti-upload-copy small { margin-top: 7px; color: #8590a2; font-size: 12px; }
+.tp-upload-copy span { color: #202a3a; font-size: 14px; font-weight: 600; }
+.tp-upload-copy small { margin-top: 7px; color: #8590a2; font-size: 12px; }
 .st-key-source_documents [data-testid="stFileUploaderDropzone"] {
  position: relative; padding: 0; align-items: stretch; justify-content: stretch; cursor: pointer;
 }
@@ -459,17 +459,17 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  border-color: var(--tp-primary); background: var(--tp-primary-soft);
  box-shadow: inset 0 0 0 1px rgba(18,103,232,.08), 0 0 0 3px rgba(18,103,232,.14);
 }
-.st-key-source_documents:has([data-testid="stFileChip"]) .mti-upload-copy {
+.st-key-source_documents:has([data-testid="stFileChip"]) .tp-upload-copy {
  display: none !important;
 }
 .st-key-source_documents:has([data-testid="stFileChip"])
  [data-testid="stFileUploaderDropzone"] {
  min-height: 116px; padding: 14px 16px; cursor: default;
- border-style: solid; border-color: var(--mti-line); background: var(--mti-surface);
+ border-style: solid; border-color: var(--tp-line); background: var(--tp-surface);
 }
 .st-key-source_documents:has([data-testid="stFileChip"])
  [data-testid="stFileUploaderDropzone"]:hover {
- border-color: var(--mti-line); background: var(--mti-surface);
+ border-color: var(--tp-line); background: var(--tp-surface);
 }
 .st-key-source_documents [data-testid="stFileChips"] {
  display: block; width: 100%; max-height: none; overflow: visible;
@@ -481,7 +481,7 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 .st-key-source_documents [data-testid="stFileChip"] {
  position: relative; display: flex !important; align-items: flex-start;
  min-height: 86px; padding: 2px 0 32px; gap: 12px;
- border-radius: 0; background: transparent !important; color: var(--mti-ink);
+ border-radius: 0; background: transparent !important; color: var(--tp-ink);
 }
 .st-key-source_documents [data-testid="stFileChip"] > div:first-child {
  width: 36px; height: 36px; flex: 0 0 36px;
@@ -495,17 +495,17 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  min-width: 0; padding-top: 1px;
 }
 .st-key-source_documents [data-testid="stFileChipName"] {
- display: block !important; overflow: hidden; color: var(--mti-ink) !important;
+ display: block !important; overflow: hidden; color: var(--tp-ink) !important;
  font-size: 0 !important; font-weight: 600; line-height: 20px;
  text-overflow: ellipsis; white-space: nowrap;
 }
 .st-key-source_documents [data-testid="stFileChipName"]::before {
  content: attr(title); display: block; overflow: hidden;
- color: var(--mti-ink); font-size: 14px; line-height: 20px;
+ color: var(--tp-ink); font-size: 14px; line-height: 20px;
  text-overflow: ellipsis; white-space: nowrap;
 }
 .st-key-source_documents [data-testid="stFileChip"] > div:nth-child(2) > div:last-child {
- color: var(--mti-sub) !important; font-size: 12px !important;
+ color: var(--tp-sub) !important; font-size: 12px !important;
 }
 .st-key-source_documents [data-testid="stFileChipDeleteBtn"] {
  display: flex !important; position: absolute; top: 0; right: 0;
@@ -514,7 +514,7 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  width: 30px !important; height: 30px !important; color: #7b8493 !important;
 }
 .st-key-source_documents [data-testid="stFileChipDeleteBtn"] button:hover {
- color: var(--mti-danger) !important; background: #fef2f2 !important;
+ color: var(--tp-danger) !important; background: #fef2f2 !important;
 }
 .st-key-source_documents [data-testid="stFileChip"]::before {
  content: "上传中…"; position: absolute; left: 48px; bottom: 14px;
@@ -525,48 +525,48 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  height: 3px; overflow: hidden; border-radius: 999px;
  background: linear-gradient(90deg, var(--tp-primary-soft) 0%, var(--tp-primary) 50%, var(--tp-primary-soft) 100%);
  background-repeat: no-repeat; background-size: 42% 100%;
- animation: mti-upload-bar 1.15s ease-in-out infinite;
+ animation: tp-upload-bar 1.15s ease-in-out infinite;
 }
 .st-key-source_documents [data-testid="stFileUploaderDropzone"] [aria-label="Add files"] {
  display: none !important;
 }
-.mti-source-file {
+.tp-source-file {
  position: relative; display: flex; align-items: center; gap: 12px;
  min-height: 82px; padding: 13px 14px;
- border: 1px solid var(--mti-line); border-radius: 10px; background: var(--mti-surface);
+ border: 1px solid var(--tp-line); border-radius: 10px; background: var(--tp-surface);
 }
-.mti-source-file .material-symbols-rounded {
+.tp-source-file .material-symbols-rounded {
  color: var(--tp-primary); font-size: 22px; font-family: "Material Symbols Rounded" !important;
  font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal;
  text-transform: none; white-space: nowrap; font-feature-settings: "liga";
 }
-.mti-source-file .material-symbols-rounded.is-loading { animation: mti-spin .8s linear infinite; }
-.mti-source-file-copy { min-width: 0; flex: 1; }
-.mti-source-file-copy strong {
- display: -webkit-box; overflow: hidden; color: var(--mti-ink); font-size: 14px;
+.tp-source-file .material-symbols-rounded.is-loading { animation: tp-spin .8s linear infinite; }
+.tp-source-file-copy { min-width: 0; flex: 1; }
+.tp-source-file-copy strong {
+ display: -webkit-box; overflow: hidden; color: var(--tp-ink); font-size: 14px;
  line-height: 1.4; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
 }
-.mti-source-file-copy span { display: block; margin-top: 3px; color: var(--mti-sub); font-size: 12px; }
-.mti-source-file-copy .mti-source-file-status {
+.tp-source-file-copy span { display: block; margin-top: 3px; color: var(--tp-sub); font-size: 12px; }
+.tp-source-file-copy .tp-source-file-status {
  display: inline; margin: 0; color: var(--tp-primary-hover); font-size: 12px;
  font-weight: 600; white-space: nowrap;
 }
-.mti-source-file-status.is-uploaded, .mti-source-file-status.is-parsing { color: var(--tp-primary); }
-.mti-source-file-status.is-parsed { color: var(--mti-success); }
-.mti-source-file-status.is-error { color: var(--mti-danger); }
-.mti-source-ready {
- position: absolute; right: 14px; bottom: 13px; color: var(--mti-success);
+.tp-source-file-status.is-uploaded, .tp-source-file-status.is-parsing { color: var(--tp-primary); }
+.tp-source-file-status.is-parsed { color: var(--tp-success); }
+.tp-source-file-status.is-error { color: var(--tp-danger); }
+.tp-source-ready {
+ position: absolute; right: 14px; bottom: 13px; color: var(--tp-success);
  font-size: 12px; font-weight: 650;
 }
-@keyframes mti-spin { to { transform: rotate(360deg); } }
-@keyframes mti-upload-bar {
+@keyframes tp-spin { to { transform: rotate(360deg); } }
+@keyframes tp-upload-bar {
  from { background-position: -72% 0; }
  to { background-position: 172% 0; }
 }
 .st-key-source_file_summary { margin-bottom: 8px; }
 .st-key-source_file_card { position: relative; min-height: 82px; }
-.st-key-source_file_card .mti-source-file { padding-right: 82px; }
-.st-key-source_file_card > [data-testid="stElementContainer"]:has(.mti-source-file) {
+.st-key-source_file_card .tp-source-file { padding-right: 82px; }
+.st-key-source_file_card > [data-testid="stElementContainer"]:has(.tp-source-file) {
  position: relative; z-index: 1;
 }
 .st-key-source_file_card > [data-testid="stElementContainer"]:has(.stButton) {
@@ -583,7 +583,7 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 }
 .st-key-source_file_card .stButton button:hover {
  border-color: #fecaca !important; background: #fef2f2 !important;
- color: var(--mti-danger) !important;
+ color: var(--tp-danger) !important;
 }
 .st-key-source_file_card .stButton p {
  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -595,28 +595,28 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  color: #202a3a !important; opacity: 1 !important;
  font-size: 15px !important; font-weight: 600 !important;
 }
-.mti-field-head { margin-top: 14px; }
-.mti-field-head strong { display: block; color: #202a3a; font-size: 15px; font-weight: 600; }
-.mti-field-head span { display: block; margin-top: 4px; color: #7c8799; font-size: 13px; }
+.tp-field-head { margin-top: 14px; }
+.tp-field-head strong { display: block; color: #202a3a; font-size: 15px; font-weight: 600; }
+.tp-field-head span { display: block; margin-top: 4px; color: #7c8799; font-size: 13px; }
 .st-key-termbase_attach { max-width: 340px; margin-top: 10px; }
 .st-key-termbase_attach .stButton > button {
- background: var(--mti-surface) !important; border-color: var(--mti-line) !important;
- color: var(--mti-ink) !important;
+ background: var(--tp-surface) !important; border-color: var(--tp-line) !important;
+ color: var(--tp-ink) !important;
 }
 .st-key-termbase_attach .stButton > button:hover {
  background: #f7f9fc !important; border-color: #c9d2df !important; color: #202a3a !important;
 }
 .st-key-termbase_picker { max-width: 620px; margin-top: 8px; }
 .st-key-termbase_picker [data-testid="stFileUploaderDropzone"] { min-height: 96px; }
-.mti-attachment {
+.tp-attachment {
  display: flex; align-items: center; min-height: 62px; padding: 11px 13px;
- border: 1px solid var(--mti-line); border-radius: 8px; background: #fff;
+ border: 1px solid var(--tp-line); border-radius: 8px; background: #fff;
 }
-.mti-attachment strong { display: block; color: var(--mti-ink); font-size: 13px; overflow-wrap: anywhere; }
-.mti-attachment span { display: block; margin-top: 3px; color: var(--mti-sub); font-size: 12px; }
+.tp-attachment strong { display: block; color: var(--tp-ink); font-size: 13px; overflow-wrap: anywhere; }
+.tp-attachment span { display: block; margin-top: 3px; color: var(--tp-sub); font-size: 12px; }
 .st-key-termbase_attached { max-width: 620px; margin-top: 10px; }
 .st-key-termbase_attached [data-testid="stHorizontalBlock"] { align-items: center; }
-.st-key-termbase_attached .stButton > button { color: var(--mti-danger); }
+.st-key-termbase_attached .stButton > button { color: var(--tp-danger); }
 /* 操作栏参与正文流：sticky 固定在滚动区底部，滚动到底时停留在文档流末尾，
    不再悬浮覆盖正文。sticky 必须设在包含操作栏的流式 wrapper 上，否则操作栏
    会被自身的短包含块限制而无法吸附到滚动区底部。 */
@@ -630,8 +630,8 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
 .st-key-task_action_bar [data-testid="stHorizontalBlock"] { align-items: center; }
-.mti-autosave { color: #667085; font-size: 12px; }
-.mti-autosave.is-saved { color: var(--mti-success); }
+.tp-autosave { color: #667085; font-size: 12px; }
+.tp-autosave.is-saved { color: var(--tp-success); }
 .st-key-task_action_bar button[data-testid="stBaseButton-primary"] {
  min-width: 180px; min-height: 48px; height: 48px;
  border-radius: 9px; font-size: 15px; font-weight: 500;
@@ -643,7 +643,7 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 .st-key-library_nav .stButton > button {
  display: flex; align-items: center; justify-content: flex-start;
  min-height: 48px; height: 48px; gap: 14px; padding-inline: 10px;
- border-radius: var(--mti-radius-md); color: #536176; font-size: 14px;
+ border-radius: var(--tp-radius-md); color: #536176; font-size: 14px;
  font-weight: 400; text-align: left;
 }
 .st-key-library_nav .stButton > button > div { width: 100%; }
@@ -677,35 +677,35 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 [class*="st-key-preset_card_"] [data-testid="stElementContainer"] > [data-testid="stMarkdown"],
 [class*="st-key-preset_card_"] [data-testid="stMarkdown"] > div,
 [class*="st-key-preset_card_"] [data-testid="stMarkdownContainer"] { height: 100%; }
-.mti-preset-card {
+.tp-preset-card {
  min-height: 182px; padding: 20px 20px 18px;
  display: grid; grid-template-rows: auto 44px 46px auto; row-gap: 8px;
  border: 1.5px solid #dce2ea; border-radius: 12px;
  background: #ffffff; transition: border-color .18s ease, background .18s ease;
 }
-[class*="st-key-preset_card_"]:hover .mti-preset-card {
+[class*="st-key-preset_card_"]:hover .tp-preset-card {
  border-color: #c5d1e0; background: #fbfcfe;
 }
-[class*="st-key-preset_card_"][class*="_selected"] .mti-preset-card {
+[class*="st-key-preset_card_"][class*="_selected"] .tp-preset-card {
  border-color: #4e93f4; background: #f7fbff;
 }
 /* header 行固定 22px：推荐 badge 的行高约 22px，若不固定会让选中卡
    的头部行比其他卡高 2px，破坏三卡横向对齐。 */
-.mti-preset-head { display: flex; align-items: center; gap: 10px; min-height: 22px; }
-.mti-preset-head .material-symbols-rounded {
+.tp-preset-head { display: flex; align-items: center; gap: 10px; min-height: 22px; }
+.tp-preset-head .material-symbols-rounded {
  color: #98a2b3; font-family: "Material Symbols Rounded" !important;
  font-size: 18px; font-weight: normal; line-height: 1; font-feature-settings: "liga";
 }
-[class*="st-key-preset_card_"][class*="_selected"] .mti-preset-head .material-symbols-rounded {
+[class*="st-key-preset_card_"][class*="_selected"] .tp-preset-head .material-symbols-rounded {
  color: var(--tp-primary);
 }
-.mti-preset-head strong {
+.tp-preset-head strong {
  color: #172033; font-size: 16px; font-weight: 700; line-height: 1.25;
 }
-[class*="st-key-preset_card_"][class*="_selected"] .mti-preset-head strong {
+[class*="st-key-preset_card_"][class*="_selected"] .tp-preset-head strong {
  color: #15379a;
 }
-.mti-preset-badge {
+.tp-preset-badge {
  margin-left: auto; padding: 2px 8px; border-radius: 999px;
  background: #eaf2ff; color: #1267e8;
  font-size: 11px; font-weight: 600; line-height: 1.6;
@@ -714,56 +714,56 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
    grid row-gap 负责间距，p 的内外边距清零（Streamlit 自带 p 规则
    specificity 更高，这里用卡片内选择器覆盖）；flow 字号需要
    !important 才能压过全局 p 字号规则。 */
-.mti-preset-card .mti-preset-purpose {
+.tp-preset-card .tp-preset-purpose {
  margin: 0; color: #667085; font-size: 14px; font-weight: 400; line-height: 1.55;
 }
-.mti-preset-card .mti-preset-flow {
+.tp-preset-card .tp-preset-flow {
  margin: 0; color: #24324a; font-size: 15px !important;
  font-weight: 600; line-height: 1.5;
 }
-[class*="st-key-preset_card_"][class*="_selected"] .mti-preset-flow {
+[class*="st-key-preset_card_"][class*="_selected"] .tp-preset-flow {
  color: #1e2f4d;
 }
-.mti-preset-tags {
+.tp-preset-tags {
  display: flex; align-items: center; gap: 6px; min-height: 22px;
 }
-.mti-preset-tag {
+.tp-preset-tag {
  padding: 4px 9px; border-radius: 6px;
  background: #eef1f5; color: #5f6b7a;
  font-size: 11px; font-weight: 500; line-height: 1.4;
 }
-[class*="st-key-preset_card_"][class*="_selected"] .mti-preset-tag {
+[class*="st-key-preset_card_"][class*="_selected"] .tp-preset-tag {
  background: #eaf2ff; color: #3c67a8;
 }
 /* ---------- Step 01 Quick Profiling（风格画像与建议） ---------- */
-.mti-style-card {
+.tp-style-card {
  border: 1px solid #dce2ea; border-radius: 12px; background: #ffffff;
  padding: 18px 20px 16px; margin: 18px 0 10px;
 }
-.mti-style-card.is-selected { border-color: #4e93f4; background: #f7fbff; }
-.mti-style-card-head { display: flex; align-items: center; gap: 8px; }
-.mti-style-card-head .material-symbols-rounded {
+.tp-style-card.is-selected { border-color: #4e93f4; background: #f7fbff; }
+.tp-style-card-head { display: flex; align-items: center; gap: 8px; }
+.tp-style-card-head .material-symbols-rounded {
  color: var(--tp-primary); font-size: 18px; line-height: 1;
  font-family: "Material Symbols Rounded" !important;
 }
-.mti-style-card-head strong { font-size: 14px; font-weight: 600; color: #202a3a; }
-.mti-style-card-head b {
+.tp-style-card-head strong { font-size: 14px; font-weight: 600; color: #202a3a; }
+.tp-style-card-head b {
  margin-left: auto; padding: 2px 8px; border-radius: 999px;
  background: #eaf2ff; color: #1267e8; font-size: 12px; font-weight: 600;
 }
-.mti-style-card p { margin: 10px 0 0; color: #667085; font-size: 13px; line-height: 1.55; }
-.mti-style-name { margin-top: 12px; font-size: 20px; font-weight: 700; color: #172033; }
-.mti-style-summary { margin-top: 4px; font-size: 13px; color: #667085; }
-.mti-style-reasons { margin-top: 10px; }
-.mti-style-reasons span { font-size: 11px; font-weight: 600; color: #8a94a6; }
-.mti-style-reasons ul {
+.tp-style-card p { margin: 10px 0 0; color: #667085; font-size: 13px; line-height: 1.55; }
+.tp-style-name { margin-top: 12px; font-size: 20px; font-weight: 700; color: #172033; }
+.tp-style-summary { margin-top: 4px; font-size: 13px; color: #667085; }
+.tp-style-reasons { margin-top: 10px; }
+.tp-style-reasons span { font-size: 11px; font-weight: 600; color: #8a94a6; }
+.tp-style-reasons ul {
  margin: 4px 0 0; padding-left: 16px; color: #5f6b7a;
  font-size: 12.5px; line-height: 1.6;
 }
-.mti-style-source { margin-top: 10px; font-size: 12px; color: #1f8a57; }
-.mti-style-adjust-head { margin: 14px 0 4px; }
-.mti-style-adjust-head strong { font-size: 14px; font-weight: 600; color: #202a3a; }
-.mti-style-adjust-head span {
+.tp-style-source { margin-top: 10px; font-size: 12px; color: #1f8a57; }
+.tp-style-adjust-head { margin: 14px 0 4px; }
+.tp-style-adjust-head strong { font-size: 14px; font-weight: 600; color: #202a3a; }
+.tp-style-adjust-head span {
  display: block; margin-top: 2px; font-size: 12px; color: #8a94a6;
 }
 /* “开始智能画像”入口：初始只保留按钮，点击后才出现风格建议卡。
@@ -772,7 +772,7 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 .st-key-run_quick_profile .stButton > button {
  height: 44px; border: 1px solid var(--tp-border);
  color: var(--tp-brand-ink); font-weight: 600;
- background: var(--mti-surface);
+ background: var(--tp-surface);
 }
 .st-key-run_quick_profile .stButton > button:hover {
  border-color: var(--tp-primary); background: var(--tp-primary-soft);
@@ -782,16 +782,16 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  color: var(--tp-primary); font-size: 18px;
 }
 /* ---------- 首次使用引导 ---------- */
-.mti-onboard-card {
+.tp-onboard-card {
  border: 1px solid #dce2ea; border-radius: 12px; background: #ffffff;
  padding: 16px 20px 14px; margin-bottom: 4px;
 }
-.mti-onboard-card .material-symbols-rounded {
+.tp-onboard-card .material-symbols-rounded {
  color: var(--tp-primary); font-size: 18px; line-height: 1;
  font-family: "Material Symbols Rounded" !important;
 }
-.mti-onboard-card p { margin: 10px 0 0; color: #667085; font-size: 13px; line-height: 1.6; }
-.mti-onboard-card ol {
+.tp-onboard-card p { margin: 10px 0 0; color: #667085; font-size: 13px; line-height: 1.6; }
+.tp-onboard-card ol {
  margin: 6px 0 0; padding-left: 20px; color: #5f6b7a;
  font-size: 13px; line-height: 1.8;
 }
@@ -814,23 +814,23 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 }
 .st-key-strategy_advanced { margin-top: 16px; }
 .st-key-strategy_advanced {
- position: relative; border: 1px solid var(--mti-line); border-radius: 10px;
- background: var(--mti-surface); overflow: hidden;
+ position: relative; border: 1px solid var(--tp-line); border-radius: 10px;
+ background: var(--tp-surface); overflow: hidden;
 }
-.mti-advanced-trigger {
+.tp-advanced-trigger {
  display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 18px;
  height: 50px; min-height: 50px; padding: 0 14px;
 }
-.mti-advanced-title { display: inline-flex; align-items: center; gap: 8px; color: var(--mti-ink); }
-.mti-advanced-title .material-symbols-rounded {
+.tp-advanced-title { display: inline-flex; align-items: center; gap: 8px; color: var(--tp-ink); }
+.tp-advanced-title .material-symbols-rounded {
  color: #667085; font-family: "Material Symbols Rounded" !important; font-size: 18px;
  font-weight: normal; line-height: 1; font-feature-settings: "liga";
 }
-.mti-advanced-title strong { font-size: 14px; font-weight: 600; }
+.tp-advanced-title strong { font-size: 14px; font-weight: 600; }
 .st-key-strategy_advanced > [data-testid="stElementContainer"]:has(.stButton) {
  position: absolute; inset: 0 0 auto; z-index: 3; height: 50px;
 }
-.st-key-strategy_advanced > [data-testid="stElementContainer"]:has(.mti-advanced-trigger) {
+.st-key-strategy_advanced > [data-testid="stElementContainer"]:has(.tp-advanced-trigger) {
  height: 50px;
 }
 .st-key-strategy_advanced .stButton, .st-key-strategy_advanced .stButton > button {
@@ -840,17 +840,17 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  padding: 0; border: 0 !important; border-radius: 0; background: transparent !important;
  color: transparent !important; box-shadow: none !important;
 }
-.st-key-strategy_advanced:has(.stButton > button:hover) .mti-advanced-trigger { background: #f8fafc; }
+.st-key-strategy_advanced:has(.stButton > button:hover) .tp-advanced-trigger { background: #f8fafc; }
 .st-key-strategy_advanced .stButton > button:focus-visible {
  outline: 3px solid var(--tp-focus-ring) !important; outline-offset: -3px;
 }
-.mti-strategy-state {
+.tp-strategy-state {
  padding: 0; margin: 0 0 22px;
  color: #7c8799; font-size: 12px; font-weight: 400; line-height: 1.5;
 }
-.mti-strategy-state strong { color: var(--tp-primary-hover); font-weight: 650; }
+.tp-strategy-state strong { color: var(--tp-primary-hover); font-weight: 650; }
 .st-key-advanced_body {
- gap: 0 !important; border-top: 1px solid var(--mti-line);
+ gap: 0 !important; border-top: 1px solid var(--tp-line);
  padding: 20px 24px 24px;
 }
 /* 抵消 Streamlit 对 markdown 容器的 -16px 默认下边距，让上下文行与
@@ -858,12 +858,12 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 .st-key-advanced_body [data-testid="stMarkdownContainer"] { margin-bottom: 0; }
 /* 分组标题：上方 24px 与上一组分开，下方 10px 接本组第一个设置项；
    第一组紧随「当前使用…」上下文行，不再额外加 24px。 */
-.mti-advanced-group {
+.tp-advanced-group {
  margin: 24px 0 10px; padding: 0;
  color: #6f7b8d; font-size: 12px; font-weight: 600; line-height: 1.4;
  letter-spacing: 0.01em;
 }
-.st-key-advanced_body > [data-testid="stElementContainer"]:nth-child(2) .mti-advanced-group {
+.st-key-advanced_body > [data-testid="stElementContainer"]:nth-child(2) .tp-advanced-group {
  margin-top: 0;
 }
 /* 设置行：单个视觉单元，文本列最宽 640px，开关固定在右侧列。 */
@@ -873,7 +873,7 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 /* 行间细分隔线：设置行各自包在 stLayoutWrapper 里，选择器作用于
    advanced_body 的直接子容器（行包装器 / 只读行容器）。 */
 .st-key-advanced_body > [data-testid="stLayoutWrapper"] + [data-testid="stLayoutWrapper"],
-.st-key-advanced_body > [data-testid="stElementContainer"]:has(.mti-readonly-setting) + [data-testid="stLayoutWrapper"] {
+.st-key-advanced_body > [data-testid="stElementContainer"]:has(.tp-readonly-setting) + [data-testid="stLayoutWrapper"] {
  border-top: 1px solid #f0f2f5; padding-top: 14px;
 }
 [class*="st-key-strategy_"][class*="_row"] [data-testid="stHorizontalBlock"] {
@@ -891,11 +891,11 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 [class*="st-key-strategy_"][class*="_row"] [data-testid="stColumn"]:last-child [data-testid="stCheckbox"] {
  display: flex; justify-content: flex-end;
 }
-.mti-setting-copy { padding: 0; max-width: 640px; }
-.mti-setting-copy strong {
+.tp-setting-copy { padding: 0; max-width: 640px; }
+.tp-setting-copy strong {
  display: block; color: #202a3a; font-size: 14px; font-weight: 600; line-height: 1.35;
 }
-.mti-setting-copy span {
+.tp-setting-copy span {
  display: block; margin-top: 4px; color: #7a8699; font-size: 12.5px; line-height: 1.55;
 }
 .st-key-strategy_advanced [data-testid="stToggle"],
@@ -910,7 +910,7 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 .st-key-strategy_advanced [data-testid="stToggle"] label,
 .st-key-output_options [data-testid="stToggle"] label,
 .st-key-academic_output_options [data-testid="stToggle"] label {
- min-height: 38px; padding: 6px 0; color: var(--mti-ink) !important;
+ min-height: 38px; padding: 6px 0; color: var(--tp-ink) !important;
 }
 .st-key-strategy_advanced [data-testid="stToggle"] [role="switch"],
 .st-key-output_options [data-testid="stToggle"] [role="switch"],
@@ -929,7 +929,7 @@ label[data-selected="true"]:has(input[role="switch"]) > div:first-of-type {
  background: var(--tp-primary) !important; border-color: var(--tp-primary) !important;
 }
 label:has(input[type="checkbox"]:not([role="switch"])) > div:first-of-type {
- background: var(--mti-surface) !important; border-color: #98a2b3 !important;
+ background: var(--tp-surface) !important; border-color: #98a2b3 !important;
 }
 label[data-selected="true"]:has(input[type="checkbox"]:not([role="switch"])) > div:first-of-type {
  background: var(--tp-primary) !important; border-color: var(--tp-primary) !important;
@@ -956,12 +956,12 @@ label:has(input[type="checkbox"]:not([role="switch"]):focus-visible) > div:first
 }
 .st-key-strategy_advanced [data-testid="stToggle"] p,
 .st-key-output_options [data-testid="stToggle"] p,
-.st-key-academic_output_options [data-testid="stToggle"] p { color: var(--mti-ink) !important; }
+.st-key-academic_output_options [data-testid="stToggle"] p { color: var(--tp-ink) !important; }
 .st-key-strategy_advanced [data-testid="stCheckbox"] p,
-.st-key-output_options [data-testid="stCheckbox"] p { color: var(--mti-ink) !important; }
+.st-key-output_options [data-testid="stCheckbox"] p { color: var(--tp-ink) !important; }
 .st-key-strategy_advanced [data-testid="stCheckbox"] label > div:first-of-type,
 .st-key-output_options [data-testid="stCheckbox"] label > div:first-of-type {
- background: var(--mti-surface) !important; border-color: #98a2b3 !important;
+ background: var(--tp-surface) !important; border-color: #98a2b3 !important;
 }
 .st-key-strategy_advanced [data-testid="stCheckbox"] label[data-selected="true"] > div:first-of-type,
 .st-key-output_options [data-testid="stCheckbox"] label[data-selected="true"] > div:first-of-type {
@@ -972,51 +972,51 @@ label:has(input[type="checkbox"]:not([role="switch"]):focus-visible) > div:first
  stroke: #fff !important;
 }
 .st-key-output_options [data-testid="stCaptionContainer"] {
- margin: -8px 0 0; color: var(--mti-sub); font-size: 12px;
+ margin: -8px 0 0; color: var(--tp-sub); font-size: 12px;
 }
-.mti-readonly-setting {
+.tp-readonly-setting {
  padding: 7px 0 7px;
 }
-.mti-readonly-head { display: flex; align-items: center; gap: 9px; }
-.mti-readonly-setting strong { color: var(--mti-ink); font-size: 14px; font-weight: 550; }
-.mti-readonly-setting span { display: block; margin-top: 3px; color: var(--mti-sub); font-size: 12px; }
-.mti-readonly-setting b {
+.tp-readonly-head { display: flex; align-items: center; gap: 9px; }
+.tp-readonly-setting strong { color: var(--tp-ink); font-size: 14px; font-weight: 550; }
+.tp-readonly-setting span { display: block; margin-top: 3px; color: var(--tp-sub); font-size: 12px; }
+.tp-readonly-setting b {
  flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; background: #ecfdf3;
  color: #15803d; font-size: 11px; font-weight: 650;
 }
 /* 高级设置面板内的只读行（基础一致性检查）与开关行使用同一套行节奏；
    Step 03 输出页的只读行保持原样式。 */
-.st-key-advanced_body .mti-readonly-setting {
+.st-key-advanced_body .tp-readonly-setting {
  min-height: 62px; padding: 0;
 }
-.st-key-advanced_body .mti-readonly-head { display: flex; align-items: center; gap: 8px; }
-.st-key-advanced_body .mti-readonly-setting strong {
+.st-key-advanced_body .tp-readonly-head { display: flex; align-items: center; gap: 8px; }
+.st-key-advanced_body .tp-readonly-setting strong {
  color: #202a3a; font-size: 14px; font-weight: 600; line-height: 1.35;
 }
-.st-key-advanced_body .mti-readonly-setting span {
+.st-key-advanced_body .tp-readonly-setting span {
  display: block; margin-top: 4px; color: #7a8699; font-size: 12.5px; line-height: 1.55;
 }
-.st-key-advanced_body .mti-readonly-setting b {
+.st-key-advanced_body .tp-readonly-setting b {
  flex: 0 0 auto; padding: 2px 7px; border-radius: 999px;
  background: #eaf8f0; color: #1f8a57;
  font-size: 10.5px; font-weight: 600; line-height: 1.5;
 }
 .st-key-output_options { max-width: 760px; margin-top: 14px; }
-.mti-output-section { margin-top: 18px; }
-.mti-output-section-head { margin-bottom: 8px; }
-.mti-output-section-head strong { display: block; color: var(--mti-ink); font-size: 14px; }
-.mti-output-section-head span { display: block; margin-top: 3px; color: var(--mti-sub); font-size: 12px; }
+.tp-output-section { margin-top: 18px; }
+.tp-output-section-head { margin-bottom: 8px; }
+.tp-output-section-head strong { display: block; color: var(--tp-ink); font-size: 14px; }
+.tp-output-section-head span { display: block; margin-top: 3px; color: var(--tp-sub); font-size: 12px; }
 .st-key-style_output { max-width: 760px; }
 .st-key-style_output .stSelectbox { max-width: 340px; }
-.mti-style-note {
- margin-top: 8px; padding: 12px 14px; border: 1px solid var(--mti-line);
+.tp-style-note {
+ margin-top: 8px; padding: 12px 14px; border: 1px solid var(--tp-line);
  border-radius: 8px; background: #fbfcfe;
 }
-.mti-style-note strong { display: block; margin-bottom: 6px; color: var(--mti-ink); font-size: 12px; }
-.mti-style-note ul { margin: 0; padding-left: 18px; }
-.mti-style-note li { margin: 3px 0; color: #475467; font-size: 12px; line-height: 1.5; }
+.tp-style-note strong { display: block; margin-bottom: 6px; color: var(--tp-ink); font-size: 12px; }
+.tp-style-note ul { margin: 0; padding-left: 18px; }
+.tp-style-note li { margin: 3px 0; color: #475467; font-size: 12px; line-height: 1.5; }
 .st-key-academic_output_options {
- max-width: 760px; margin-top: 16px; padding-top: 2px; border-top: 1px solid var(--mti-line);
+ max-width: 760px; margin-top: 16px; padding-top: 2px; border-top: 1px solid var(--tp-line);
 }
 .st-key-academic_output_options .stSelectbox { max-width: 520px; }
 .st-key-engine_setup_banner [data-testid="stAlert"] {
@@ -1033,22 +1033,22 @@ label:has(input[type="checkbox"]:not([role="switch"]):focus-visible) > div:first
  min-height: 36px; background: #fff; border-color: #f3c35c; color: #92400e;
 }
 .st-key-analysis_theory { max-width: 520px; margin-top: 8px; }
-.mti-report-helper { margin: 0 0 4px; color: var(--mti-sub); font-size: 12px; }
+.tp-report-helper { margin: 0 0 4px; color: var(--tp-sub); font-size: 12px; }
 
 /* ---------- 容器类组件 ---------- */
 [data-testid="stExpander"] {
- border: 1px solid var(--mti-line) !important;
+ border: 1px solid var(--tp-line) !important;
  border-radius: 10px !important; background: #fff; box-shadow: none; overflow: hidden;
 }
-[data-testid="stExpander"] summary { font-weight: 600; color: var(--mti-ink); }
+[data-testid="stExpander"] summary { font-weight: 600; color: var(--tp-ink); }
 [data-testid="stExpander"] summary:hover { color: var(--tp-primary-hover); }
 [data-testid="stAlert"] { border-radius: 8px; }
 [data-testid="stDataFrame"] {
- border: 1px solid var(--mti-line); border-radius: 12px; overflow: hidden;
+ border: 1px solid var(--tp-line); border-radius: 12px; overflow: hidden;
 }
 [data-testid="stProgress"] [role="progressbar"] > div { background: var(--tp-primary); }
 [data-testid="stStatusWidget"] {
- border-radius: 14px; border-color: var(--mti-line) !important;
+ border-radius: 14px; border-color: var(--tp-line) !important;
 }
 .st-key-task_action_bar .stButton button > div > span {
  display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -1060,27 +1060,27 @@ label:has(input[type="checkbox"]:not([role="switch"]):focus-visible) > div:first
 
 /* ---------- 响应式与减少动态效果 ---------- */
 @media (max-width: 1439px) {
- :root { --mti-main-gutter: 48px; }
+ :root { --tp-main-gutter: 48px; }
 }
 
 @media (max-width: 1279px) {
- :root { --mti-main-gutter: 32px; }
+ :root { --tp-main-gutter: 32px; }
 }
 
 @media (max-width: 767px) {
- :root { --mti-main-gutter: 14px; }
+ :root { --tp-main-gutter: 14px; }
  [data-testid="stSidebar"] {
-  width: var(--mti-sidebar-width); min-width: var(--mti-sidebar-width);
+  width: var(--tp-sidebar-width); min-width: var(--tp-sidebar-width);
  }
  [data-testid="stMainBlockContainer"] { width: 100%; padding: 1rem .875rem 3rem; }
- .mti-title h1 { font-size: 26px; }
- .mti-summary-grid { grid-template-columns: 1fr; gap: 14px; }
- .mti-confirm-card .mti-summary-grid { grid-template-columns: 1fr; }
- .mti-summary-item.is-wide { grid-column: auto; }
- .mti-confirm-stack { grid-template-columns: 1fr; }
- .mti-artifact-list, .mti-runtime-grid { grid-template-columns: 1fr; }
+ .tp-title h1 { font-size: 26px; }
+ .tp-summary-grid { grid-template-columns: 1fr; gap: 14px; }
+ .tp-confirm-card .tp-summary-grid { grid-template-columns: 1fr; }
+ .tp-summary-item.is-wide { grid-column: auto; }
+ .tp-confirm-stack { grid-template-columns: 1fr; }
+ .tp-artifact-list, .tp-runtime-grid { grid-template-columns: 1fr; }
  .st-key-preset_cards [data-testid="stHorizontalBlock"] { flex-direction: column; }
- .mti-advanced-trigger { grid-template-columns: 1fr; gap: 0; }
+ .tp-advanced-trigger { grid-template-columns: 1fr; gap: 0; }
  [data-testid="stTabs"] [role="tablist"] { overflow-x: auto; scrollbar-width: none; }
  [data-testid="stTabs"] [role="tablist"]::-webkit-scrollbar { display: none; }
  button[data-baseweb="tab"] { min-height: 40px; white-space: nowrap; }
@@ -1208,14 +1208,14 @@ def _df_to_entries(df):
 
 def _page_title(title, sub):
     st.markdown(
-        f'<div class="mti-title"><h1>{title}</h1><p>{sub}</p></div>',
+        f'<div class="tp-title"><h1>{title}</h1><p>{sub}</p></div>',
  unsafe_allow_html=True)
 
 
 def _step_title(number, title, sub):
     st.markdown(
-        f'<div class="mti-section-title">{title}</div>'
-        f'<div class="mti-section-sub">{sub}</div>', unsafe_allow_html=True)
+        f'<div class="tp-section-title">{title}</div>'
+        f'<div class="tp-section-sub">{sub}</div>', unsafe_allow_html=True)
 
 
 def _go_to_step(step):
@@ -1314,7 +1314,7 @@ def _set_output_option(option, widget_key):
 
 def _apply_style_selection(selection):
     """把选中的 Style Profile 落成 style_rules / style_template。"""
-    from mti_tool.style_profile import STYLE_PROFILES, profile_to_rules
+    from transpraxis.style_profile import STYLE_PROFILES, profile_to_rules
     selection = selection or {}
     rules = profile_to_rules(selection)
     custom = (selection.get("custom_rules") or "").strip()
@@ -1344,8 +1344,8 @@ def _run_quick_profile_with_progress():
     改为点击后置 running 状态，在本轮运行内逐步渲染状态并执行，
     完成后同一轮直接渲染结果卡片。
     """
-    from mti_tool import models as _models
-    from mti_tool.style_profile import _fallback_recommendation, quick_profile
+    from transpraxis import models as _models
+    from transpraxis.style_profile import _fallback_recommendation, quick_profile
     task_files = st.session_state.get("task_files") or []
     if not task_files:
         st.session_state.style_profiling_state = "idle"
@@ -1385,7 +1385,7 @@ def _run_quick_profile_with_progress():
 
 def _render_style_adjust_panel():
     """基础风格 radio + 4 个微调滑块 + 高级规则；应用后覆盖系统建议。"""
-    from mti_tool.style_profile import STYLE_PROFILES
+    from transpraxis.style_profile import STYLE_PROFILES
     names = list(STYLE_PROFILES)
     current = st.session_state.get("style_selection") or {}
     rec = st.session_state.get("style_recommendation") or {}
@@ -1393,7 +1393,7 @@ def _render_style_adjust_panel():
     if base_id not in names:
         base_id = "general"
     st.markdown(
-        '<div class="mti-style-adjust-head"><strong>调整风格</strong>'
+        '<div class="tp-style-adjust-head"><strong>调整风格</strong>'
         '<span>修改后将覆盖系统建议，并记录为 user_override</span></div>',
         unsafe_allow_html=True)
     base = st.radio(
@@ -1436,7 +1436,7 @@ def _render_style_adjust_panel():
 
 def _render_style_profile_section():
     """Step 01 的智能风格建议卡片：推荐 -> 接受 / 调整 / 查看分析。"""
-    from mti_tool.style_profile import STYLE_PROFILES
+    from transpraxis.style_profile import STYLE_PROFILES
     state = st.session_state.get("style_profiling_state", "idle")
     rec = st.session_state.get("style_recommendation")
     selection = st.session_state.get("style_selection")
@@ -1463,17 +1463,17 @@ def _render_style_profile_section():
             source_text = "已接受系统推荐" if selection.get("source") == "accepted" \
                 else "已使用用户选择覆盖系统建议"
         st.markdown(
-            f'<div class="mti-style-card{" is-selected" if selection else ""}">'
-            '<div class="mti-style-card-head">'
+            f'<div class="tp-style-card{" is-selected" if selection else ""}">'
+            '<div class="tp-style-card-head">'
             '<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>'
             '<strong>智能风格建议</strong>'
             f'<b>{round(confidence * 100)}%</b></div>'
-            f'<div class="mti-style-name">{meta["name"]}</div>'
-            f'<div class="mti-style-summary">{meta["summary"]}</div>'
-            '<div class="mti-style-reasons"><span>检测依据</span><ul>'
+            f'<div class="tp-style-name">{meta["name"]}</div>'
+            f'<div class="tp-style-summary">{meta["summary"]}</div>'
+            '<div class="tp-style-reasons"><span>检测依据</span><ul>'
             + "".join(f"<li>{escape(r)}</li>" for r in reasons)
             + '</ul></div>'
-            + (f'<div class="mti-style-source">{source_text}</div>'
+            + (f'<div class="tp-style-source">{source_text}</div>'
                if source_text else "")
             + '</div>', unsafe_allow_html=True)
         for warn in st.session_state.get("style_profile_warnings", []):
@@ -1547,7 +1547,7 @@ def _render_task_actions(*, back_step=None, next_step=None, next_label="下一�
         status_col, back_col, next_col = st.columns([2.6, .8, .8])
         has_inputs = bool(st.session_state.get("task_files"))
         save_text = "已保存" if has_inputs else "更改会自动保存"
-        save_class = "mti-autosave is-saved" if has_inputs else "mti-autosave"
+        save_class = "tp-autosave is-saved" if has_inputs else "tp-autosave"
         status_col.markdown(f'<span class="{save_class}">{save_text}</span>',
                             unsafe_allow_html=True)
         if back_step is not None:
@@ -1602,14 +1602,14 @@ def _source_file_html(task_files):
     icon = "progress_activity" if parse_state == "parsing" else "description"
     icon_class = "material-symbols-rounded is-loading" if parse_state == "parsing" \
         else "material-symbols-rounded"
-    ready_badge = '<span class="mti-source-ready">已就绪</span>' \
+    ready_badge = '<span class="tp-source-ready">已就绪</span>' \
         if parse_state == "parsed" else ""
     return (
-        '<div class="mti-source-file">'
+        '<div class="tp-source-file">'
         f'<span class="{icon_class}" aria-hidden="true">{icon}</span>'
-        f'<div class="mti-source-file-copy"><strong title="{escape(raw_name, quote=True)}">'
+        f'<div class="tp-source-file-copy"><strong title="{escape(raw_name, quote=True)}">'
         f'{name}</strong>'
-        f'<span>{detail} · <b class="mti-source-file-status is-{parse_state}">'
+        f'<span>{detail} · <b class="tp-source-file-status is-{parse_state}">'
         f'{status}</b></span></div>{ready_badge}</div>'
     )
 
@@ -1624,19 +1624,19 @@ def _preset_card_html(label):
                  ("证据最完整", "耗时较长")),
     }
     purpose, workflow, tags = cards[label]
-    badge = '<span class="mti-preset-badge">推荐</span>' if label == "标准" else ""
+    badge = '<span class="tp-preset-badge">推荐</span>' if label == "标准" else ""
     icon = "radio_button_checked" if label == st.session_state.get(
         "translation_preset", "标准") else "radio_button_unchecked"
     tag_html = "".join(
-        f'<span class="mti-preset-tag">{tag}</span>' for tag in tags)
+        f'<span class="tp-preset-tag">{tag}</span>' for tag in tags)
     return (
-        '<div class="mti-preset-card">'
-        '<div class="mti-preset-head">'
+        '<div class="tp-preset-card">'
+        '<div class="tp-preset-head">'
         f'<span class="material-symbols-rounded" aria-hidden="true">{icon}</span>'
         f'<strong>{label}</strong>{badge}</div>'
-        f'<p class="mti-preset-purpose">{purpose}</p>'
-        f'<p class="mti-preset-flow">{workflow}</p>'
-        f'<div class="mti-preset-tags">{tag_html}</div></div>'
+        f'<p class="tp-preset-purpose">{purpose}</p>'
+        f'<p class="tp-preset-flow">{workflow}</p>'
+        f'<div class="tp-preset-tags">{tag_html}</div></div>'
     )
 
 
@@ -1644,7 +1644,7 @@ def _render_strategy_toggle(label, description, option, key, config):
     with st.container(key=f"{key}_row"):
         copy_col, switch_col = st.columns([9, 1], vertical_alignment="center")
         copy_col.markdown(
-            f'<div class="mti-setting-copy"><strong>{label}</strong>'
+            f'<div class="tp-setting-copy"><strong>{label}</strong>'
             f'<span>{description}</span></div>', unsafe_allow_html=True)
         switch_col.toggle(label, value=config[option], key=key,
                           label_visibility="collapsed",
@@ -1702,25 +1702,25 @@ def _summary_html(filename, target_lang, preset_label, glossary_name,
                               "审校发现与处理记录", "MD"))
     style_value = style_template + (f"（{style_source}）" if style_source else "")
     artifact_rows = "".join(
-        '<div class="mti-artifact-row">'
+        '<div class="tp-artifact-row">'
         f'<span class="material-symbols-rounded" aria-hidden="true">{icon}</span>'
         f'<div><strong>{name}</strong><span>{detail}</span></div><b>{kind}</b></div>'
         for icon, name, detail, kind in artifacts)
     return (
-        '<div class="mti-confirm-stack">'
-        '<section class="mti-confirm-card"><div class="mti-confirm-head">'
+        '<div class="tp-confirm-stack">'
+        '<section class="tp-confirm-card"><div class="tp-confirm-head">'
         '<span class="material-symbols-rounded" aria-hidden="true">tune</span>'
-        '<strong>任务配置</strong></div><div class="mti-summary-grid">'
-        f'<div class="mti-summary-item"><span>原文</span><strong>{filename}</strong></div>'
-        f'<div class="mti-summary-item"><span>目标语言</span><strong>{target_lang}</strong></div>'
-        f'<div class="mti-summary-item"><span>翻译模式</span><strong>{mode_label}</strong></div>'
-        f'<div class="mti-summary-item"><span>译文风格</span><strong>{style_value}</strong></div>'
-        f'<div class="mti-summary-item"><span>术语库</span><strong>{glossary_name}</strong></div>'
-        '<div class="mti-summary-item is-wide"><span>工作流</span>'
+        '<strong>任务配置</strong></div><div class="tp-summary-grid">'
+        f'<div class="tp-summary-item"><span>原文</span><strong>{filename}</strong></div>'
+        f'<div class="tp-summary-item"><span>目标语言</span><strong>{target_lang}</strong></div>'
+        f'<div class="tp-summary-item"><span>翻译模式</span><strong>{mode_label}</strong></div>'
+        f'<div class="tp-summary-item"><span>译文风格</span><strong>{style_value}</strong></div>'
+        f'<div class="tp-summary-item"><span>术语库</span><strong>{glossary_name}</strong></div>'
+        '<div class="tp-summary-item is-wide"><span>工作流</span>'
         f'<strong>{" → ".join(workflow)}</strong></div></div></section>'
-        '<section class="mti-confirm-card"><div class="mti-confirm-head">'
+        '<section class="tp-confirm-card"><div class="tp-confirm-head">'
         '<span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>'
-        '<strong>将生成</strong></div><div class="mti-artifact-list">'
+        '<strong>将生成</strong></div><div class="tp-artifact-list">'
         f'{artifact_rows}</div></section></div>')
 
 
@@ -1732,15 +1732,15 @@ def _runtime_html(provider, model, connection_status, can_start):
     }.get(connection_status, ("未验证", "is-neutral"))
     readiness = ("可启动", "is-success") if can_start else ("需要配置", "is-warning")
     return (
-        '<section class="mti-confirm-card mti-runtime-card">'
-        '<div class="mti-confirm-head"><span class="material-symbols-rounded" '
+        '<section class="tp-confirm-card tp-runtime-card">'
+        '<div class="tp-confirm-head"><span class="material-symbols-rounded" '
         'aria-hidden="true">memory</span><strong>运行环境</strong></div>'
-        '<div class="mti-runtime-grid">'
+        '<div class="tp-runtime-grid">'
         f'<div><span>AI 引擎</span><strong>{provider}</strong></div>'
         f'<div><span>模型</span><strong>{model or "未配置"}</strong></div>'
-        f'<div><span>连接状态</span><strong class="mti-status {connection[1]}">'
+        f'<div><span>连接状态</span><strong class="tp-status {connection[1]}">'
         f'{connection[0]}</strong></div>'
-        f'<div><span>启动状态</span><strong class="mti-status {readiness[1]}">'
+        f'<div><span>启动状态</span><strong class="tp-status {readiness[1]}">'
         f'{readiness[0]}</strong></div></div></section>')
 
 
@@ -1863,9 +1863,9 @@ workspace_mode = st.session_state.get("workspace_mode", False)
 
 with st.sidebar:
     st.markdown(
-                '<div class="mti-brand" aria-label="TransPraxis 译践">'
-                f'<img class="mti-brand-mark" src="{_BRAND_MARK_URI}" alt="">'
-                '<div class="mti-brand-copy"><strong>TransPraxis</strong><b>译践</b></div>'
+                '<div class="tp-brand" aria-label="TransPraxis 译践">'
+                f'<img class="tp-brand-mark" src="{_BRAND_MARK_URI}" alt="">'
+                '<div class="tp-brand-copy"><strong>TransPraxis</strong><b>译践</b></div>'
                 '<span>Translation Practice Workspace</span></div>',
                 unsafe_allow_html=True)
     with st.container(key="new_task_action"):
@@ -1877,8 +1877,8 @@ with st.sidebar:
             st.session_state.app_view = "workspace"
             st.rerun()
     if app_view == "new" and not workspace_mode:
-        st.markdown('<div class="mti-nav-divider"></div>'
-                    '<div class="mti-nav-label">当前任务</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tp-nav-divider"></div>'
+                    '<div class="tp-nav-label">当前任务</div>', unsafe_allow_html=True)
         with st.container(key="task_steps"):
             current_step = st.session_state.task_step
             for number, label in ((1, "文档与画像"), (2, "翻译策略"),
@@ -1892,7 +1892,7 @@ with st.sidebar:
                              type="primary" if status == "current" else "secondary"):
                     _request_step(number)
                     st.rerun()
-    st.markdown('<div class="mti-nav-label">资料库</div>', unsafe_allow_html=True)
+    st.markdown('<div class="tp-nav-label">资料库</div>', unsafe_allow_html=True)
     with st.container(key="library_nav"):
         if st.button("历史任务", icon=":material/history:", width="stretch",
                      type="primary" if app_view == "history" else "secondary"):
@@ -1909,7 +1909,7 @@ with st.sidebar:
     with st.container(key="provider_status"):
         provider_col, manage_col = st.columns([3, 1])
         connection_status = st.session_state.get("provider_connection_status", "unverified")
-        provider_col.markdown(f'<div class="mti-provider is-{connection_status}">'
+        provider_col.markdown(f'<div class="tp-provider is-{connection_status}">'
                               f'<strong>{ai_provider}</strong>'
                               f'<span>{ai_model or "未配置模型"}</span></div>',
                               unsafe_allow_html=True)
@@ -2036,8 +2036,8 @@ with setup_placeholder.container():
             with st.container(key="onboarding_guide"):
                 guide_col, action_col = st.columns([3, 1])
                 guide_col.markdown(
-                    '<div class="mti-onboard-card">'
-                    '<div class="mti-style-card-head">'
+                    '<div class="tp-onboard-card">'
+                    '<div class="tp-style-card-head">'
                     '<span class="material-symbols-rounded" aria-hidden="true">rocket_launch</span>'
                     '<strong>首次使用 TransPraxis</strong></div>'
                     '<p>配置 AI 引擎后即可开始翻译。三步完成：</p>'
@@ -2067,7 +2067,7 @@ with setup_placeholder.container():
                     if first_job.get("source_page_count"):
                         task_files[0]["pages"] = first_job["source_page_count"]
                 with st.container(key="source_file_summary"):
-                    st.markdown('<div class="mti-source-label">原文</div>',
+                    st.markdown('<div class="tp-source-label">原文</div>',
                                 unsafe_allow_html=True)
                     with st.container(key="source_file_card"):
                         st.markdown(_source_file_html(task_files), unsafe_allow_html=True)
@@ -2076,8 +2076,8 @@ with setup_placeholder.container():
                                   on_click=_remove_source_documents)
             else:
                 with st.container(key="source_documents"):
-                    st.markdown('<div class="mti-source-label">原文</div>'
-                                '<div class="mti-upload-copy">'
+                    st.markdown('<div class="tp-source-label">原文</div>'
+                                '<div class="tp-upload-copy">'
                                 '<span class="material-symbols-rounded" aria-hidden="true">upload_file</span>'
                                 '<span>拖入文件或点击选择</span>'
                                 '<small>支持 PDF、DOCX · 单文件最大 200 MB</small></div>',
@@ -2101,7 +2101,7 @@ with setup_placeholder.container():
                                  "Italiano", "العربية"], key="target_lang",
                     persist_state="session")
             term_label = st.session_state.get("task_glossary_name", "未添加")
-            st.markdown('<div class="mti-field-head"><strong>术语库</strong>'
+            st.markdown('<div class="tp-field-head"><strong>术语库</strong>'
                         '<span>可选 · 用于保持术语与专名一致</span></div>',
                         unsafe_allow_html=True)
             if term_label == "未添加":
@@ -2116,7 +2116,7 @@ with setup_placeholder.container():
                     count = st.session_state.get("task_glossary_count")
                     count_text = f"{count:,} 条术语" if count is not None else "已添加"
                     attached_col.markdown(
-                        f'<div class="mti-attachment"><div><strong>{term_label}</strong>'
+                        f'<div class="tp-attachment"><div><strong>{term_label}</strong>'
                         f'<span>{count_text}</span></div></div>', unsafe_allow_html=True)
                     remove_col.button("移除", key="remove_termbase",
                                       on_click=_remove_task_termbase, width="stretch")
@@ -2169,8 +2169,8 @@ with setup_placeholder.container():
                     else f'当前使用「{preset_label}」默认配置'
                 trigger_icon = "expand_less" if advanced_open else "chevron_right"
                 st.markdown(
-                    '<div class="mti-advanced-trigger">'
-                    '<span class="mti-advanced-title">'
+                    '<div class="tp-advanced-trigger">'
+                    '<span class="tp-advanced-title">'
                     f'<span class="material-symbols-rounded" aria-hidden="true">'
                     f'{trigger_icon}</span><strong>高级设置</strong></span></div>',
                     unsafe_allow_html=True)
@@ -2178,9 +2178,9 @@ with setup_placeholder.container():
                           on_click=_toggle_advanced_strategy, width="stretch")
                 if advanced_open:
                     with st.container(key="advanced_body"):
-                        st.markdown(f'<div class="mti-strategy-state">{state_text}</div>',
+                        st.markdown(f'<div class="tp-strategy-state">{state_text}</div>',
                                     unsafe_allow_html=True)
-                        st.markdown('<div class="mti-advanced-group">翻译辅助</div>',
+                        st.markdown('<div class="tp-advanced-group">翻译辅助</div>',
                                     unsafe_allow_html=True)
                         _render_strategy_toggle(
                             "自动术语抽取", "从全文识别候选术语并用于翻译",
@@ -2188,18 +2188,18 @@ with setup_placeholder.container():
                         _render_strategy_toggle(
                             "复用翻译记忆", "精确复用已审校通过的历史译文",
                             "use_tm", "strategy_use_tm", strategy_config)
-                        st.markdown('<div class="mti-advanced-group">质量控制</div>',
+                        st.markdown('<div class="tp-advanced-group">质量控制</div>',
                                     unsafe_allow_html=True)
                         st.markdown(
-                            '<div class="mti-readonly-setting">'
-                            '<div class="mti-readonly-head">'
+                            '<div class="tp-readonly-setting">'
+                            '<div class="tp-readonly-head">'
                             '<strong>基础一致性检查</strong><b>始终开启</b></div>'
                             '<span>自动检查漏译、保留项、源语残留和锁定术语</span>'
                             '</div>', unsafe_allow_html=True)
                         _render_strategy_toggle(
                             "独立审校", "使用独立模型阶段复核语义与术语，并保存审校证据",
                             "enable_review", "strategy_review", strategy_config)
-                        st.markdown('<div class="mti-advanced-group">术语治理</div>',
+                        st.markdown('<div class="tp-advanced-group">术语治理</div>',
                                     unsafe_allow_html=True)
                         _render_strategy_toggle(
                             "审核并冻结候选术语", "翻译前建立文档画像，并审核自动提取的候选术语",
@@ -2211,7 +2211,7 @@ with setup_placeholder.container():
             _step_title(3, "交付内容", "选择要生成的文件与附加成果")
             output_config = st.session_state.output_config
             with st.container(key="deliver_translation"):
-                st.markdown('<div class="mti-output-section-head"><strong>译文</strong>'
+                st.markdown('<div class="tp-output-section-head"><strong>译文</strong>'
                             '<span>选择要生成的译文文件</span></div>',
                             unsafe_allow_html=True)
                 trans_a, trans_b = st.columns(2)
@@ -2241,7 +2241,7 @@ with setup_placeholder.container():
                               persist_state="session")
                 st.caption("重点标注版在双语文档中标出生僻词、专业术语和翻译难点句")
             with st.container(key="deliver_assets"):
-                st.markdown('<div class="mti-output-section-head"><strong>语言资产</strong>'
+                st.markdown('<div class="tp-output-section-head"><strong>语言资产</strong>'
                             '<span>术语与翻译记忆的导出格式</span></div>',
                             unsafe_allow_html=True)
                 asset_a, asset_b = st.columns(2)
@@ -2270,7 +2270,7 @@ with setup_placeholder.container():
                         help="双语段落 JSONL，便于后续处理", persist_state="session")
             enable_annotate = output_config["enable_annotate"]
             with st.container(key="deliver_academic"):
-                st.markdown('<div class="mti-output-section-head"><strong>研究资产</strong>'
+                st.markdown('<div class="tp-output-section-head"><strong>研究资产</strong>'
                             '<span>学术增强模式的过程证据与写作产物</span></div>',
                             unsafe_allow_html=True)
                 st.toggle("生成实践报告", value=output_config["enable_report"],
@@ -2404,8 +2404,8 @@ with setup_placeholder.container():
                     f'<div style="padding:6px 0;color:{"#111827" if state == "active" else "#16a34a" if state == "done" else "#9ca3af"}">'
                     f'{"●" if state == "active" else "✓" if state == "done" else "○"}&nbsp;&nbsp;{label}</div>'
                     for state, label in pipeline_items)
-                st.markdown(f'<div class="mti-pipeline" style="padding:16px 18px">'
-                            f'<div class="mti-section-sub" style="margin-bottom:8px">处理流程</div>{rows}</div>',
+                st.markdown(f'<div class="tp-pipeline" style="padding:16px 18px">'
+                            f'<div class="tp-section-sub" style="margin-bottom:8px">处理流程</div>{rows}</div>',
                             unsafe_allow_html=True)
             with pright:
                 st.subheader(stage_label)
@@ -2479,9 +2479,9 @@ if run_clicked:
         _page_title("任务工作区", "任务正在运行，进度会自动保存")
         wp_left, wp_right = st.columns([1, 2.5])
         with wp_left:
-            st.markdown('<div class="mti-pipeline" style="padding:16px 18px">'
-                        '<div class="mti-section-sub" style="margin-bottom:8px">处理流程</div>'
-                        '<div class="mti-flow" style="display:block;line-height:2.15">'
+            st.markdown('<div class="tp-pipeline" style="padding:16px 18px">'
+                        '<div class="tp-section-sub" style="margin-bottom:8px">处理流程</div>'
+                        '<div class="tp-flow" style="display:block;line-height:2.15">'
                         '<span>文档解析</span><br/><span>段落重建</span><br/>'
                         '<span>术语抽取</span><br/><span>批次翻译</span><br/>'
                         '<span>独立审校</span><br/><span>Evidence</span><br/>'

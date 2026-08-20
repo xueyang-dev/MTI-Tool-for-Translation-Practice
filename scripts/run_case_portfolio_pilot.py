@@ -12,7 +12,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import academic_evidence, academic_writer, case_portfolio
+from transpraxis import academic_evidence, academic_writer, case_portfolio
 
 
 def _load(path: Path) -> dict[str, Any]:

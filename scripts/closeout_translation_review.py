@@ -20,7 +20,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
-from mti_tool import academic_evidence, academic_writer, delivery, state_migration
+from transpraxis import academic_evidence, academic_writer, delivery, state_migration
 
 
 JOB_ID = "ec100d8686d3891e"

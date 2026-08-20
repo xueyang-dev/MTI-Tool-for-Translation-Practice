@@ -7,7 +7,7 @@
 ## 1. 基线提交
 
 - 本轮开始前 `main` 干净，HEAD=`ef16a87`；旧评估产物未改动。
-- 本轮新增：`mti_tool/case_analysis.py`（Analysis Contract、translation
+- 本轮新增：`transpraxis/case_analysis.py`（Analysis Contract、translation
   delta、evidence adequacy、规划器）、`tests/case_analysis_test.py`、
   `docs/case-analysis-audit.md`；扩展 `academic_writer.py`（案例分析规划
   阶段、结构化 writer packet 与推理修复动作）与 `academic_quality.py`

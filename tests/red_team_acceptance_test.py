@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core
-from mti_tool import assets, delivery, document_profile, models, state_migration, terminology
+from transpraxis import assets, delivery, document_profile, models, state_migration, terminology
 
 
 def _make_docx(texts):
@@ -664,7 +664,7 @@ def test_report_evidence_verbatim_and_no_fabrication():
                 "initial_target": "We trained 300 participants.", "reviewed": True,
                 "from_tm": False, "glossary_entry_ids": []}],
         findings=[], delivery_status="draft")
-    block = __import__("mti_tool.report_evidence", fromlist=["evidence_text_block"])
+    block = __import__("transpraxis.report_evidence", fromlist=["evidence_text_block"])
     text = block.evidence_text_block(state, "re0000000000000001")
     assert "累计培训300人次" in text, "证据必须逐字来自 state"
     assert "[seg-re0000000000000001-0000]" in text, "证据必须带真实 segment_id"
@@ -696,7 +696,7 @@ def test_external_evidence_attack_and_prompt_scan():
     # 代码库扫描：模型 prompt 不得要求模型生成引用来源 URL
     import subprocess
     hits = subprocess.run(
-        ["rg", "-n", "https?://", "core.py", "mti_tool/", "scripts/"],
+        ["rg", "-n", "https?://", "core.py", "transpraxis/", "scripts/"],
         capture_output=True, text=True).stdout
     prompt_files = []
     for line in hits.splitlines():

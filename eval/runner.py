@@ -3,9 +3,9 @@
 设计约束：
 - 只使用 core 的公共 API，且 arm A/C 运行在 pre-governance 基线
   （b4ae9ac）的 worktree 上，arm B/D 运行在当前代码上；
-- 因此本文件不得 import mti_tool（基线 worktree 没有该包）；
+- 因此本文件不得 import transpraxis（基线 worktree 没有该包）；
 - --mock 提供确定性 LLM（离线自测用），真实运行通过环境变量
-  MTI_EVAL_API_KEY 提供 API Key，并统计 LLM 调用次数。
+  TRANSPRAXIS_EVAL_API_KEY 提供 API Key，并统计 LLM 调用次数。
 
 用法（由 run_ab.py 调用）：
     PYTHONPATH=<code_root> python eval/runner.py \
@@ -25,7 +25,7 @@ from pathlib import Path
 
 
 def _matches(term: str, text: str) -> bool:
-    """词边界 + 大小写不敏感的术语匹配（runner 内嵌实现，避免依赖 mti_tool）。"""
+    """词边界 + 大小写不敏感的术语匹配（runner 内嵌实现，避免依赖 transpraxis）。"""
     term = (term or "").strip()
     text = text or ""
     if not term or not text:
@@ -136,9 +136,9 @@ def main() -> int:
 
         core.call_llm = counted
 
-    api_key = os.environ.get("MTI_EVAL_API_KEY", "")
+    api_key = os.environ.get("TRANSPRAXIS_EVAL_API_KEY", "")
     if not args.mock and not api_key:
-        print(json.dumps({"ok": False, "error": "缺少 MTI_EVAL_API_KEY"}))
+        print(json.dumps({"ok": False, "error": "缺少 TRANSPRAXIS_EVAL_API_KEY"}))
         return 2
 
     docx_bytes = Path(args.corpus).read_bytes()

@@ -1,4 +1,4 @@
-# MTI Tool Evaluation Harness（评测工具）
+# TransPraxis / 译践 Evaluation Harness（评测工具）
 
 目标不是"证明新版更好"，而是建立一套以后每次改 prompt、模型、TM、术语策略
 都能重复使用的评测工具。第一轮实验用 `outputs/` 里的真实书
@@ -33,8 +33,8 @@ A→D 完整新工作流 vs 裸基线。
 # 离线自测（合成 fixture + 确定性 mock，不访问网络）
 .venv/bin/python eval/self_test.py
 
-# 真实评测（需要 MTI_EVAL_API_KEY；默认子集 [0,300)）
-MTI_EVAL_API_KEY=sk-... .venv/bin/python eval/run_ab.py \
+# 真实评测（需要 TRANSPRAXIS_EVAL_API_KEY；默认子集 [0,300)）
+TRANSPRAXIS_EVAL_API_KEY=sk-... .venv/bin/python eval/run_ab.py \
     --config eval/config.example.json
 
 # 指定子集 / 全文 / 指定臂

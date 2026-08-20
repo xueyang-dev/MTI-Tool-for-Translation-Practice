@@ -12,8 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import academic_evidence, academic_quality, academic_writer
-from mti_tool import case_analysis
+from transpraxis import academic_evidence, academic_quality, academic_writer
+from transpraxis import case_analysis
 from tests.academic_writing_test import JOB, _state
 
 

@@ -10,7 +10,7 @@
 ## 1. 基线提交与工作树
 
 - 基线：`251e80d feat: add literature evidence spine`（本次迭代前唯一提交）。
-- 本次迭代新增代码位于 `mti_tool/academic_quality.py`、
+- 本次迭代新增代码位于 `transpraxis/academic_quality.py`、
   `scripts/eval_academic_quality.py`、`tests/academic_quality_test.py`，
   并增强 `academic_writer.py`（质量评估/结构性修复/引文规范化）与
   `academic_validator.py`（计划外引用检查、案例计划校验）。

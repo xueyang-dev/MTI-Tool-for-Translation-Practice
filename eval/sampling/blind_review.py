@@ -18,8 +18,8 @@ import random
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from mti_tool import models
-from mti_tool.terminology import term_matches
+from transpraxis import models
+from transpraxis.terminology import term_matches
 
 MAX_PACKET = 80
 

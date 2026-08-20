@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, Mapping
 
 
-SCHEMA_VERSION = "mti-thesis-constraints-v1"
+SCHEMA_VERSION = "transpraxis-thesis-constraints-v1"
 CHINESE_BODY_EFFECTIVE_YEAR = 2026
 
 CHAPTERS = (

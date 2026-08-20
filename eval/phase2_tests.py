@@ -17,7 +17,7 @@ ROOT = EVAL_DIR.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(EVAL_DIR))
 
-from mti_tool.terminology import term_matches  # noqa: E402
+from transpraxis.terminology import term_matches  # noqa: E402
 
 import approved_recompute  # noqa: E402
 import term_audit  # noqa: E402

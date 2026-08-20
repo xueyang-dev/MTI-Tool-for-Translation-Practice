@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# MTI 翻译实践小助手 —— macOS / Linux 一键启动（HTML GUI）
+# TransPraxis / 译践 —— macOS / Linux 一键启动（HTML GUI）
 set -e
 cd "$(dirname "$0")"
 
 echo "=========================================="
-echo "    MTI 翻译实践小助手 正在启动..."
+echo "    TransPraxis / 译践 正在启动..."
 echo "=========================================="
 echo
 

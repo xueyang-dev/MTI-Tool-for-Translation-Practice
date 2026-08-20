@@ -1,4 +1,4 @@
-"""MTI 翻译实践小助手 —— 核心逻辑层（与 Streamlit UI 解耦，便于测试）。
+"""TransPraxis / 译践 —— 核心逻辑层（与 Streamlit UI 解耦，便于测试）。
 
 职责：大模型路由、文档清洗、术语抽取、双语翻译、报告生成、任务进度持久化。
 """
@@ -20,8 +20,8 @@ from docx import Document
 from google import genai
 from openai import OpenAI
 
-from mti_tool import models as _models
-from mti_tool import state_migration as _state_migration
+from transpraxis import models as _models
+from transpraxis import state_migration as _state_migration
 
 # ================= 常量 =================
 # 任务进度与过程文件的本地存储目录（已加入 .gitignore）
@@ -589,10 +589,10 @@ def import_tmx(file_stream):
 def extract_auto_terms(paragraphs, target_lang, provider, api_key, model):
     """自动抽取术语库（兼容旧接口：返回 {source: target}）。
 
-    新实现（mti_tool.terminology.extract_auto_terms_v2）：分布式采样、
+    新实现（transpraxis.terminology.extract_auto_terms_v2）：分布式采样、
     全量 occurrences、candidate 状态与 model_knowledge 证据。
     """
-    from mti_tool.terminology import extract_auto_terms_v2
+    from transpraxis.terminology import extract_auto_terms_v2
     entries, _warnings = extract_auto_terms_v2(
         paragraphs, target_lang, provider, api_key, model)
     return {e["source"]: e["target"] for e in entries}
@@ -600,7 +600,7 @@ def extract_auto_terms(paragraphs, target_lang, provider, api_key, model):
 
 # ================= 概念化术语表（对齐 localize-anything 的 Glossary 模型）=================
 def normalize_glossary(entries):
-    """标准化术语条目（委托 mti_tool.models，兼容旧字段并新增 id/occurrences/evidence）。"""
+    """标准化术语条目（委托 transpraxis.models，兼容旧字段并新增 id/occurrences/evidence）。"""
     return _models.normalize_glossary(entries)
 
 
@@ -634,8 +634,8 @@ def glossary_to_terms(glossary):
 
 def check_glossary_compliance(src, tgt, glossary, segment_id=None,
                               section_profile=None):
-    """锁定术语的确定性合规检查（委托 mti_tool.terminology：entry_id/segment_id 级）。"""
-    from mti_tool.terminology import check_glossary_compliance as _qa
+    """锁定术语的确定性合规检查（委托 transpraxis.terminology：entry_id/segment_id 级）。"""
+    from transpraxis.terminology import check_glossary_compliance as _qa
     return _qa(src, tgt, glossary, segment_id=segment_id,
                section_profile=section_profile)
 
@@ -1285,7 +1285,7 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
         "blocking": 0, "actionable": 0, "informational": 0, "review_failed": 0,
     })
     findings_all = state.setdefault("findings", [])
-    from mti_tool.terminology import (
+    from transpraxis.terminology import (
         detect_glossary_conflicts as _detect_conflicts,
         glossary_block as _glossary_block,
         select_glossary_for_segments as _select_glossary,
@@ -1915,8 +1915,8 @@ def _apply_glossary_staleness(state):
     - 追加 blocking finding（type=glossary_stale），交付回到 review_required；
     - 从 translation_memory.json 中清除，防止后续任务精确命中旧译文。
     """
-    from mti_tool import delivery as _delivery
-    from mti_tool.terminology import stale_segments_for_glossary
+    from transpraxis import delivery as _delivery
+    from transpraxis.terminology import stale_segments_for_glossary
 
     stale = stale_segments_for_glossary(state)
     pairs = state.get("pairs") or []
@@ -2059,7 +2059,7 @@ def write_profile_artifacts(job_id, document_profile, style_profile):
     返回写入的 style_profile_id，失败返回 None。
     """
     try:
-        from mti_tool.style_profile import style_profile_id
+        from transpraxis.style_profile import style_profile_id
         job_root = job_dir(job_id)
         job_root.mkdir(parents=True, exist_ok=True)
         (job_root / "document_profile.json").write_text(
@@ -2094,7 +2094,7 @@ def bypass_freeze(job_id, frozen_by="user"):
 # ================= 交付状态与人工处理记录 =================
 def mark_findings_resolved(job_id, finding_ids, action, note="", actor="user"):
     """标记 findings 已人工处理，并重算交付状态。"""
-    from mti_tool import delivery as _delivery
+    from transpraxis import delivery as _delivery
     state = load_job_state(job_id)
     if state is None:
         return None
@@ -2106,7 +2106,7 @@ def mark_findings_resolved(job_id, finding_ids, action, note="", actor="user"):
 
 def approve_delivery(job_id, note="", accept_blocking=False, actor="user"):
     """人工交付确认 -> final；有未解决 blocking 且不接受风险时拒绝。"""
-    from mti_tool import delivery as _delivery
+    from transpraxis import delivery as _delivery
     state = load_job_state(job_id)
     if state is None:
         return None, False, ["任务不存在"]
@@ -2119,7 +2119,7 @@ def retranslate_segments(job_id, indexes, provider, api_key, model, target_lang,
                          style_rules="", glossary=None, on_status=None,
                          on_caption=None, actor="user"):
     """定点重译（抽取自 scripts/fix_segments.py 的能力）。"""
-    from mti_tool import delivery as _delivery
+    from transpraxis import delivery as _delivery
     return _delivery.retranslate_segments(
         job_id, indexes, provider, api_key, model, target_lang,
         style_rules, glossary, on_status, on_caption, actor)
@@ -2145,7 +2145,7 @@ def academic_status_label(state):
 
 def invalidate_academic_report(job_id, scope="all", section_id=None):
     """Invalidate academic artifacts only; translation stages remain intact."""
-    from mti_tool import academic_writer
+    from transpraxis import academic_writer
     state = load_job_state(job_id)
     if state is None:
         raise ValueError(f"找不到任务 {job_id}")
@@ -2156,7 +2156,7 @@ def invalidate_academic_report(job_id, scope="all", section_id=None):
 
 def load_academic_artifact(job_id, name):
     """Read a canonical academic JSON artifact for UI/CLI inspection."""
-    from mti_tool import academic_writer
+    from transpraxis import academic_writer
     ARTIFACT_FILES = academic_writer.ARTIFACT_FILES
     if name not in ARTIFACT_FILES:
         raise ValueError(f"未知学术 artifact：{name}")
@@ -2176,7 +2176,7 @@ def record_human_evidence(job_id, question_id, answer, interface="academic_works
     answered; the case-analysis/section staleness is propagated through the
     existing dependency-hash architecture (only affected sections rewrite).
     """
-    from mti_tool import academic_writer, human_evidence
+    from transpraxis import academic_writer, human_evidence
     state = load_job_state(job_id)
     if state is None:
         raise ValueError(f"找不到任务 {job_id}")
@@ -2215,7 +2215,7 @@ def generate_mti_report(bilingual_pairs, termbase_dict, theory, provider, api_ke
     callers; the canonical inputs are now the saved translation state and the
     durable academic artifacts beside ``state.json``.
     """
-    from mti_tool import academic_writer
+    from transpraxis import academic_writer
     return academic_writer.run_academic_pipeline(
         state, job_id, theory, provider, api_key, model,
         artifact_dir=job_dir(job_id), call_llm=call_llm,
@@ -2251,7 +2251,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     warnings = state.setdefault("warnings", [])
 
     if enable_report:
-        from mti_tool import academic_writer
+        from transpraxis import academic_writer
         academic_writer.prepare_academic_inputs(
             state, translation_theory, research_settings, literature_sources)
         academic_writer.sync_versions(state)
@@ -2302,7 +2302,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
     if strict_terminology_governance and not state.get("profile_done"):
         if on_status:
             on_status("【阶段1.2】文档画像（分布式采样 + 结构化校验）...")
-        from mti_tool.document_profile import profile_document
+        from transpraxis.document_profile import profile_document
         profile, profile_warnings = profile_document(
             state["paras"], provider, api_key, model, target_lang)
         state["document_profile"] = profile
@@ -2323,7 +2323,7 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
             on_status("【阶段1.5】正在 AI 智能抽取全文核心术语...")
         if on_caption:
             on_caption("🤖 正在从全文分布式样本中提取专业术语...")
-        from mti_tool.terminology import extract_auto_terms_v2
+        from transpraxis.terminology import extract_auto_terms_v2
         entries, extract_warnings = extract_auto_terms_v2(
             state["paras"], target_lang, provider, api_key, model,
             document_profile=state.get("document_profile"))

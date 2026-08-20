@@ -131,7 +131,7 @@ def test_compose_spans():
 
 
 def test_annotate_stage():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-annot-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-annot-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -367,7 +367,7 @@ def test_symbol_segment_passthrough_and_tm_gate():
     assert core._tm_eligible("I blushed.", "我脸红了。")
     assert not core._tm_eligible("hello", "")
 
-    tmp = Path(tempfile.mkdtemp(prefix="mti-sym-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-sym-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -401,7 +401,7 @@ def test_symbol_segment_passthrough_and_tm_gate():
 
 
 def test_tm_sanitize_on_load():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-tmsan-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-tmsan-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -436,7 +436,7 @@ def test_annotations_normalize_and_bounds():
 
 
 def test_annotate_resume_by_offset():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-annres-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-annres-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -501,7 +501,7 @@ def test_completeness_check():
 
 
 def test_review_truncated_suggestion_rollback():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-trunc-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-trunc-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -536,7 +536,7 @@ def test_review_truncated_suggestion_rollback():
 
 
 def test_job_store():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-test-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-test-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -598,7 +598,7 @@ def _fake_llm_factory():
 
 
 def test_e2e_pipeline():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-e2e-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-e2e-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -641,7 +641,7 @@ def test_e2e_pipeline():
 
 
 def test_deterministic_repair():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-repair-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-repair-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -675,7 +675,7 @@ def test_deterministic_repair():
 
 
 def test_review_fix_and_blocking():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-review-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-review-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -718,7 +718,7 @@ def test_review_fix_and_blocking():
 
 
 def test_tm_reuse():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-tm-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-tm-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -754,7 +754,7 @@ def test_tm_reuse():
 
 
 def test_resume_translation():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-resume-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-resume-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -808,7 +808,7 @@ def test_resume_translation():
 
 
 def test_resume_report_sections():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-report-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-report-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -870,7 +870,7 @@ def test_resume_report_sections():
 
 
 def test_missing_source():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-missing-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-missing-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:

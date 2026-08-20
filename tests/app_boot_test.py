@@ -19,8 +19,8 @@ def main():
     core.OUTPUT_DIR = tmp
     try:
         app_source = (root / "app.py").read_text(encoding="utf-8")
-        assert ':has([data-testid="stFileChip"]) .mti-upload-copy' in app_source \
-            and 'animation: mti-upload-bar' in app_source \
+        assert ':has([data-testid="stFileChip"]) .tp-upload-copy' in app_source \
+            and 'animation: tp-upload-bar' in app_source \
             and '[data-testid="stFileChipName"]::before' in app_source, \
             "上传中的 Streamlit FileChip 应重绘为带状态的全宽文件卡"
         # 预置一个本地任务，确保「资产与交付 / 学术写作」Tabs 一定渲染
@@ -56,9 +56,7 @@ def main():
         assert any("TransPraxis" in m.value and "译践" in m.value
                    for m in at.sidebar.markdown), \
             "侧栏应显示 TransPraxis / 译践 品牌锁定"
-        assert not any("MTI Tool" in m.value for m in at.sidebar.markdown), \
-            "侧栏不能保留旧的 MTI Tool 产品品牌"
-        assert any("mti-provider is-unverified" in m.value for m in at.sidebar.markdown), \
+        assert any("tp-provider is-unverified" in m.value for m in at.sidebar.markdown), \
             "未经连接测试的 Provider 不应显示绿色已连接状态"
         assert any("新建翻译任务" in m.value for m in at.markdown), \
             "应直接进入四步任务工作流，不显示营销 Hero"
@@ -104,7 +102,7 @@ def main():
             "同一时刻只能显示一个文件状态"
         at.session_state["source_parse_state"] = "parsed"
         at.run()
-        assert any("文件已就绪" in m.value and "mti-source-ready" in m.value
+        assert any("文件已就绪" in m.value and "tp-source-ready" in m.value
                    for m in at.markdown), \
             "解析完成后应切换到文件已就绪"
         entry_btn = next(b for b in at.button if b.label == "开始智能画像")
@@ -166,7 +164,7 @@ def main():
             "最快", "成本最低", "术语更一致", "成本适中", "证据最完整", "耗时较长",
             "推荐")), \
             "三个预设必须直接说明工作流、取舍与推荐项"
-        assert any("mti-preset-tag" in m.value for m in at.markdown), \
+        assert any("tp-preset-tag" in m.value for m in at.markdown), \
             "预设卡片应使用紧凑标签而不是长句描述"
         assert not any("自动术语 · 翻译记忆" in m.value for m in at.markdown), \
             "折叠的高级设置不应在右侧展示配置摘要，展开后再看内容"

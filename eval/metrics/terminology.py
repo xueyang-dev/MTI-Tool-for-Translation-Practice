@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from mti_tool import models
-from mti_tool.terminology import term_matches
+from transpraxis import models
+from transpraxis.terminology import term_matches
 
 
 def compute_terminology_metrics(state: Dict[str, Any],

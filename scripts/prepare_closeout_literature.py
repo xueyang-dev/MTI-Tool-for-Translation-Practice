@@ -15,7 +15,7 @@ from typing import Any, Dict, Iterable
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from mti_tool import academic_evidence, academic_writer, literature_evidence
+from transpraxis import academic_evidence, academic_writer, literature_evidence
 
 
 JOB_ID = "ec100d8686d3891e"

@@ -107,7 +107,7 @@ def test_provider_probe():
 
 
 def test_exchange_formats():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-exchange-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-exchange-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     try:
@@ -176,7 +176,7 @@ def _make_docx(texts):
 
 
 def test_mode_semantics():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-mode-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-mode-"))
     old_dir = core.OUTPUT_DIR
     core.OUTPUT_DIR = tmp
     prompts = []
@@ -236,7 +236,7 @@ def test_mode_semantics():
 
 
 def test_translation_memory_switch():
-    tmp = Path(tempfile.mkdtemp(prefix="mti-tm-switch-"))
+    tmp = Path(tempfile.mkdtemp(prefix="transpraxis-tm-switch-"))
     old_dir = core.OUTPUT_DIR
     old_llm = core.call_llm
     core.OUTPUT_DIR = tmp

@@ -11,7 +11,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mti_tool import academic_evidence, case_analysis
+from transpraxis import academic_evidence, case_analysis
 
 
 CORE_INDEXES = (139, 233, 272)
@@ -110,7 +110,7 @@ def main() -> int:
         "eligibility_rule": (
             "核心案例必须存在真实、有意义的初译至终译变化，且不得带有系统对齐、"
             "跨段污染或模型序列化完整性标记。"),
-        "shared_gate": "mti_tool.academic_evidence.is_eligible_revision_case",
+        "shared_gate": "transpraxis.academic_evidence.is_eligible_revision_case",
         "statistics": evidence["project_evidence"]["statistics"],
         "eligible_revision_case_count": sum(
             item.get("academic_candidate_status") == "eligible"

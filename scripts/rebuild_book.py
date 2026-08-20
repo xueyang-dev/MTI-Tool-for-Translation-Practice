@@ -101,10 +101,10 @@ def main():
     import os
     env_key = {"OpenCode Go": "OPENCODE_GO_API_KEY",
                "DeepSeek": "DEEPSEEK_API_KEY", "OpenAI": "OPENAI_API_KEY",
-               "Gemini": "GEMINI_API_KEY"}.get(args.provider, "MTI_API_KEY")
-    api_key = os.environ.get(env_key) or os.environ.get("MTI_API_KEY")
+               "Gemini": "GEMINI_API_KEY"}.get(args.provider, "TRANSPRAXIS_API_KEY")
+    api_key = os.environ.get(env_key) or os.environ.get("TRANSPRAXIS_API_KEY")
     if not api_key:
-        sys.exit(f"请设置 {env_key} 或 MTI_API_KEY 环境变量")
+        sys.exit(f"请设置 {env_key} 或 TRANSPRAXIS_API_KEY 环境变量")
 
     old_state = core.load_job_state(args.job)
     if not old_state:
