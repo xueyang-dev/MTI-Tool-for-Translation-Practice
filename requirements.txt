@@ -1,0 +1,10 @@
+# 直接依赖（版本下限，安装时自动解析兼容版本）
+# Streamlit 的压缩中间件使用 Starlette 0.x API，保持此范围避免 1.x 构造参数不兼容。
+streamlit>=1.40
+starlette>=0.46,<1
+PyMuPDF>=1.24
+python-docx>=1.1
+openai>=1.40
+google-genai>=1.0
+pandas>=2.0
+openpyxl>=3.1

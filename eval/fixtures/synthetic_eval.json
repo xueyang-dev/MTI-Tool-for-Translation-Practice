@@ -1,0 +1,40 @@
+{
+  "note": "Synthetic eval fixture. 内容为虚构示例，不含任何真实书籍文本。",
+  "segments": [
+    "The Skopos theory is frequently discussed in translation studies.",
+    "Skopos theory guides the translator's decisions from the very start.",
+    "The fidelity principle matters when the target text must match the source.",
+    "John Smith wrote the introduction to this handbook.",
+    "MT tools assist translators, but the final choice is human.",
+    "Price: %s per copy. See https://example.com/ref1 and [12].",
+    "\"What do you mean?\" she asked, looking up from the book.",
+    "\"Nothing much,\" he replied with a shrug.",
+    "The Skopos theory and the fidelity principle are often compared.",
+    "Skopos's core claim is that purpose justifies the method.",
+    "A very long sentence that keeps going with subordinate clauses, qualifications, and additional details which make the paragraph harder to parse and translate, especially when it spans multiple lines of text and contains both technical and ordinary vocabulary mixed together.",
+    "Short.",
+    "The bank approved the loan for the new translation project.",
+    "We sat on the bank of the river watching the sunset.",
+    "Translation is an art; Translation Studies is a field.",
+    "The quick brown fox jumps over the lazy dog while the kit-ten slept on the mat.",
+    "MTI tools are used in MTI programs across the country.",
+    "John Smith's theory builds on Skopos theory and the fidelity principle.",
+    "References [12] and [34] support the claim. Email: test@example.com",
+    "The cat sat on the mat, and the dog barked at the moon.",
+    "The fidelity principle requires faithful rendering of the original.",
+    "Skopos theory was developed in the 1970s in Germany.",
+    "Both John Smith and the reviewer agreed on the final text.",
+    "The end of the chapter summarizes everything discussed above."
+  ],
+  "glossary": [
+    {"source": "Skopos theory", "target": "目的论", "preferred": "目的论",
+     "forbidden": ["功能对等"], "behavior": "translate", "status": "locked",
+     "scope": "global"},
+    {"source": "fidelity principle", "target": "忠实原则", "preferred": "忠实原则",
+     "behavior": "translate", "status": "locked", "scope": "global"},
+    {"source": "John Smith", "target": "约翰·史密斯", "behavior": "preserve",
+     "status": "locked", "scope": "global"},
+    {"source": "MT", "target": "机器翻译", "preferred": "机器翻译",
+     "behavior": "translate", "status": "locked", "scope": "global"}
+  ]
+}

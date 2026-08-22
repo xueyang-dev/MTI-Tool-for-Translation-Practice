@@ -1,0 +1,279 @@
+{
+  "schema_version": "case-selector-v1",
+  "selection_policy": "argument relevance > complete process chain > representativeness > complexity",
+  "cases": [
+    {
+      "case_id": "seg-track-b-fixture-0006",
+      "segment_id": "seg-track-b-fixture-0006",
+      "segment_index": 6,
+      "coverage_zone": "middle",
+      "score": 28.5,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "blocking_finding",
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 1,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "research_questions": [
+        "RQ1"
+      ],
+      "selection_rationale": "complete_translation_evidence_chain；blocking_finding；repair_or_initial_final_change；terminology_dense；clause_complexity"
+    },
+    {
+      "case_id": "seg-track-b-fixture-0000",
+      "segment_id": "seg-track-b-fixture-0000",
+      "segment_index": 0,
+      "coverage_zone": "beginning",
+      "score": 26.5,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "actionable_finding",
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 1,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "research_questions": [
+        "RQ1"
+      ],
+      "selection_rationale": "complete_translation_evidence_chain；actionable_finding；repair_or_initial_final_change；terminology_dense；clause_complexity"
+    },
+    {
+      "case_id": "seg-track-b-fixture-0011",
+      "segment_id": "seg-track-b-fixture-0011",
+      "segment_index": 11,
+      "coverage_zone": "end",
+      "score": 20.7,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 128,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 1,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "research_questions": [
+        "RQ1"
+      ],
+      "selection_rationale": "complete_translation_evidence_chain；repair_or_initial_final_change；terminology_dense；clause_complexity"
+    },
+    {
+      "case_id": "seg-track-b-fixture-0005",
+      "segment_id": "seg-track-b-fixture-0005",
+      "segment_index": 5,
+      "coverage_zone": "middle",
+      "score": 11.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "tm_reuse",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": true
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "repair_or_initial_final_change；terminology_dense；tm_reuse；clause_complexity"
+    },
+    {
+      "case_id": "seg-track-b-fixture-0001",
+      "segment_id": "seg-track-b-fixture-0001",
+      "segment_index": 1,
+      "coverage_zone": "beginning",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "repair_or_initial_final_change；terminology_dense；clause_complexity"
+    },
+    {
+      "case_id": "seg-track-b-fixture-0002",
+      "segment_id": "seg-track-b-fixture-0002",
+      "segment_index": 2,
+      "coverage_zone": "beginning",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "repair_or_initial_final_change；terminology_dense；clause_complexity"
+    },
+    {
+      "case_id": "seg-track-b-fixture-0003",
+      "segment_id": "seg-track-b-fixture-0003",
+      "segment_index": 3,
+      "coverage_zone": "beginning",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "repair_or_initial_final_change；terminology_dense；clause_complexity"
+    },
+    {
+      "case_id": "seg-track-b-fixture-0004",
+      "segment_id": "seg-track-b-fixture-0004",
+      "segment_index": 4,
+      "coverage_zone": "middle",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      },
+      "supports_claims": [],
+      "research_questions": [],
+      "selection_rationale": "repair_or_initial_final_change；terminology_dense；clause_complexity"
+    }
+  ],
+  "content_hash": "1c35c75d3a936f5a029483fff117962068c172deee388a160c88595803cf97a6"
+}

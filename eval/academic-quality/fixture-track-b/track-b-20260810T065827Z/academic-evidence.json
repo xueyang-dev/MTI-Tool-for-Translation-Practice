@@ -1,0 +1,1011 @@
+{
+  "schema_version": "academic-evidence-v2",
+  "job_id": "track-b-fixture",
+  "evidence_classes": {
+    "PROJECT_EVIDENCE": "facts recorded by the translation workflow",
+    "LITERATURE_EVIDENCE": "registered external or user-provided sources",
+    "AUTHOR_ANALYSIS": "interpretation produced during academic planning/writing"
+  },
+  "coverage_policy": {
+    "segments_scanned": 12,
+    "scan_scope": "whole_corpus",
+    "candidate_limit": 80,
+    "zones": [
+      "beginning",
+      "middle",
+      "end"
+    ],
+    "zone_minimum_candidates": 3,
+    "bounded": false
+  },
+  "project_evidence": {
+    "segments": [
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0000",
+        "segment_index": 0,
+        "source": "Although segment 0 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第0段初译。",
+        "final_target": "尽管第0段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "beginning",
+        "location": {
+          "paragraph": 0,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [
+            {
+              "segment_index": 0,
+              "severity": "actionable",
+              "type": "review",
+              "reason": "初译遗漏让步关系",
+              "suggested_target": "尽管第0段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。"
+            }
+          ],
+          "deterministic_findings": [],
+          "review_findings": [
+            {
+              "severity": "actionable",
+              "reason": "初译遗漏让步关系",
+              "type": "review",
+              "suggested_target": "尽管第0段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+              "resolved": null
+            }
+          ],
+          "repair_history": [
+            {
+              "severity": "actionable",
+              "reason": "初译遗漏让步关系",
+              "suggested_target": "尽管第0段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。"
+            }
+          ],
+          "human_actions": [
+            {
+              "finding_id": "segment:0",
+              "action": "retranslated",
+              "note": "重译",
+              "timestamp": "2026-08-09T00:00:00Z"
+            }
+          ],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "recorded",
+          "repair_history": "recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0001",
+        "segment_index": 1,
+        "source": "Although segment 1 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第1段初译。",
+        "final_target": "尽管第1段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "beginning",
+        "location": {
+          "paragraph": 1,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0002",
+        "segment_index": 2,
+        "source": "Although segment 2 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第2段初译。",
+        "final_target": "尽管第2段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "beginning",
+        "location": {
+          "paragraph": 2,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0003",
+        "segment_index": 3,
+        "source": "Although segment 3 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第3段初译。",
+        "final_target": "尽管第3段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "beginning",
+        "location": {
+          "paragraph": 3,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0004",
+        "segment_index": 4,
+        "source": "Although segment 4 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第4段初译。",
+        "final_target": "尽管第4段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "middle",
+        "location": {
+          "paragraph": 4,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0005",
+        "segment_index": 5,
+        "source": "Although segment 5 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第5段初译。",
+        "final_target": "尽管第5段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": true,
+        "coverage_zone": "middle",
+        "location": {
+          "paragraph": 5,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0006",
+        "segment_index": 6,
+        "source": "Although segment 6 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第6段初译。",
+        "final_target": "尽管第6段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "middle",
+        "location": {
+          "paragraph": 6,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [
+            {
+              "segment_index": 6,
+              "severity": "blocking",
+              "type": "check",
+              "reason": "译文疑似截断",
+              "resolved": true
+            }
+          ],
+          "deterministic_findings": [
+            {
+              "severity": "blocking",
+              "reason": "译文疑似截断",
+              "type": "check",
+              "entry_id": null,
+              "resolved": true
+            }
+          ],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0007",
+        "segment_index": 7,
+        "source": "Although segment 7 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第7段初译。",
+        "final_target": "尽管第7段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "middle",
+        "location": {
+          "paragraph": 7,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0008",
+        "segment_index": 8,
+        "source": "Although segment 8 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第8段初译。",
+        "final_target": "尽管第8段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "end",
+        "location": {
+          "paragraph": 8,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0009",
+        "segment_index": 9,
+        "source": "Although segment 9 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第9段初译。",
+        "final_target": "尽管第9段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "end",
+        "location": {
+          "paragraph": 9,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0010",
+        "segment_index": 10,
+        "source": "Although segment 10 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第10段初译。",
+        "final_target": "尽管第10段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "end",
+        "location": {
+          "paragraph": 10,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [],
+          "deterministic_findings": [],
+          "review_findings": [],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "not_recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      },
+      {
+        "evidence_type": "PROJECT_EVIDENCE",
+        "segment_id": "seg-track-b-fixture-0011",
+        "segment_index": 11,
+        "source": "Although segment 11 contains several clauses, the pilot continued because the mission mattered, which required careful judgment.",
+        "initial_target": "第11段初译。",
+        "final_target": "尽管第11段包含多个分句，飞行员仍继续执行任务，因为任务需要审慎判断。",
+        "reviewed": true,
+        "from_tm": false,
+        "coverage_zone": "end",
+        "location": {
+          "paragraph": 11,
+          "section_id": null,
+          "chapter": null,
+          "topic": null,
+          "recorded": false
+        },
+        "process_evidence": {
+          "findings": [
+            {
+              "segment_index": 11,
+              "severity": "informational",
+              "type": "review",
+              "reason": "结尾段语气处理可接受"
+            }
+          ],
+          "deterministic_findings": [],
+          "review_findings": [
+            {
+              "severity": "informational",
+              "reason": "结尾段语气处理可接受",
+              "type": "review",
+              "suggested_target": null,
+              "resolved": null
+            }
+          ],
+          "repair_history": [],
+          "human_actions": [],
+          "terminology_decisions": [
+            {
+              "id": "term-1",
+              "source": "pilot",
+              "target": "飞行员",
+              "preferred": "飞行员",
+              "status": "locked",
+              "behavior": "translate"
+            }
+          ],
+          "injected_glossary_entry_ids": [
+            "term-1"
+          ]
+        },
+        "availability": {
+          "initial_target": "recorded",
+          "findings": "recorded",
+          "repair_history": "not_recorded",
+          "terminology_decisions": "recorded",
+          "location": "not_recorded"
+        }
+      }
+    ],
+    "statistics": {
+      "total_segments": 12,
+      "translated_segments": 12,
+      "reviewed_segments": 12,
+      "blocking_findings": 1,
+      "actionable_findings": 1,
+      "informational_findings": 1,
+      "repaired_segments": 12,
+      "term_conflicts": 0,
+      "tm_reuse_count": 1,
+      "issue_category_distribution": {
+        "check": 1,
+        "review": 2
+      },
+      "repair_category_distribution": {
+        "initial_final_changed": 12,
+        "suggested_target_recorded": 1,
+        "human_action_recorded": 1
+      },
+      "coverage_distribution": {
+        "beginning": 4,
+        "middle": 4,
+        "end": 4
+      }
+    },
+    "document_profile": {
+      "genre": "回忆录",
+      "sections": []
+    },
+    "glossary": [
+      {
+        "id": "term-1",
+        "source": "pilot",
+        "target": "飞行员",
+        "preferred": "飞行员",
+        "status": "locked",
+        "behavior": "translate"
+      }
+    ]
+  },
+  "author_analysis": [],
+  "candidate_cases": [
+    {
+      "case_id": "seg-track-b-fixture-0006",
+      "segment_id": "seg-track-b-fixture-0006",
+      "segment_index": 6,
+      "coverage_zone": "middle",
+      "score": 28.5,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "blocking_finding",
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 1,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0000",
+      "segment_id": "seg-track-b-fixture-0000",
+      "segment_index": 0,
+      "coverage_zone": "beginning",
+      "score": 26.5,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "actionable_finding",
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 1,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0011",
+      "segment_id": "seg-track-b-fixture-0011",
+      "segment_index": 11,
+      "coverage_zone": "end",
+      "score": 20.7,
+      "reasons": [
+        "complete_translation_evidence_chain",
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 128,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 1,
+        "repair_evidence": true,
+        "complete_evidence_chain": true,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0005",
+      "segment_id": "seg-track-b-fixture-0005",
+      "segment_index": 5,
+      "coverage_zone": "middle",
+      "score": 11.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "tm_reuse",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": true
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0001",
+      "segment_id": "seg-track-b-fixture-0001",
+      "segment_index": 1,
+      "coverage_zone": "beginning",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0002",
+      "segment_id": "seg-track-b-fixture-0002",
+      "segment_index": 2,
+      "coverage_zone": "beginning",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0003",
+      "segment_id": "seg-track-b-fixture-0003",
+      "segment_index": 3,
+      "coverage_zone": "beginning",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0004",
+      "segment_id": "seg-track-b-fixture-0004",
+      "segment_index": 4,
+      "coverage_zone": "middle",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0007",
+      "segment_id": "seg-track-b-fixture-0007",
+      "segment_index": 7,
+      "coverage_zone": "middle",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0008",
+      "segment_id": "seg-track-b-fixture-0008",
+      "segment_index": 8,
+      "coverage_zone": "end",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0009",
+      "segment_id": "seg-track-b-fixture-0009",
+      "segment_index": 9,
+      "coverage_zone": "end",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 127,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    },
+    {
+      "case_id": "seg-track-b-fixture-0010",
+      "segment_id": "seg-track-b-fixture-0010",
+      "segment_index": 10,
+      "coverage_zone": "end",
+      "score": 10.5,
+      "reasons": [
+        "repair_or_initial_final_change",
+        "terminology_dense",
+        "clause_complexity"
+      ],
+      "features": {
+        "source_chars": 128,
+        "clause_markers": 3,
+        "punctuation_count": 2,
+        "term_count": 1,
+        "term_entry_ids": [
+          "term-1"
+        ],
+        "blocking_findings": 0,
+        "actionable_findings": 0,
+        "informational_findings": 0,
+        "repair_evidence": true,
+        "complete_evidence_chain": false,
+        "terminology_conflict": false,
+        "tm_reuse": false
+      }
+    }
+  ],
+  "limitations": [],
+  "content_hash": "fdfe68cbef7db8d42eaa3722d5799b483d2acaa9c9928bbe940d05c816c76c4d"
+}

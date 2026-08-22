@@ -1,0 +1,582 @@
+{
+  "schema_version": "academic-validation-v2",
+  "validator_version": "validator-v2",
+  "status": "fail",
+  "issues": [
+    {
+      "issue_id": "AV-001",
+      "type": "unresolved_statistic_token",
+      "severity": "error",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "报告仍含未解析的统计占位符。",
+      "suggested_action": ""
+    },
+    {
+      "issue_id": "AV-002",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：初译为“第6段初译。”，审校环节发现该译文疑似截断，属于阻断性问题，即译文在结构上不完整，受众无法获得完整信息。修复后的定稿为：",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-003",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：初译为“第0段初译。”，审校环节发现初译遗漏了让步关系，属于可操作问题，即译文虽可读但逻辑关系受损。修复后的定稿为：",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-004",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：初译为“第11段初译。”，审校环节认为结尾段语气处理可接受，属于参考性问题，即译文已达到可接受水平。修复后的定稿为：",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-005",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：初译版本为“第6段初译。”，审校环节发现该译文存在阻断性问题（blocking finding），问题类型为“check”，具体原因为“译文疑似截断”。修复后的最终译文为：",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-006",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：修复后的译文以“尽管”开篇，完整再现了源文本的让步结构、因果逻辑与修饰关系。值得注意的是，修复后的译文在结构上与源文本形成了系统的对应：让步从句（“尽管第6段包含多个分句”）对应源文本的“Althou",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-007",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：初译版本同样为“第0段初译。”，审校环节发现该译文存在可操作问题（actionable finding），问题类型为“review”，具体原因为“初译遗漏让步关系”。审校者给出了建议译文：",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-008",
+      "type": "unmarked_project_statistic",
+      "severity": "warning",
+      "section_id": null,
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "项目数字缺少统计来源标记：从功能对等理论来看，<!--lit-claim:LC-002-->翻译在于再现最贴近的自然对等（the closest natural equivalent）<!--lit-evidence:LE-8",
+      "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+    },
+    {
+      "issue_id": "AV-009",
+      "type": "missing_research_question_link",
+      "severity": "warning",
+      "section_id": "1",
+      "claim_id": null,
+      "evidence_id": null,
+      "reason": "章节 1 未标明对研究问题 RQ1 的回应。",
+      "suggested_action": ""
+    },
+    {
+      "issue_id": "AV-010",
+      "type": "missing_selected_case",
+      "severity": "error",
+      "section_id": "3",
+      "claim_id": null,
+      "evidence_id": "seg-track-b-fixture-0006",
+      "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0006。",
+      "suggested_action": "使用该案例，或重新规划案例选择。"
+    },
+    {
+      "issue_id": "AV-011",
+      "type": "missing_selected_case",
+      "severity": "error",
+      "section_id": "3",
+      "claim_id": null,
+      "evidence_id": "seg-track-b-fixture-0000",
+      "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0000。",
+      "suggested_action": "使用该案例，或重新规划案例选择。"
+    },
+    {
+      "issue_id": "AV-012",
+      "type": "missing_selected_case",
+      "severity": "error",
+      "section_id": "3",
+      "claim_id": null,
+      "evidence_id": "seg-track-b-fixture-0011",
+      "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0011。",
+      "suggested_action": "使用该案例，或重新规划案例选择。"
+    },
+    {
+      "issue_id": "AV-013",
+      "type": "missing_planned_literature_claim",
+      "severity": "error",
+      "section_id": "3",
+      "claim_id": null,
+      "evidence_id": "LC-003",
+      "reason": "章节 3 未落实文献主张 LC-003。",
+      "suggested_action": ""
+    },
+    {
+      "issue_id": "AV-014",
+      "type": "missing_planned_literature_evidence",
+      "severity": "error",
+      "section_id": "3",
+      "claim_id": null,
+      "evidence_id": "LE-40d411b6c8a07b44",
+      "reason": "章节 3 未使用文献证据 LE-40d411b6c8a07b44。",
+      "suggested_action": ""
+    },
+    {
+      "issue_id": "AV-015",
+      "type": "missing_selected_case",
+      "severity": "error",
+      "section_id": "4",
+      "claim_id": null,
+      "evidence_id": "seg-track-b-fixture-0006",
+      "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0006。",
+      "suggested_action": "使用该案例，或重新规划案例选择。"
+    },
+    {
+      "issue_id": "AV-016",
+      "type": "missing_selected_case",
+      "severity": "error",
+      "section_id": "4",
+      "claim_id": null,
+      "evidence_id": "seg-track-b-fixture-0000",
+      "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0000。",
+      "suggested_action": "使用该案例，或重新规划案例选择。"
+    },
+    {
+      "issue_id": "AV-017",
+      "type": "missing_selected_case",
+      "severity": "error",
+      "section_id": "4",
+      "claim_id": null,
+      "evidence_id": "seg-track-b-fixture-0011",
+      "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0011。",
+      "suggested_action": "使用该案例，或重新规划案例选择。"
+    },
+    {
+      "issue_id": "AV-018",
+      "type": "missing_planned_literature_claim",
+      "severity": "error",
+      "section_id": "4",
+      "claim_id": null,
+      "evidence_id": "LC-003",
+      "reason": "章节 4 未落实文献主张 LC-003。",
+      "suggested_action": ""
+    },
+    {
+      "issue_id": "AV-019",
+      "type": "missing_planned_literature_evidence",
+      "severity": "error",
+      "section_id": "4",
+      "claim_id": null,
+      "evidence_id": "LE-40d411b6c8a07b44",
+      "reason": "章节 4 未使用文献证据 LE-40d411b6c8a07b44。",
+      "suggested_action": ""
+    }
+  ],
+  "summary": {
+    "errors": 11,
+    "warnings": 8,
+    "segment_references": 0,
+    "statistics_markers": 10,
+    "citation_markers": 6,
+    "literature_claim_markers": 13,
+    "literature_evidence_markers": 13,
+    "literature_quote_markers": 6,
+    "claim_markers": 20,
+    "research_question_markers": 9
+  },
+  "content_hash": "586379dc13ea4fb43303aacaa28de8f66a4fc55084d83060c8ee2ce35ec71cc7",
+  "runs": [
+    {
+      "schema_version": "academic-validation-v2",
+      "validator_version": "validator-v2",
+      "status": "fail",
+      "issues": [
+        {
+          "issue_id": "AV-001",
+          "type": "unresolved_statistic_token",
+          "severity": "error",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "报告仍含未解析的统计占位符。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-002",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：初译版本为“第6段初译。”，审校环节发现该译文存在阻断性问题（blocking finding），问题类型为“check”，具体原因为“译文疑似截断”。修复后的最终译文为：",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-003",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：修复后的译文以“尽管”开篇，完整再现了源文本的让步结构、因果逻辑与修饰关系。值得注意的是，修复后的译文在结构上与源文本形成了系统的对应：让步从句（“尽管第6段包含多个分句”）对应源文本的“Althou",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-004",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：初译版本同样为“第0段初译。”，审校环节发现该译文存在可操作问题（actionable finding），问题类型为“review”，具体原因为“初译遗漏让步关系”。审校者给出了建议译文：",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-005",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：从功能对等理论来看，<!--lit-claim:LC-002-->翻译在于再现最贴近的自然对等（the closest natural equivalent）<!--lit-evidence:LE-8",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-006",
+          "type": "missing_research_question_link",
+          "severity": "warning",
+          "section_id": "1",
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "章节 1 未标明对研究问题 RQ1 的回应。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-007",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "3",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0006",
+          "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0006。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-008",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "3",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0000",
+          "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0000。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-009",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "3",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0011",
+          "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0011。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-010",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0006",
+          "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0006。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-011",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0000",
+          "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0000。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-012",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0011",
+          "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0011。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-013",
+          "type": "missing_planned_literature_claim",
+          "severity": "error",
+          "section_id": "5",
+          "claim_id": null,
+          "evidence_id": "LC-003",
+          "reason": "章节 5 未落实文献主张 LC-003。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-014",
+          "type": "missing_planned_literature_evidence",
+          "severity": "error",
+          "section_id": "5",
+          "claim_id": null,
+          "evidence_id": "LE-40d411b6c8a07b44",
+          "reason": "章节 5 未使用文献证据 LE-40d411b6c8a07b44。",
+          "suggested_action": ""
+        }
+      ],
+      "summary": {
+        "errors": 9,
+        "warnings": 5,
+        "segment_references": 0,
+        "statistics_markers": 10,
+        "citation_markers": 6,
+        "literature_claim_markers": 15,
+        "literature_evidence_markers": 15,
+        "literature_quote_markers": 6,
+        "claim_markers": 20,
+        "research_question_markers": 9
+      },
+      "content_hash": "3ea01c01443255e6ac660fa010421bc1429ebf6686aa143864c808f934f885ed"
+    },
+    {
+      "schema_version": "academic-validation-v2",
+      "validator_version": "validator-v2",
+      "status": "fail",
+      "issues": [
+        {
+          "issue_id": "AV-001",
+          "type": "unresolved_statistic_token",
+          "severity": "error",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "报告仍含未解析的统计占位符。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-002",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：初译为“第6段初译。”，审校环节发现该译文疑似截断，属于阻断性问题，即译文在结构上不完整，受众无法获得完整信息。修复后的定稿为：",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-003",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：初译为“第0段初译。”，审校环节发现初译遗漏了让步关系，属于可操作问题，即译文虽可读但逻辑关系受损。修复后的定稿为：",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-004",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：初译为“第11段初译。”，审校环节认为结尾段语气处理可接受，属于参考性问题，即译文已达到可接受水平。修复后的定稿为：",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-005",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：初译版本为“第6段初译。”，审校环节发现该译文存在阻断性问题（blocking finding），问题类型为“check”，具体原因为“译文疑似截断”。修复后的最终译文为：",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-006",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：修复后的译文以“尽管”开篇，完整再现了源文本的让步结构、因果逻辑与修饰关系。值得注意的是，修复后的译文在结构上与源文本形成了系统的对应：让步从句（“尽管第6段包含多个分句”）对应源文本的“Althou",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-007",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：初译版本同样为“第0段初译。”，审校环节发现该译文存在可操作问题（actionable finding），问题类型为“review”，具体原因为“初译遗漏让步关系”。审校者给出了建议译文：",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-008",
+          "type": "unmarked_project_statistic",
+          "severity": "warning",
+          "section_id": null,
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "项目数字缺少统计来源标记：从功能对等理论来看，<!--lit-claim:LC-002-->翻译在于再现最贴近的自然对等（the closest natural equivalent）<!--lit-evidence:LE-8",
+          "suggested_action": "改用 {{STAT:metric_name}}，或明确说明该数字不是项目统计。"
+        },
+        {
+          "issue_id": "AV-009",
+          "type": "missing_research_question_link",
+          "severity": "warning",
+          "section_id": "1",
+          "claim_id": null,
+          "evidence_id": null,
+          "reason": "章节 1 未标明对研究问题 RQ1 的回应。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-010",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "3",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0006",
+          "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0006。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-011",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "3",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0000",
+          "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0000。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-012",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "3",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0011",
+          "reason": "章节 3 未使用已选案例 seg-track-b-fixture-0011。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-013",
+          "type": "missing_planned_literature_claim",
+          "severity": "error",
+          "section_id": "3",
+          "claim_id": null,
+          "evidence_id": "LC-003",
+          "reason": "章节 3 未落实文献主张 LC-003。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-014",
+          "type": "missing_planned_literature_evidence",
+          "severity": "error",
+          "section_id": "3",
+          "claim_id": null,
+          "evidence_id": "LE-40d411b6c8a07b44",
+          "reason": "章节 3 未使用文献证据 LE-40d411b6c8a07b44。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-015",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0006",
+          "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0006。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-016",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0000",
+          "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0000。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-017",
+          "type": "missing_selected_case",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": "seg-track-b-fixture-0011",
+          "reason": "章节 4 未使用已选案例 seg-track-b-fixture-0011。",
+          "suggested_action": "使用该案例，或重新规划案例选择。"
+        },
+        {
+          "issue_id": "AV-018",
+          "type": "missing_planned_literature_claim",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": "LC-003",
+          "reason": "章节 4 未落实文献主张 LC-003。",
+          "suggested_action": ""
+        },
+        {
+          "issue_id": "AV-019",
+          "type": "missing_planned_literature_evidence",
+          "severity": "error",
+          "section_id": "4",
+          "claim_id": null,
+          "evidence_id": "LE-40d411b6c8a07b44",
+          "reason": "章节 4 未使用文献证据 LE-40d411b6c8a07b44。",
+          "suggested_action": ""
+        }
+      ],
+      "summary": {
+        "errors": 11,
+        "warnings": 8,
+        "segment_references": 0,
+        "statistics_markers": 10,
+        "citation_markers": 6,
+        "literature_claim_markers": 13,
+        "literature_evidence_markers": 13,
+        "literature_quote_markers": 6,
+        "claim_markers": 20,
+        "research_question_markers": 9
+      },
+      "content_hash": "8ccfb8f1d0bcaeb5e45431c0e055e088aa8b8b302c2bafec7327e9cc3d9f7536"
+    }
+  ]
+}

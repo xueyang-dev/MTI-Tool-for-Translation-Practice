@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="500" viewBox="0 0 1440 500" role="img" aria-labelledby="title desc">
+  <title id="title">TransPraxis 长文档翻译工作流程</title>
+  <desc id="desc">PDF 或 DOCX 文档依次经过文档解析、术语管理、上下文翻译、独立审校、交付资产和翻译实践报告六个阶段。</desc>
+  <rect width="1440" height="500" rx="28" fill="#F7F8FC"/>
+  <text x="72" y="76" fill="#152036" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="30" font-weight="700">长文档翻译工作流程</text>
+  <text x="72" y="112" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="17">从原始文档到可交付的翻译资产与实践材料</text>
+
+  <g fill="none" stroke="#B4BECD" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M270 288H294"/><path d="M286 280L294 288 286 296"/>
+    <path d="M492 288H516"/><path d="M508 280L516 288 508 296"/>
+    <path d="M714 288H738"/><path d="M730 280L738 288 730 296"/>
+    <path d="M936 288H960"/><path d="M952 280L960 288 952 296"/>
+    <path d="M1158 288H1182"/><path d="M1174 280L1182 288 1174 296"/>
+  </g>
+
+  <g transform="translate(72 170)">
+    <rect width="198" height="236" rx="22" fill="#FFF7DE" stroke="#F2C65B" stroke-width="2"/>
+    <circle cx="30" cy="30" r="17" fill="#F2C65B"/><text x="30" y="36" text-anchor="middle" fill="#4A3504" font-family="Arial, sans-serif" font-size="16" font-weight="700">1</text>
+    <g transform="translate(72 49)" fill="none" stroke="#8C6505" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 5H39L55 21V72H4Z"/><path d="M39 5V21H55"/><path d="M18 38H42M18 53H42"/>
+    </g>
+    <text x="99" y="149" text-anchor="middle" fill="#26324A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="21" font-weight="700">文档解析</text>
+    <text x="99" y="181" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">PDF / DOCX</text>
+    <text x="99" y="204" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">段落与结构</text>
+  </g>
+
+  <g transform="translate(294 170)">
+    <rect width="198" height="236" rx="22" fill="#E8F5FF" stroke="#75C4F3" stroke-width="2"/>
+    <circle cx="30" cy="30" r="17" fill="#75C4F3"/><text x="30" y="36" text-anchor="middle" fill="#103C5D" font-family="Arial, sans-serif" font-size="16" font-weight="700">2</text>
+    <g transform="translate(73 51)" fill="none" stroke="#1774A8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 22L29 5H66L78 17 43 52H5Z"/><circle cx="56" cy="21" r="4"/><path d="M23 57L34 68 61 41"/>
+    </g>
+    <text x="99" y="149" text-anchor="middle" fill="#26324A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="21" font-weight="700">术语管理</text>
+    <text x="99" y="181" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">提取候选</text>
+    <text x="99" y="204" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">确认术语</text>
+  </g>
+
+  <g transform="translate(516 170)">
+    <rect width="198" height="236" rx="22" fill="#F0EBFF" stroke="#AF9AF5" stroke-width="2"/>
+    <circle cx="30" cy="30" r="17" fill="#AF9AF5"/><text x="30" y="36" text-anchor="middle" fill="#352472" font-family="Arial, sans-serif" font-size="16" font-weight="700">3</text>
+    <g transform="translate(66 49)" fill="none" stroke="#6E54D8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 11H58A8 8 0 0 1 66 19V49A8 8 0 0 1 58 57H32L18 70V57H7A8 8 0 0 1-1 49V19A8 8 0 0 1 7 11Z"/>
+      <path d="M16 29H48M16 43H39"/>
+    </g>
+    <text x="99" y="149" text-anchor="middle" fill="#26324A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="21" font-weight="700">上下文翻译</text>
+    <text x="99" y="181" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">相关术语</text>
+    <text x="99" y="204" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">相邻段落</text>
+  </g>
+
+  <g transform="translate(738 170)">
+    <rect width="198" height="236" rx="22" fill="#E7F8F2" stroke="#76D1AF" stroke-width="2"/>
+    <circle cx="30" cy="30" r="17" fill="#76D1AF"/><text x="30" y="36" text-anchor="middle" fill="#0B533A" font-family="Arial, sans-serif" font-size="16" font-weight="700">4</text>
+    <g transform="translate(70 48)" fill="none" stroke="#168364" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="31" cy="33" r="27"/><path d="M52 54L70 72M18 34L28 44 46 24"/>
+    </g>
+    <text x="99" y="149" text-anchor="middle" fill="#26324A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="21" font-weight="700">独立审校</text>
+    <text x="99" y="181" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">检查问题</text>
+    <text x="99" y="204" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">评估修订</text>
+  </g>
+
+  <g transform="translate(960 170)">
+    <rect width="198" height="236" rx="22" fill="#FFF0E8" stroke="#F3A678" stroke-width="2"/>
+    <circle cx="30" cy="30" r="17" fill="#F3A678"/><text x="30" y="36" text-anchor="middle" fill="#6A2A0B" font-family="Arial, sans-serif" font-size="16" font-weight="700">5</text>
+    <g transform="translate(67 49)" fill="none" stroke="#C9602E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 25L35 8 67 25V64L35 81 4 64Z"/><path d="M4 25L35 42 67 25M35 42V81"/><path d="M51 6V26M43 14L51 6 59 14"/>
+    </g>
+    <text x="99" y="149" text-anchor="middle" fill="#26324A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="21" font-weight="700">交付资产</text>
+    <text x="99" y="181" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">DOCX · TMX · TBX</text>
+    <text x="99" y="204" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">翻译记忆</text>
+  </g>
+
+  <g transform="translate(1182 170)">
+    <rect width="198" height="236" rx="22" fill="#EFF2F7" stroke="#AAB6C8" stroke-width="2"/>
+    <circle cx="30" cy="30" r="17" fill="#AAB6C8"/><text x="30" y="36" text-anchor="middle" fill="#26364B" font-family="Arial, sans-serif" font-size="16" font-weight="700">6</text>
+    <g transform="translate(73 47)" fill="none" stroke="#52657C" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 5H39L55 21V72H4Z"/><path d="M39 5V21H55M17 38H43M17 53H43"/><path d="M16 65L43 65"/>
+    </g>
+    <text x="99" y="149" text-anchor="middle" fill="#26324A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="21" font-weight="700">实践报告</text>
+    <text x="99" y="181" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">案例与证据</text>
+    <text x="99" y="204" text-anchor="middle" fill="#69758A" font-family="PingFang SC, Noto Sans CJK SC, Microsoft YaHei, sans-serif" font-size="15">报告草稿</text>
+  </g>
+</svg>

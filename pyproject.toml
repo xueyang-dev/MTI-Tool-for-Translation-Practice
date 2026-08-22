@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "transpraxis"
+version = "0.2.1"
+description = "TransPraxis / 译践 — Translation & Report Copilot"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dynamic = ["dependencies"]
+authors = [
+  {name = "Xue Yang"}
+]
+
+[project.optional-dependencies]
+desktop = ["pywebview>=5.0"]
+test = ["pytest>=8,<9"]
+
+[project.scripts]
+transpraxis = "gui:main"
+
+[tool.setuptools]
+py-modules = ["app", "core", "gui"]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["transpraxis*"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.package-data]
+transpraxis = ["resources/*.txt", "resources/brand/*.png"]
