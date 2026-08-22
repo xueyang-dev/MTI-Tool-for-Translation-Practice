@@ -12,9 +12,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-import xml.etree.ElementTree as ET
+# The standard module is used only to construct XML; parsing uses defusedxml.
+import xml.etree.ElementTree as ET  # nosec B405
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+
+from defusedxml.ElementTree import fromstring as safe_xml_fromstring
 
 from . import delivery as _delivery
 from . import models
@@ -99,7 +102,7 @@ def validate_tbx(xml_bytes: bytes,
     """TBX 结构校验：可解析、根元素正确、termEntry 数量匹配。"""
     problems = []
     try:
-        root = ET.fromstring(xml_bytes.decode("utf-8"))
+        root = safe_xml_fromstring(xml_bytes.decode("utf-8"))
     except Exception as e:
         return [f"TBX 不是合法 XML：{e}"]
     if root.tag != "martif":
@@ -173,7 +176,7 @@ def build_tmx(state: Dict[str, Any],
 def validate_tmx(xml_bytes: bytes, expected_tus: Optional[int] = None) -> List[str]:
     problems = []
     try:
-        root = ET.fromstring(xml_bytes.decode("utf-8"))
+        root = safe_xml_fromstring(xml_bytes.decode("utf-8"))
     except Exception as e:
         return [f"TMX 不是合法 XML：{e}"]
     if root.tag != "tmx":

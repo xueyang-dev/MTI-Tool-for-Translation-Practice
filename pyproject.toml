@@ -8,7 +8,7 @@ version = "0.2.1"
 description = "TransPraxis / 译践 — Translation & Report Copilot"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dynamic = ["dependencies"]
 authors = [
   {name = "Xue Yang"}

@@ -1,12 +1,12 @@
 # Changelog
 
-本文件记录 TransPraxis / 译践 的用户可见变更。`v0.2.0` 是不可变的历史发布；当前修正版为 `v0.2.1`。
+本文件记录 TransPraxis / 译践 的用户可见变更。当前公开版本为 `v0.2.1`。
 
 ## [0.2.1] - 2026-08-22
 
-`v0.2.1` supersedes the published `v0.2.0`: the final runtime-hardening and
-release-engineering pass landed after the original release. The original
-`v0.2.0` tag and release remain unchanged.
+`v0.2.1` supersedes the earlier public builds and is published from the
+scrubbed repository baseline. Earlier tags, releases, and downloadable build
+artifacts were withdrawn during the repository-history cleanup.
 
 ### Runtime hardening
 
@@ -15,11 +15,13 @@ release-engineering pass landed after the original release. The original
 - Blind review stays independent of formal targets, repair provenance, and prior repair decisions; delivery approval remains document-level human authority rather than fabricated segment acceptance.
 - Knowledge observations are bound to verified source/target segments, semantic batching preserves context boundaries, and long-document digest/resume reduction remains bounded and restartable.
 - Malformed ranges degrade safely, while checkpoint and Translation Memory recovery remain idempotent across interruption points.
+- Uploaded XML rejects entity declarations, and user-controlled labels are escaped before entering custom HTML.
 
 ### Packaging and release validation
 
 - Project metadata is versioned as `0.2.1`; the `transpraxis` package, console entrypoint, package resources, and cross-platform launchers are validated from an installed wheel.
-- Python 3.9-compatible Streamlit widget handling is covered by regression tests; GitHub Actions validates Python 3.9, 3.11, and 3.12, pytest, sdist/wheel contents, isolated wheel installation, and CLI smoke.
+- Python 3.10 or newer is required. GitHub Actions validates Python 3.10, 3.11, and 3.12, pytest, sdist/wheel contents, isolated wheel installation, and CLI smoke.
+- Runtime dependency floors exclude the vulnerable Starlette 0.x line; dependency auditing reports no known vulnerabilities in the resolved release environment.
 
 ### Installation and known limitations
 
@@ -29,7 +31,7 @@ release-engineering pass landed after the original release. The original
 
 ## [0.2.0] - 2026-08-22
 
-> Superseded by `v0.2.1`: the final runtime-hardening and release-engineering pass landed afterward. This historical tag and release are unchanged.
+> Superseded by `v0.2.1`; its public tag and release were withdrawn during repository-history cleanup.
 
 ### Highlights
 

@@ -19,6 +19,8 @@ TransPraxis / 译践是一套面向长文档翻译实践的本地工作空间，
 
 ### 安装 v0.2.1
 
+需要 Python 3.10 或更高版本。
+
 从 [GitHub Releases](https://github.com/xueyang-dev/TransPraxis/releases) 下载
 `transpraxis-0.2.1-py3-none-any.whl`，然后运行：
 

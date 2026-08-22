@@ -469,6 +469,11 @@ def test_hostile_xml_and_json_assets():
     for token in ("&amp;", "&lt;", "&gt;"):
         assert token in tmx_text
     assert '"' in tmx_text and "'" in tmx_text, "引号在文本内容中原样保留即可"
+    hostile_xml = b'''<?xml version="1.0"?>
+<!DOCTYPE data [<!ENTITY injected "entity text">]>
+<data>&injected;</data>'''
+    assert assets.validate_tbx(hostile_xml), "TBX 校验必须拒绝 XML 实体声明"
+    assert assets.validate_tmx(hostile_xml), "TMX 校验必须拒绝 XML 实体声明"
     # roundtrip：解码后内容不丢失
     import xml.etree.ElementTree as ET
     root = ET.fromstring(tmx_text)

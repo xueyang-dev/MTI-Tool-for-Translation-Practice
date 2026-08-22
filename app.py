@@ -1819,6 +1819,10 @@ def _format_size(size):
 def _summary_html(filename, target_lang, preset_label, glossary_name,
                   strategy_config, output_config, style_template,
                   style_source=""):
+    filename = escape(str(filename))
+    target_lang = escape(str(target_lang))
+    preset_label = escape(str(preset_label))
+    glossary_name = escape(str(glossary_name))
     workflow = []
     if strategy_config["strict_terminology_governance"]:
         workflow.append("术语治理")
@@ -1858,7 +1862,8 @@ def _summary_html(filename, target_lang, preset_label, glossary_name,
         if output_config.get("deliver_review_report"):
             artifacts.append(("fact_check", "审校报告",
                               "审校发现与处理记录", "MD"))
-    style_value = style_template + (f"（{style_source}）" if style_source else "")
+    style_value = escape(str(
+        style_template + (f"（{style_source}）" if style_source else "")))
     artifact_rows = "".join(
         '<div class="tp-artifact-row">'
         f'<span class="material-symbols-rounded" aria-hidden="true">{icon}</span>'
@@ -1883,6 +1888,8 @@ def _summary_html(filename, target_lang, preset_label, glossary_name,
 
 
 def _runtime_html(provider, model, connection_status, can_start):
+    provider = escape(str(provider))
+    model = escape(str(model or "未配置"))
     connection = {
         "connected": ("已连接", "is-success"),
         "error": ("连接失败", "is-error"),
@@ -1895,7 +1902,7 @@ def _runtime_html(provider, model, connection_status, can_start):
         'aria-hidden="true">memory</span><strong>运行环境</strong></div>'
         '<div class="tp-runtime-grid">'
         f'<div><span>AI 引擎</span><strong>{provider}</strong></div>'
-        f'<div><span>模型</span><strong>{model or "未配置"}</strong></div>'
+        f'<div><span>模型</span><strong>{model}</strong></div>'
         f'<div><span>连接状态</span><strong class="tp-status {connection[1]}">'
         f'{connection[0]}</strong></div>'
         f'<div><span>启动状态</span><strong class="tp-status {readiness[1]}">'
@@ -2068,8 +2075,8 @@ with st.sidebar:
         provider_col, manage_col = st.columns([3, 1])
         connection_status = st.session_state.get("provider_connection_status", "unverified")
         provider_col.markdown(f'<div class="tp-provider is-{connection_status}">'
-                              f'<strong>{ai_provider}</strong>'
-                              f'<span>{ai_model or "未配置模型"}</span></div>',
+                              f'<strong>{escape(str(ai_provider))}</strong>'
+                              f'<span>{escape(str(ai_model or "未配置模型"))}</span></div>',
                               unsafe_allow_html=True)
         if manage_col.button("管理", key="manage_provider"):
             st.session_state.app_view = "settings"
@@ -2319,7 +2326,8 @@ with setup_placeholder.container():
                     count = st.session_state.get("task_glossary_count")
                     count_text = f"{count:,} 条术语" if count is not None else "已添加"
                     attached_col.markdown(
-                        f'<div class="tp-attachment"><div><strong>{term_label}</strong>'
+                        f'<div class="tp-attachment"><div><strong>'
+                        f'{escape(str(term_label))}</strong>'
                         f'<span>{count_text}</span></div></div>', unsafe_allow_html=True)
                     remove_col.button("移除", key="remove_termbase",
                                       on_click=_remove_task_termbase, width="stretch")

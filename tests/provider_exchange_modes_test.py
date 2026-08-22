@@ -185,6 +185,17 @@ def test_exchange_formats():
         tm = core.load_tm()
         assert tm["Hello world"]["target"] == "你好世界"
         assert tm["existing"]["target"] == "已有译文", "冲突源文不得覆盖项目内记忆"
+
+        hostile_xml = b'''<?xml version="1.0"?>
+<!DOCTYPE data [<!ENTITY injected "entity text">]>
+<data>&injected;</data>'''
+        for parser in (core.parse_termbase_tbx, core.import_tmx):
+            try:
+                parser(io.BytesIO(hostile_xml))
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("TBX/TMX 导入必须拒绝 XML 实体声明")
     finally:
         core.OUTPUT_DIR = old_dir
         shutil.rmtree(tmp, ignore_errors=True)

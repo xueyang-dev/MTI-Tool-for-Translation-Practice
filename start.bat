@@ -18,7 +18,7 @@ if not exist "venv\Scripts\activate.bat" (
     echo [系统] 未检测到虚拟环境，正在创建...
     python -m venv venv
     if errorlevel 1 (
-        echo [错误] 创建虚拟环境失败！请确认已安装 Python 3.9+，并勾选 "Add Python to PATH"。
+        echo [错误] 创建虚拟环境失败！请确认已安装 Python 3.10 或更高版本，并勾选 "Add Python to PATH"。
         pause
         exit /b 1
     )

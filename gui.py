@@ -43,7 +43,8 @@ def server_args(port: int, lan: bool) -> list[str]:
             "--theme.textColor", "#131c2e",
             "--browser.gatherUsageStats", "false"]
     if lan:
-        args += ["--server.address", "0.0.0.0"]
+        # Explicit opt-in for the documented trusted-LAN mode.
+        args += ["--server.address", "0.0.0.0"]  # nosec B104
     return args
 
 
@@ -69,7 +70,8 @@ def wait_ready(url: str, timeout: float = 60.0) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            with urllib.request.urlopen(url, timeout=2) as resp:
+            # url_for() constructs this URL from a fixed HTTP host and integer port.
+            with urllib.request.urlopen(url, timeout=2) as resp:  # nosec B310
                 if resp.status == 200:
                     return True
         except Exception:

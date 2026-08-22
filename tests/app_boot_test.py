@@ -250,12 +250,23 @@ def main():
         at.run()
         assert at.session_state["literature_upload_sources"][0]["source_type"] == "md", \
             "普通参考资料应转换为内部来源，而不是要求用户准备 JSON"
+        at.session_state["task_files"][0]["name"] = \
+            'sample"><img src=x onerror=alert(1)>.docx'
+        at.session_state["task_glossary_name"] = '<svg onload=alert(1)>.tbx'
+        at.session_state["task_glossary_count"] = 1
         next(b for b in at.button if b.label == "下一步").click()
         at.run()
         assert at.session_state["task_step"] == 4, "输出设置完成后可进入确认运行"
         assert all(any(text in m.value for m in at.markdown) for text in (
             "任务配置", "将生成", "运行环境", "双语译文", "翻译实践报告")), \
             "确认页应分别汇总配置、交付物与运行环境"
+        confirmation_html = "\n".join(
+            m.value for m in at.markdown if "tp-confirm-stack" in m.value)
+        assert "<img src=x" not in confirmation_html \
+            and "&lt;img src=x" in confirmation_html \
+            and "<svg onload" not in confirmation_html \
+            and "&lt;svg onload" in confirmation_html, \
+            "上传文件名和术语库名进入自定义 HTML 前必须转义"
         assert any(b.label == "前往设置" for b in at.button), \
             "AI 引擎未配置时应提供直接的设置入口"
         assert not any(s.label in ("Provider", "Model", "服务商", "模型", "核心引擎")

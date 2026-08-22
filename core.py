@@ -9,13 +9,13 @@ import re
 import shutil
 import threading
 import time
-import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
 import fitz  # PyMuPDF
 import httpx
 import pandas as pd
+from defusedxml import ElementTree as ET
 from docx import Document
 from google import genai
 from openai import OpenAI

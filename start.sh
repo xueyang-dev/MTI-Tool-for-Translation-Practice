@@ -9,7 +9,7 @@ echo "=========================================="
 echo
 
 if ! command -v python3 >/dev/null 2>&1; then
-    echo "[错误] 未找到 python3，请先安装 Python 3.9+。"
+    echo "[错误] 未找到 python3，请先安装 Python 3.10+。"
     read -r -p "按回车退出..." _
     exit 1
 fi
