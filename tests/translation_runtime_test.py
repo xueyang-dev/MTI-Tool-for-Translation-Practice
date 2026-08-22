@@ -73,6 +73,8 @@ def test_knowledge_candidate_first_occurrence_and_locked_conflict():
     assert candidates[0]["first_observed_segment"] == 1
     assert candidates[0]["occurrences"] == [0, 1]
     assert knowledge.provisional_hints(candidates)[0]["status"] == "provisional"
+    assert knowledge.discard_candidates_for_segments(
+        [{"source": "river bank", "observed_segments": [1]}], [1]) == []
 
 
 def test_evidence_requests_are_bounded_and_traced():
@@ -98,13 +100,46 @@ def test_evidence_requests_are_bounded_and_traced():
 
 
 def test_shadow_overlay_and_checkpoint_recovery(tmp_path):
-    overlay = repair.create_overlay(["初译"], ["修复"], [{"segment_index": 0}], "deterministic")
+    overlay = repair.create_overlay(
+        ["初译"], ["修复"], [{"segment_index": 0}], "deterministic",
+        sources=["source"], finding_segment_ids=[36])
     assert overlay["input_hash"] and overlay["candidate_hash"]
+    assert overlay["finding_segment_ids"] == [36]
+    assert overlay["input_findings"] == [{"segment_id": 36}]
+    assert "finding_indexes" not in overlay
     assert overlay["candidate_hash"] != repair.create_overlay(
         ["初译"], ["另一修复"], [], "deterministic")["candidate_hash"]
-    accepted = repair.evaluate_overlay(overlay, [], [])
+    accepted = repair.evaluate_overlay(
+        overlay, [], [], review_identity={
+            "input_hash": overlay["input_hash"],
+            "candidate_hash": overlay["candidate_hash"],
+        })
     assert accepted["status"] == "accepted"
     assert repair.promoted_targets(accepted) == ["修复"]
+
+    mismatched_identity = repair.create_overlay(
+        ["初译"], ["修复"], [], "deterministic", sources=["source"])
+    rejected_identity = repair.evaluate_overlay(
+        mismatched_identity, [], [], review_identity={
+            "input_hash": "different-input",
+            "candidate_hash": mismatched_identity["candidate_hash"],
+        })
+    assert rejected_identity["status"] == "rejected"
+    assert rejected_identity["rejection"] == "blind_review_identity_mismatch"
+
+    mutated_input = repair.create_overlay(
+        ["初译"], ["修复"], [], "deterministic", sources=["source"])
+    mutated_input["input_sources"] = ["different source"]
+    rejected_input = repair.evaluate_overlay(mutated_input, [], [])
+    assert rejected_input["status"] == "rejected"
+    assert rejected_input["rejection"] == "input_hash_mismatch"
+
+    mutated_candidate = repair.create_overlay(
+        ["初译"], ["修复"], [], "deterministic", sources=["source"])
+    mutated_candidate["shadow_targets"] = ["被篡改"]
+    rejected_candidate = repair.evaluate_overlay(mutated_candidate, [], [])
+    assert rejected_candidate["status"] == "rejected"
+    assert rejected_candidate["rejection"] == "candidate_hash_mismatch"
 
     rejected = repair.evaluate_overlay(
         repair.create_overlay(["初译"], ["坏修复"], [], "deterministic"),
@@ -120,6 +155,17 @@ def test_shadow_overlay_and_checkpoint_recovery(tmp_path):
     })
     changed, pending = checkpoint.reconcile_translation_memory(tm, state, tmp_path)
     assert changed and pending == 1 and tm["s"]["target"] == "t"
+    checkpoint.append_event(tmp_path, {
+        "batch": 1, "phase": "tm_promotion_pending",
+        "entries": [{"source": "u", "target": "v"}],
+    })
+    changed, pending = checkpoint.reconcile_translation_memory(tm, state, tmp_path)
+    assert changed and pending == 1 and tm["u"]["target"] == "v"
+    changed, pending = checkpoint.reconcile_translation_memory(tm, state, tmp_path)
+    assert not changed and pending == 0
+    assert checkpoint.batch_entries([{
+        "source": "◇◇◇", "target": "◇◇◇", "reviewed": True,
+    }]) == []
 
 
 def test_review_failed_must_not_mark_segment_reviewed_or_promote_tm_or_knowledge(tmp_path):
@@ -135,17 +181,30 @@ def test_review_failed_must_not_mark_segment_reviewed_or_promote_tm_or_knowledge
             return "[]"
 
         core.call_llm = llm
+        core.save_tm({
+            "The cached sentence is safe.": {"target": "已有译文", "reviewed": True}
+        })
         state = core.new_job_state("failed-review.docx")
-        state["paras"] = ["The source sentence is safe."]
+        state["paras"] = [
+            "The source sentence is safe.",
+            "The cached sentence is safe.",
+        ]
         result = core.translate_stage(
             state, "failed-review-job", [], "DeepSeek", "k", "m", "简体中文", "",
             enable_review=True, use_tm=True)
         pair = result["pairs"][0]
         assert pair["review_status"] == "review_failed"
         assert pair["reviewed"] is False
+        assert result["pairs"][1]["from_tm"] is True
         assert result["review_stats"]["review_failed"] == 1
         assert result["knowledge_candidates"] == []
-        assert core.load_tm() == {}
+        assert core.load_tm() == {
+            "The cached sentence is safe.": {"target": "已有译文", "reviewed": True}
+        }
+        events = checkpoint.read_events(tmp_path / "failed-review-job")
+        assert not any(event.get("phase") in {
+            "tm_promotion_pending", "tm_promotion_done"
+        } for event in events)
     finally:
         core.OUTPUT_DIR, core.call_llm = old_output, old_call
 
@@ -170,6 +229,14 @@ def test_evidence_segment_id_is_global_across_later_batches():
     assert not failed and findings[0]["segment_id"] == 36
     assert trace["requests"][0]["result"]["segment_id"] == 36
     assert trace["completion_receipt"]["reviewed_segment_ids"] == [36]
+
+
+def test_repair_findings_are_document_global():
+    findings = core._globalize_batch_findings([{
+        "segment_id": 0, "segment_index": 0, "severity": "actionable",
+    }], 36)
+    assert findings[0]["segment_id"] == 36
+    assert findings[0]["segment_index"] == 36
 
 
 def test_blind_review_cannot_read_formal_or_initial_target():
@@ -268,6 +335,18 @@ def test_synopsis_uses_hierarchical_reduce_for_long_digest_list():
     assert synopsis["summary"] == "reduced" and not warnings
     assert len(calls) > 1
 
+    bounded_calls = []
+
+    def bounded_llm(provider, key, model, system, user, temperature=0.1):
+        bounded_calls.append(user.split("语义摘要块：\n", 1)[1])
+        return json.dumps({"summary": "reduced"})
+
+    context.generate_document_synopsis(
+        [{"unit_id": "large", "start_segment": 0, "end_segment": 0,
+          "summary": "x" * 2500}], "p", "k", "m", "中文",
+        call_llm=bounded_llm, max_chunk_chars=1000)
+    assert len(bounded_calls[0]) <= 1000
+
 
 def test_evidence_final_round_cannot_request_more_evidence():
     replies = iter([
@@ -286,6 +365,37 @@ def test_evidence_final_round_cannot_request_more_evidence():
     assert trace["completion_receipt"]["status"] == "failed"
 
 
+def test_malformed_review_payload_is_not_clean_acceptance():
+    index = TranslationEvidenceIndex(["source"], [{"target": "target"}], [])
+    findings, failed, trace = review_translation_batch_with_evidence(
+        ["source"], ["target"], "", "", "中文", "p", "k", "m", index,
+        call_llm=lambda *args, **kwargs: "{}")
+    assert findings == [] and failed
+    assert trace["completion_receipt"]["status"] == "failed"
+
+    findings, failed, trace = review_translation_batch_with_evidence(
+        ["source"], ["target"], "", "", "中文", "p", "k", "m", index,
+        call_llm=lambda *args, **kwargs: json.dumps({
+            "findings": [], "evidence_requests": {},
+        }))
+    assert findings == [] and failed
+    assert trace["completion_receipt"]["status"] == "failed"
+
+    replies = iter([
+        json.dumps({"findings": [], "evidence_requests": [{
+            "tool": "get_segment", "arguments": {"segment_id": 0},
+        }]}),
+        json.dumps({"findings": [{
+            "segment_id": 99, "severity": "actionable", "reason": "wrong segment",
+        }]}),
+    ])
+    findings, failed, trace = review_translation_batch_with_evidence(
+        ["source"], ["target"], "", "", "中文", "p", "k", "m", index,
+        call_llm=lambda *args, **kwargs: next(replies))
+    assert findings == [] and failed
+    assert trace["completion_receipt"]["status"] == "failed"
+
+
 def test_malformed_section_ranges_are_skipped_not_crashed():
     units = context.build_semantic_units(
         ["a", "b"], {"sections": [
@@ -294,3 +404,14 @@ def test_malformed_section_ranges_are_skipped_not_crashed():
             {"start_segment": 0, "end_segment": 1},
         ]})
     assert len(units) == 1 and units[0]["start_segment"] == 0
+    assert core._batch_section_profile(
+        {"sections": [{"start_segment": "unknown", "end_segment": 1},
+                       {"start_segment": 0, "end_segment": 1}]}, 0, 2
+    )["start_segment"] == 0
+    assert context.digest_for_segment(
+        [None, {"start_segment": "unknown", "end_segment": 1}], 0) is None
+    index = TranslationEvidenceIndex(
+        ["a"], [{"target": "b"}], [], section_digests=[None, {
+            "start_segment": "unknown", "end_segment": 1,
+        }])
+    assert index.request("get_section_digest", segment_id=0) == {}

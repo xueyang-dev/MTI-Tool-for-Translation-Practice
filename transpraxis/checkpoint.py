@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -43,7 +44,8 @@ def read_events(job_root: Path) -> List[Dict[str, Any]]:
 
 
 def _eligible(source: str, target: str) -> bool:
-    return bool(str(source or "").strip()) and bool(str(target or "").strip())
+    return bool(re.search(r"[A-Za-z0-9\u4e00-\u9fff]", str(source or ""))) \
+        and bool(str(target or "").strip())
 
 
 def _state_entries(state: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
@@ -64,7 +66,8 @@ def reconcile_translation_memory(
 ) -> Tuple[bool, int]:
     """Recover accepted state entries and pending TM promotions after restart."""
     desired = _state_entries(state)
-    pending = 0
+    initial_tm = dict(tm)
+    recovered_sources = set()
     events = read_events(job_root)
     promoted_batches = {event.get("batch") for event in events
                         if event.get("phase") in {"tm_promoted", "tm_promotion_done"}}
@@ -73,17 +76,20 @@ def reconcile_translation_memory(
             continue
         if event.get("batch") in promoted_batches:
             continue
-        pending += 1
         for item in event.get("entries") or []:
             source, target = item.get("source"), item.get("target")
             if _eligible(source, target):
-                desired[str(source)] = {"target": str(target), "reviewed": True}
+                source = str(source)
+                entry = {"target": str(target), "reviewed": True}
+                desired[source] = entry
+                if initial_tm.get(source) != entry:
+                    recovered_sources.add(source)
     changed = False
     for source, entry in desired.items():
         if tm.get(source) != entry:
             tm[source] = entry
             changed = True
-    return changed, pending
+    return changed, len(recovered_sources)
 
 
 def batch_entries(pairs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

@@ -712,7 +712,10 @@ def test_retranslate_segments():
             paras=[long_src, "第二段足够长以通过检查。"],
             pairs=[
                 {"source": long_src, "target": "只译了一句。", "reviewed": False,
-                 "from_tm": False, "glossary_entry_ids": []},
+                 "from_tm": False, "review_status": "reviewed_clean",
+                 "initial_target": "旧初译", "accepted_target": "旧接受译文",
+                 "human_accepted": True, "target_provenance": "human_accepted",
+                 "glossary_entry_ids": []},
                 {"source": "第二段足够长以通过检查。", "target": "第二段的译文。",
                  "reviewed": True, "from_tm": False, "glossary_entry_ids": []},
             ],
@@ -721,7 +724,9 @@ def test_retranslate_segments():
                  "reason": "疑似漏译/截断：原文 250 字符，译文仅 6 字符"},
             ],
             review_stats={"blocking": 1, "actionable": 0, "informational": 0},
-            delivery_status="review_required",
+            delivery_status="final", stage="FINAL",
+            delivery_approved_by_human=True,
+            delivery_approval={"actor": "previous-reviewer"},
         )
         core.save_job_state("rt0000000000000001", state)
 
@@ -742,6 +747,14 @@ def test_retranslate_segments():
             "重译段的旧 finding 应保留并标记已解决"
         assert state2["has_blocking"] is False
         assert state2["delivery_status"] == "draft"
+        assert state2["stage"] == "TRANSLATED"
+        assert state2["delivery_approved_by_human"] is False
+        assert state2["delivery_approval"] is None
+        assert state2["pairs"][0]["initial_target"] == state2["pairs"][0]["target"]
+        assert state2["pairs"][0]["review_status"] == "not_reviewed"
+        assert state2["pairs"][0]["target_provenance"] == "generated"
+        assert state2["pairs"][0].get("accepted_target") is None
+        assert state2["pairs"][0].get("human_accepted") is None
         assert any(r["action"] == "retranslated" for r in state2["human_actions"])
         # 落盘后可恢复
         on_disk = core.load_job_state("rt0000000000000001")

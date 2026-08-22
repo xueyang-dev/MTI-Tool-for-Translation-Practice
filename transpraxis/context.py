@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 DEFAULT_UNIT_CHARS = 12000
 DEFAULT_DIGEST_WORKERS = 4
+MAX_SYNOPSIS_CHARS = 12000
 TARGET_CONTEXT_LEVELS = (
     "human_accepted",
     "reviewed",
@@ -329,6 +330,13 @@ def _text_chunks(items: Sequence[str], max_chars: int) -> List[str]:
     chars = 0
     for item in items:
         item = str(item or "")
+        if len(item) > max_chars:
+            if current:
+                chunks.append("\n\n".join(current))
+                current, chars = [], 0
+            chunks.extend(item[index:index + max_chars]
+                          for index in range(0, len(item), max_chars))
+            continue
         if current and chars + len(item) > max_chars:
             chunks.append("\n\n".join(current))
             current, chars = [], 0
@@ -348,7 +356,8 @@ def _reduce_synopsis(
     call_llm: Callable,
     max_chars: int,
 ) -> Dict[str, Any]:
-    chunks = _text_chunks(items, max(1000, int(max_chars or 12000)))
+    chunk_limit = min(MAX_SYNOPSIS_CHARS, max(1000, int(max_chars or 12000)))
+    chunks = _text_chunks(items, chunk_limit)
     if not chunks:
         return {"summary": "", "status": "unavailable"}
     reduced: List[Dict[str, Any]] = []
@@ -363,7 +372,8 @@ def _reduce_synopsis(
         return reduced[0]
     return _reduce_synopsis(
         [_synopsis_text(item, index) for index, item in enumerate(reduced)],
-        provider, api_key, model, target_lang, call_llm, max_chars * 2)
+        provider, api_key, model, target_lang, call_llm,
+        min(MAX_SYNOPSIS_CHARS, chunk_limit * 2))
 
 
 def generate_document_synopsis(
@@ -498,7 +508,15 @@ def write_understanding_artifacts(
 
 def digest_for_segment(digests: Sequence[Dict[str, Any]], segment_index: int) -> Optional[Dict[str, Any]]:
     for digest in digests or []:
-        if digest.get("start_segment", 0) <= segment_index <= digest.get("end_segment", -1):
+        if not isinstance(digest, dict):
+            continue
+        try:
+            index = int(segment_index)
+            start = int(digest.get("start_segment"))
+            end = int(digest.get("end_segment"))
+        except (TypeError, ValueError):
+            continue
+        if start <= index <= end:
             return digest
     return None
 

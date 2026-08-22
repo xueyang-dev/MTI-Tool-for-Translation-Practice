@@ -278,3 +278,25 @@ def provisional_hints(
             entry["observed_target"] = target
             hints.append(entry)
     return hints
+
+
+def discard_candidates_for_segments(
+    candidates: Sequence[Dict[str, Any]],
+    segment_ids: Sequence[int],
+) -> List[Dict[str, Any]]:
+    """Drop provisional observations whose evidence includes invalid segments."""
+    blocked = {int(segment_id) for segment_id in segment_ids or []
+               if isinstance(segment_id, int) and not isinstance(segment_id, bool)}
+    if not blocked:
+        return [dict(item) for item in candidates or [] if isinstance(item, dict)]
+    kept = []
+    for item in candidates or []:
+        if not isinstance(item, dict):
+            continue
+        observed = item.get("observed_segments")
+        if not isinstance(observed, list):
+            observed = [item.get("first_observed_segment")]
+        if any(segment_id in blocked for segment_id in observed):
+            continue
+        kept.append(dict(item))
+    return kept

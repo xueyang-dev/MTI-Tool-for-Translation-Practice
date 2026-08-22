@@ -823,6 +823,16 @@ def check_translation_batch(sources, targets, glossary, target_lang,
     return findings
 
 
+def _globalize_batch_findings(findings, offset):
+    """Persist repair findings in document-global, never batch-local, space."""
+    return [
+        {**finding,
+         "segment_id": offset + finding["segment_id"],
+         "segment_index": offset + finding["segment_index"]}
+        for finding in findings
+    ]
+
+
 # ================= 语义批次（对齐 localize-anything 的上下文批次）=================
 BATCH_SIZE = 4
 MAX_BATCH_CHARS = 1600
@@ -878,8 +888,12 @@ def _batch_section_profile(document_profile, offset, batch_len):
     if not document_profile:
         return None
     for sec in document_profile.get("sections") or []:
-        start, end = sec.get("start_segment"), sec.get("end_segment")
-        if start is None or end is None:
+        if not isinstance(sec, dict):
+            continue
+        try:
+            start = int(sec.get("start_segment"))
+            end = int(sec.get("end_segment"))
+        except (TypeError, ValueError):
             continue
         if start <= offset and offset + batch_len - 1 <= end:
             return sec
@@ -1529,10 +1543,12 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                             shadow_targets[j] = candidate
                     overlay = _repair.create_overlay(
                         formal_targets, shadow_targets, fixable, "deterministic",
-                        sources=batch_sources)
+                        sources=batch_sources,
+                        finding_segment_ids=[offset + f["segment_index"] for f in fixable])
                     shadow_findings = check_translation_batch(
                         batch_sources, shadow_targets, glossary, target_lang,
                         section_profile=section_profile)
+                    shadow_findings = _globalize_batch_findings(shadow_findings, offset)
                     blind_findings, blind_failed, blind_trace = [], False, None
                     if enable_review and not any(
                             f["severity"] in ("blocking", "actionable")
@@ -1548,12 +1564,17 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                                 batch_sources, shadow_targets, glossary_text, style_rules,
                                 target_lang, provider, api_key, model, shadow_index,
                                 call_llm=call_llm, blind=True,
-                                segment_ids=list(range(offset, offset + len(batch_pairs))))
+                                segment_ids=list(range(offset, offset + len(batch_pairs))),
+                                review_identity={
+                                    "input_hash": overlay["input_hash"],
+                                    "candidate_hash": overlay["candidate_hash"],
+                                })
                         if blind_trace:
                             state.setdefault("review_evidence", []).append({
                                 "batch": bi, "phase": "shadow_repair", **blind_trace})
                     overlay = _repair.evaluate_overlay(
-                        overlay, shadow_findings, blind_findings, blind_failed)
+                        overlay, shadow_findings, blind_findings, blind_failed,
+                        review_identity=(blind_trace or {}).get("review_identity"))
                     state.setdefault("repair_overlays", []).append({
                         "batch": bi, "offset": offset, **overlay,
                         "blind_trace": blind_trace,
@@ -1626,10 +1647,11 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                             old_target = batch_pairs[idx]["target"]
                             overlay = _repair.create_overlay(
                                 [old_target], [suggested], [rf], "review_suggested",
-                                sources=[batch_sources[idx]])
-                            recheck = check_translation_batch(
+                                sources=[batch_sources[idx]],
+                                finding_segment_ids=[segment_id])
+                            recheck = _globalize_batch_findings(check_translation_batch(
                                 [batch_sources[idx]], [suggested], glossary, target_lang,
-                                section_profile=section_profile)
+                                section_profile=section_profile), segment_id)
                             blind_trace = None
                             blind_findings = []
                             blind_failed = False
@@ -1644,11 +1666,16 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                                         [batch_sources[idx]], [suggested], glossary_text,
                                         style_rules, target_lang, provider, api_key, model,
                                         blind_index, call_llm=call_llm, blind=True,
-                                        segment_ids=[segment_id])
+                                        segment_ids=[segment_id], review_identity={
+                                            "input_hash": overlay["input_hash"],
+                                            "candidate_hash": overlay["candidate_hash"],
+                                        })
                             overlay = _repair.evaluate_overlay(
-                                overlay, recheck, blind_findings, blind_failed)
+                                overlay, recheck, blind_findings, blind_failed,
+                                review_identity=(blind_trace or {}).get("review_identity"))
                             state.setdefault("repair_overlays", []).append({
-                                "batch": bi, "offset": offset, "segment_index": idx,
+                                "batch": bi, "offset": offset,
+                                "batch_local_ordinal": idx,
                                 "segment_id": segment_id, **overlay,
                                 "blind_trace": blind_trace,
                             })
@@ -1777,8 +1804,11 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
             "batch": bi, "offset": offset, "phase": "state_commit_done",
             "pairs_count": len(pairs),
         })
-        tm_entries = _checkpoint.batch_entries(batch_pairs) \
-            if enable_review and use_tm else []
+        tm_entries = _checkpoint.batch_entries([
+            pair for pair in batch_pairs
+            if not pair.get("from_tm")
+            and pair.get("review_status") == "reviewed_clean"
+        ]) if enable_review and use_tm and review_succeeded else []
         if tm_entries:
             _checkpoint.append_event(job_dir(job_id), {
                 "batch": bi, "offset": offset, "phase": "tm_promotion_pending",
@@ -2257,14 +2287,21 @@ def _apply_glossary_staleness(state):
     if not stale:
         return state, []
 
+    state["knowledge_candidates"] = _knowledge.discard_candidates_for_segments(
+        state.get("knowledge_candidates") or [], stale)
+
     fg = state.get("glossary_frozen") or {}
     for i in stale:
         p = pairs[i]
         p["stale_due_to_glossary"] = True
         p["reviewed"] = False
         p["from_tm"] = False
+        p["review_status"] = "not_reviewed"
+        for key in ("accepted_target", "human_accepted", "accepted_by_human",
+                    "target_provenance"):
+            p.pop(key, None)
         state["findings"].append({
-            "segment_index": i,
+            "segment_id": i, "segment_index": i,
             "severity": "blocking",
             "type": "glossary_stale",
             "entry_id": None,
@@ -2281,6 +2318,8 @@ def _apply_glossary_staleness(state):
             dirty = True
     if dirty:
         save_tm(tm)
+    state["delivery_approved_by_human"] = False
+    state["delivery_approval"] = None
 
     stats = state.setdefault("review_stats", {})
     stats["blocking"] = sum(1 for f in state["findings"]

@@ -125,6 +125,13 @@ def test_p0_glossary_staleness():
             "已翻译段落必须记录所用冻结 hash（本断言失败 = 无依赖追踪）"
         tm_after_v1 = core.load_tm()
         assert state["pairs"][0]["source"] in tm_after_v1
+        approved, approved_ok, approved_errors = core.approve_delivery(jid)
+        assert approved_ok and approved_errors == []
+        assert approved["delivery_approved_by_human"] is True
+        approved["knowledge_candidates"] = [{
+            "source": "Skopos theory", "observed_segments": [0],
+        }]
+        core.save_job_state(jid, approved)
 
         # v2：Skopos theory -> 目的原则（术语决策变化）
         v2 = [_entry("Skopos theory", "目的原则", status="locked", scope="global")]
@@ -139,12 +146,18 @@ def test_p0_glossary_staleness():
         assert p0.get("stale_due_to_glossary") is True, \
             "受影响段必须标记 stale（P0）"
         assert p0["reviewed"] is False, "stale 段不得保持 reviewed"
+        assert p0.get("accepted_target") is None
+        assert p0.get("human_accepted") is None
+        assert p0.get("target_provenance") is None
+        assert st["knowledge_candidates"] == []
         assert p1.get("stale_due_to_glossary") is not True, \
             "未受影响段不得整本失效"
         assert any(f["type"] == "glossary_stale" for f in st["findings"]), \
             "必须产生 stale finding"
         assert st["delivery_status"] == "review_required", \
             "stale 段存在时交付必须为 review_required"
+        assert st["delivery_approved_by_human"] is False
+        assert st["delivery_approval"] is None
         assert "Skopos theory is frequently discussed" not in core.load_tm(), \
             "stale 译文必须从 TM 清除"
         # stale blocking 未被接受时不能 final

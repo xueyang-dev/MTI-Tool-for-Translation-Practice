@@ -179,8 +179,13 @@ def retranslate_segments(
                 [src], [tgt], glossary, target_lang,
                 section_profile=section_profile)
             pairs[idx]["target"] = tgt
+            pairs[idx]["initial_target"] = tgt
             pairs[idx]["from_tm"] = False
             pairs[idx]["reviewed"] = False  # 重译后需重新审校，不进 TMX final memory
+            pairs[idx]["review_status"] = "not_reviewed"
+            pairs[idx]["target_provenance"] = "generated"
+            for key in ("accepted_target", "human_accepted", "accepted_by_human"):
+                pairs[idx].pop(key, None)
             for old in state.get("findings", []):
                 if old.get("segment_index") != idx or old.get("resolved") \
                         or old.get("severity") not in ("blocking", "actionable"):
@@ -205,6 +210,10 @@ def retranslate_segments(
             if on_caption:
                 on_caption(f"⚠️ 段 {idx} 重译失败：{str(e)[:120]}")
 
+    if fixed:
+        from . import knowledge
+        state["knowledge_candidates"] = knowledge.discard_candidates_for_segments(
+            state.get("knowledge_candidates") or [], fixed)
     stats = state.setdefault("review_stats", {})
     stats["blocking"] = sum(1 for f in state["findings"]
                             if f["severity"] == "blocking" and not f.get("resolved"))
@@ -213,6 +222,14 @@ def retranslate_segments(
     stats["informational"] = sum(1 for f in state["findings"]
                                  if f["severity"] == "informational" and not f.get("resolved"))
     state["has_blocking"] = stats["blocking"] > 0
+    if fixed:
+        # Re-translation changes the released document; the old document-level
+        # approval no longer covers the new content.
+        state["delivery_status"] = "draft"
+        state["delivery_approved_by_human"] = False
+        state["delivery_approval"] = None
+        if state.get("stage") in ("FINAL", "REVIEW_REQUIRED"):
+            state["stage"] = "REVIEW_REQUIRED" if state["has_blocking"] else "TRANSLATED"
     state["delivery_status"] = compute_delivery_status(state)
     core.save_job_state(job_id, state)
     return state, fixed
