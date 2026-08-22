@@ -7,6 +7,24 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from . import terminology
 
+MAX_REQUESTS_PER_ROUND = 5
+MAX_EVIDENCE_PAYLOAD_BYTES = 24000
+
+
+def _bound_evidence(result: Any) -> Any:
+    try:
+        payload_bytes = len(json.dumps(
+            result, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+    except (TypeError, ValueError):
+        return {"error": "证据结果不可序列化"}
+    if payload_bytes <= MAX_EVIDENCE_PAYLOAD_BYTES:
+        return result
+    return {
+        "error": "证据负载超过上限",
+        "payload_bytes": payload_bytes,
+        "max_bytes": MAX_EVIDENCE_PAYLOAD_BYTES,
+    }
+
 
 class TranslationEvidenceIndex:
     """Read-only, bounded evidence surface for a translation reviewer."""
@@ -26,6 +44,8 @@ class TranslationEvidenceIndex:
         document_synopsis: Optional[Dict[str, Any]] = None,
         section_digests: Optional[Sequence[Dict[str, Any]]] = None,
         findings: Optional[Sequence[Dict[str, Any]]] = None,
+        blind: bool = False,
+        candidate_targets: Optional[Dict[int, str]] = None,
     ) -> None:
         self.paragraphs = list(paragraphs or [])
         self.pairs = list(pairs or [])
@@ -34,6 +54,11 @@ class TranslationEvidenceIndex:
         self.document_synopsis = document_synopsis or {}
         self.section_digests = list(section_digests or [])
         self.findings = list(findings or [])
+        self.blind = bool(blind)
+        self.candidate_targets = {
+            int(key): str(value or "")
+            for key, value in (candidate_targets or {}).items()
+        }
         self.requests: List[Dict[str, Any]] = []
 
     def get_segment(self, segment_id: int) -> Dict[str, Any]:
@@ -44,6 +69,17 @@ class TranslationEvidenceIndex:
         if not 0 <= index < len(self.paragraphs):
             return {}
         pair = self.pairs[index] if index < len(self.pairs) else {}
+        if self.blind:
+            # Blind review may see the candidate and accepted neighbor context,
+            # but never formal/initial targets or their provenance.
+            target = self.candidate_targets.get(index, "")
+            if not target:
+                target = str(pair.get("accepted_target") or "")
+            return {
+                "segment_id": index,
+                "source": self.paragraphs[index],
+                "target": target,
+            }
         return {
             "segment_id": index,
             "source": self.paragraphs[index],
@@ -62,6 +98,8 @@ class TranslationEvidenceIndex:
             before = max(0, min(5, int(before)))
             after = max(0, min(5, int(after)))
         except (TypeError, ValueError):
+            return []
+        if not 0 <= index < len(self.paragraphs):
             return []
         start = max(0, index - before)
         end = min(len(self.paragraphs), index + after + 1)
@@ -101,19 +139,30 @@ class TranslationEvidenceIndex:
         for digest in self.section_digests:
             if section_id and digest.get("unit_id") == section_id:
                 return dict(digest)
-            if segment_id is not None and digest.get("start_segment", 0) <= int(segment_id) <= digest.get("end_segment", -1):
-                return dict(digest)
+            if segment_id is not None:
+                try:
+                    in_range = (digest.get("start_segment", 0) <= int(segment_id)
+                                <= digest.get("end_segment", -1))
+                except (TypeError, ValueError):
+                    in_range = False
+                if in_range:
+                    return dict(digest)
         return {}
 
     def get_translation_history(self, segment_id: int) -> Dict[str, Any]:
         segment = self.get_segment(segment_id)
         if not segment:
             return {}
+        if self.blind:
+            return {key: segment.get(key) for key in (
+                "segment_id", "source", "target")}
         return {key: segment.get(key) for key in (
             "segment_id", "source", "initial_target", "target", "accepted_target",
             "target_provenance", "reviewed", "from_tm")}
 
     def get_findings(self, segment_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        if self.blind:
+            return []
         if segment_id is None:
             return [dict(item) for item in self.findings]
         try:
@@ -150,6 +199,7 @@ class TranslationEvidenceIndex:
             result = self.get_translation_history(arguments.get("segment_id"))
         else:
             result = self.get_findings(arguments.get("segment_id"))
+        result = _bound_evidence(result)
         self.requests.append({"tool": tool, "arguments": dict(arguments), "result": result})
         return result
 
@@ -173,23 +223,61 @@ def _parse_payload(text: Any) -> Optional[Any]:
     return None
 
 
-def _normalize_findings(items: Any) -> List[Dict[str, Any]]:
+def _normalize_findings(
+    items: Any,
+    segment_ids: Optional[Sequence[int]] = None,
+    invalid_segments: Optional[List[Any]] = None,
+    invalid_refs: Optional[List[str]] = None,
+    valid_evidence_ids: Optional[Sequence[str]] = None,
+) -> List[Dict[str, Any]]:
     if not isinstance(items, list):
+        if items is not None and invalid_segments is not None:
+            invalid_segments.append("findings_not_array")
         return []
+    valid_ids = set(int(item) for item in segment_ids or [])
+    valid_refs = set(str(item) for item in valid_evidence_ids or [])
     out = []
     for item in items:
         if not isinstance(item, dict):
+            if invalid_segments is not None:
+                invalid_segments.append("malformed_finding")
             continue
         severity = item.get("severity")
         if severity not in ("blocking", "actionable", "informational"):
+            if invalid_segments is not None:
+                invalid_segments.append("invalid_severity")
             continue
-        index = item.get("segment_index")
-        if not isinstance(index, int):
+        segment_id = item.get("segment_id")
+        # Read old responses only as a one-way compatibility shim: the prompt
+        # and persisted records use global IDs, while an old local ordinal is
+        # translated through this batch's explicit segment list.
+        if segment_id is None and isinstance(item.get("segment_index"), int):
+            local_ordinal = item["segment_index"]
+            if segment_ids is not None and 0 <= local_ordinal < len(segment_ids):
+                segment_id = segment_ids[local_ordinal]
+        if isinstance(segment_id, bool) or not isinstance(segment_id, int):
+            if invalid_segments is not None:
+                invalid_segments.append("missing_segment_id")
             continue
+        if segment_ids is not None and segment_id not in valid_ids:
+            if invalid_segments is not None:
+                invalid_segments.append(segment_id)
+            continue
+        raw_refs = item.get("evidence_refs") or item.get("evidence_ids") or []
+        if not isinstance(raw_refs, list):
+            if invalid_refs is not None:
+                invalid_refs.append("evidence_refs_not_array")
+            raw_refs = []
+        evidence_refs = [str(ref) for ref in raw_refs if str(ref).strip()]
+        if valid_evidence_ids is not None:
+            for ref in evidence_refs:
+                if ref not in valid_refs and invalid_refs is not None:
+                    invalid_refs.append(ref)
         record = {
-            "segment_index": index,
+            "segment_id": segment_id,
             "severity": severity,
             "reason": str(item.get("reason") or "审校发现问题"),
+            "evidence_refs": evidence_refs,
         }
         if item.get("suggested_target"):
             record["suggested_target"] = str(item["suggested_target"])
@@ -219,14 +307,24 @@ def review_translation_batch_with_evidence(
     call_llm: Optional[Callable] = None,
     max_rounds: int = 2,
     blind: bool = False,
+    segment_ids: Optional[Sequence[int]] = None,
 ) -> Tuple[List[Dict[str, Any]], bool, Dict[str, Any]]:
-    """Review a batch, allowing at most two rounds of explicit evidence requests."""
+    """Review a batch with a bounded, two-state evidence protocol."""
     if call_llm is None:
         import core
         call_llm = core.call_llm
+    segment_ids = list(segment_ids) if segment_ids is not None \
+        else list(range(len(sources)))
+    if len(segment_ids) != len(sources):
+        return [], True, {
+            "blind": blind, "rounds": [], "requests": [],
+            "decision": "failed", "error": "segment_ids 与批次长度不一致",
+            "completion_receipt": {"status": "failed", "reviewed_unit_count": 0},
+        }
     numbered = "\n".join(
-        f"{i + 1}. 原文：{source}\n   译文：{target}"
-        for i, (source, target) in enumerate(zip(sources, targets))
+        f"local_ordinal: {i}\nsegment_id: {segment_id}\n原文：{source}\n译文：{target}"
+        for i, (segment_id, source, target) in
+        enumerate(zip(segment_ids, sources, targets))
     )
     system_prompt = (
         "你是一位独立的翻译审校专家，负责审查机器译文。"
@@ -236,54 +334,124 @@ def review_translation_batch_with_evidence(
         "如果需要全文证据，先在 evidence_requests 中请求工具；拿到证据后再作最终判断。"
         "严格输出 JSON 对象：{\"findings\": [...], \"evidence_requests\": "
         "[{\"tool\": \"get_segment\", \"arguments\": {}}]}。"
+        "finding 必须使用给出的全局 segment_id；不要输出 segment_index。"
+        "每个 finding 可带 evidence_refs（证据编号数组）。"
         "若无问题 findings 必须为空数组。\n" + glossary_text + "\n" + style_rules
     )
     base_prompt = f"待审校段落（目标语言：{target_lang}）：\n{numbered}"
     prompt = base_prompt
-    trace: Dict[str, Any] = {"blind": blind, "rounds": [], "requests": [], "decision": ""}
+    trace: Dict[str, Any] = {
+        "blind": blind, "segment_ids": segment_ids, "rounds": [],
+        "requests": [], "evidence_ids": [], "decision": "",
+        "completion_receipt": None,
+    }
     latest_findings: List[Dict[str, Any]] = []
+    evidence_by_key: Dict[str, Dict[str, Any]] = {}
+
+    def finish(findings: List[Dict[str, Any]], decision: str):
+        trace["decision"] = decision
+        trace["completion_receipt"] = {
+            "status": "completed",
+            "reviewed_segment_ids": list(segment_ids),
+            "reviewed_unit_count": len(segment_ids),
+            "finding_count": len(findings),
+            "evidence_ids": list(trace["evidence_ids"]),
+        }
+        return findings, False, trace
+
+    def fail(message: Optional[str] = None):
+        trace["decision"] = "failed"
+        if message:
+            trace["error"] = message[:240]
+        trace["completion_receipt"] = {
+            "status": "failed",
+            "reviewed_segment_ids": [],
+            "reviewed_unit_count": 0,
+            "finding_count": 0,
+            "evidence_ids": list(trace["evidence_ids"]),
+        }
+        return [], True, trace
+
     for round_index in range(max(1, int(max_rounds or 1))):
         try:
             payload = _parse_payload(_call(
                 call_llm, provider, api_key, model, system_prompt, prompt))
         except Exception as exc:
-            trace["decision"] = "failed"
-            trace["error"] = str(exc)[:240]
-            return [], True, trace
+            return fail(str(exc))
         if isinstance(payload, list):
-            latest_findings = _normalize_findings(payload)
+            invalid_segments: List[Any] = []
+            invalid_refs: List[str] = []
+            latest_findings = _normalize_findings(
+                payload, segment_ids, invalid_segments, invalid_refs,
+                list(trace["evidence_ids"]))
             trace["rounds"].append({"round": round_index, "findings": latest_findings,
                                     "requests": []})
-            trace["decision"] = "clean" if not latest_findings else "findings"
-            return latest_findings, False, trace
+            if invalid_segments or invalid_refs:
+                return fail("finding 引用了无效的 segment_id/evidence_refs")
+            return finish(latest_findings,
+                          "clean" if not latest_findings else "findings")
         if not isinstance(payload, dict):
-            trace["decision"] = "failed"
-            return [], True, trace
-        latest_findings = _normalize_findings(payload.get("findings"))
+            return fail("审校返回不是 JSON 对象")
+        invalid_segments = []
+        latest_findings = _normalize_findings(
+            payload.get("findings"), segment_ids, invalid_segments)
+        if invalid_segments:
+            return fail("finding 引用了不属于当前批次的全局 segment_id")
         raw_requests = payload.get("evidence_requests") or payload.get("requests") or []
-        requests = [item for item in raw_requests if isinstance(item, dict)][:5]
+        requests = [item for item in raw_requests if isinstance(item, dict)][:MAX_REQUESTS_PER_ROUND]
         round_trace = {"round": round_index, "findings": latest_findings, "requests": []}
+        if round_index > 0 and requests:
+            trace["rounds"].append(round_trace)
+            return fail("最终审校轮次禁止继续请求证据")
         evidence = []
         for request in requests:
             tool = str(request.get("tool") or request.get("type") or "")
             arguments = request.get("arguments") or request.get("args") or {}
             if not isinstance(arguments, dict):
                 arguments = {}
-            try:
-                result = evidence_index.request(tool, **arguments)
-            except (TypeError, ValueError) as exc:
-                result = {"error": str(exc)}
-            round_trace["requests"].append({"tool": tool, "arguments": arguments,
-                                            "result": result})
-            trace["requests"].append(round_trace["requests"][-1])
-            evidence.append({"tool": tool, "result": result})
+            request_key = json.dumps({"tool": tool, "arguments": arguments},
+                                     ensure_ascii=False, sort_keys=True,
+                                     separators=(",", ":"))
+            envelope = evidence_by_key.get(request_key)
+            deduped = envelope is not None
+            if envelope is None:
+                try:
+                    result = evidence_index.request(tool, **arguments)
+                except (TypeError, ValueError) as exc:
+                    result = {"error": str(exc)}
+                result = _bound_evidence(result)
+                evidence_id = f"E{len(evidence_by_key) + 1}"
+                envelope = {
+                    "evidence_id": evidence_id,
+                    "tool": tool,
+                    "arguments": arguments,
+                    "result": result,
+                }
+                evidence_by_key[request_key] = envelope
+                trace["evidence_ids"].append(evidence_id)
+            round_request = {
+                "evidence_id": envelope["evidence_id"],
+                "tool": tool,
+                "arguments": arguments,
+                "result": envelope["result"],
+            }
+            if deduped:
+                round_request["deduped"] = True
+            round_trace["requests"].append(round_request)
+            trace["requests"].append(round_request)
+            evidence.append(envelope)
         trace["rounds"].append(round_trace)
         if not evidence:
-            trace["decision"] = "findings" if latest_findings else "clean"
-            return latest_findings, False, trace
+            invalid_refs: List[str] = []
+            latest_findings = _normalize_findings(
+                payload.get("findings"), segment_ids, [], invalid_refs,
+                list(trace["evidence_ids"]))
+            if invalid_refs:
+                return fail("finding 引用了无效的 evidence_refs")
+            return finish(latest_findings,
+                          "findings" if latest_findings else "clean")
         prompt = base_prompt + (
             "\n\n【按审校请求返回的证据】\n" +
             json.dumps(evidence, ensure_ascii=False, indent=2) +
             "\n请基于证据作最终判断；本轮不要再请求证据。")
-    trace["decision"] = "failed"
-    return latest_findings, True, trace
+    return fail("证据审校未收到最终判定")

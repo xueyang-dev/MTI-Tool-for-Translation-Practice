@@ -110,11 +110,13 @@ def approve_delivery(state: Dict[str, Any], note: str = "", actor: str = "user",
                                      note or "接受风险（人工确认）", actor)
     state["delivery_status"] = "final"
     state["stage"] = "FINAL"
-    for pair in state.get("pairs") or []:
-        if pair.get("target"):
-            pair["accepted_target"] = pair["target"]
-            pair["human_accepted"] = True
-            pair["target_provenance"] = "human_accepted"
+    # Delivery approval is document-scoped authority.  It does not prove that
+    # the user inspected and accepted every segment, so segment-level
+    # human_accepted fields remain unchanged.
+    state["delivery_approved_by_human"] = True
+    state["delivery_approval"] = {
+        "timestamp": now_iso(), "actor": actor, "note": note,
+    }
     add_human_action(state, "*delivery*", "approve_final", note, actor)
     return state, True, []
 

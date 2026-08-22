@@ -685,6 +685,8 @@ def test_review_fix_and_blocking():
         def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
             if "术语管理专家" in system_prompt:
                 return '[]'
+            if "这是盲审" in system_prompt:
+                return '[]'
             if "翻译审校专家" in system_prompt:
                 return json.dumps([
                     {"segment_index": 0, "severity": "actionable", "reason": "术语不一致",

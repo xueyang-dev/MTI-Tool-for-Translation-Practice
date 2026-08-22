@@ -1,7 +1,15 @@
 """Formal-target / shadow-target repair lifecycle."""
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any, Dict, List, Sequence
+
+
+def _content_hash(value: Any) -> str:
+    payload = json.dumps(value, ensure_ascii=False, sort_keys=True,
+                         separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def create_overlay(
@@ -9,14 +17,22 @@ def create_overlay(
     shadow_targets: Sequence[str],
     findings: Sequence[Dict[str, Any]],
     source: str,
+    sources: Sequence[str] = (),
 ) -> Dict[str, Any]:
     """Create a pending repair overlay without mutating the formal target."""
+    formal = list(formal_targets)
+    shadow = list(shadow_targets)
     return {
         "source": source,
         "status": "pending",
-        "formal_targets": list(formal_targets),
-        "shadow_targets": list(shadow_targets),
-        "finding_indexes": [item.get("segment_index") for item in findings],
+        "formal_targets": formal,
+        "shadow_targets": shadow,
+        "finding_indexes": [item.get("segment_id", item.get("segment_index"))
+                             for item in findings],
+        "input_hash": _content_hash({"sources": list(sources or []),
+                                      "formal_targets": formal,
+                                      "findings": list(findings or [])}),
+        "candidate_hash": _content_hash(shadow),
     }
 
 

@@ -106,6 +106,16 @@ def _make_unit(paragraphs: Sequence[str], start: int, end: int,
     }
 
 
+def _section_sort_key(section: Dict[str, Any]) -> Tuple[int, int]:
+    """Sort malformed profile ranges after valid ranges without raising."""
+    try:
+        start = int(section.get("start_segment"))
+        end = int(section.get("end_segment"))
+    except (TypeError, ValueError):
+        return (10**12, 10**12)
+    return start, end
+
+
 def build_semantic_units(
     paragraphs: Sequence[str],
     document_profile: Optional[Dict[str, Any]] = None,
@@ -126,7 +136,7 @@ def build_semantic_units(
     sections = sorted(
         (s for s in (document_profile or {}).get("sections") or []
          if isinstance(s, dict)),
-        key=lambda s: (int(s.get("start_segment", -1)), int(s.get("end_segment", -1))),
+        key=_section_sort_key,
     )
     for section in sections:
         try:
@@ -208,6 +218,8 @@ def generate_section_digests(
     target_lang: str = "",
     call_llm: Optional[Callable] = None,
     max_workers: int = DEFAULT_DIGEST_WORKERS,
+    existing_digests: Optional[Sequence[Dict[str, Any]]] = None,
+    on_progress: Optional[Callable[[List[Dict[str, Any]]], None]] = None,
 ) -> Tuple[List[Dict[str, Any]], List[str]]:
     """Generate independent unit digests; results retain source order."""
     if not units:
@@ -232,21 +244,39 @@ def generate_section_digests(
         except Exception as exc:  # provider failures must not corrupt the job
             return _fallback_digest(unit), f"{unit['unit_id']}：语义摘要失败（{str(exc)[:160]}）"
 
-    results: List[Optional[Dict[str, Any]]] = [None] * len(units)
+    existing_by_id = {
+        str(item.get("unit_id")): dict(item)
+        for item in existing_digests or []
+        if isinstance(item, dict) and item.get("unit_id")
+    }
+    results: List[Optional[Dict[str, Any]]] = []
+    for unit in units:
+        saved = existing_by_id.get(str(unit["unit_id"]))
+        if saved and saved.get("start_segment") == unit.get("start_segment") \
+                and saved.get("end_segment") == unit.get("end_segment") \
+                and saved.get("source") in (None, unit.get("source")):
+            results.append(saved)
+        else:
+            results.append(None)
     warnings: List[str] = []
-    workers = max(1, min(int(max_workers or 1), len(units)))
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(work, unit): index for index, unit in enumerate(units)}
-        for future in as_completed(futures):
-            index = futures[future]
-            try:
-                digest, warning = future.result()
-            except Exception as exc:  # defensive around custom executors/providers
-                digest = _fallback_digest(units[index])
-                warning = f"{units[index]['unit_id']}：语义摘要失败（{str(exc)[:160]}）"
-            results[index] = digest
-            if warning:
-                warnings.append(warning)
+    pending = [(index, unit) for index, unit in enumerate(units)
+               if results[index] is None]
+    if pending:
+        workers = max(1, min(int(max_workers or 1), len(pending)))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(work, unit): index for index, unit in pending}
+            for future in as_completed(futures):
+                index = futures[future]
+                try:
+                    digest, warning = future.result()
+                except Exception as exc:  # defensive around custom executors/providers
+                    digest = _fallback_digest(units[index])
+                    warning = f"{units[index]['unit_id']}：语义摘要失败（{str(exc)[:160]}）"
+                results[index] = digest
+                if warning:
+                    warnings.append(warning)
+                if on_progress is not None:
+                    on_progress([item for item in results if item is not None])
     return [item for item in results if item is not None], warnings
 
 
@@ -271,6 +301,71 @@ def _normalize_synopsis(raw: Dict[str, Any], status: str = "model") -> Dict[str,
     }
 
 
+def _digest_text(digest: Dict[str, Any]) -> str:
+    return (
+        f"[{digest.get('unit_id', '')} · 段 {digest.get('start_segment', '')}-"
+        f"{digest.get('end_segment', '')}]\n"
+        f"主旨：{digest.get('summary', '')}\n"
+        f"实体：{'、'.join(digest.get('key_entities') or [])}\n"
+        f"概念：{'、'.join(digest.get('key_terms') or [])}\n"
+        f"提示：{'、'.join(digest.get('translation_notes') or [])}"
+    )
+
+
+def _synopsis_text(synopsis: Dict[str, Any], index: int) -> str:
+    return (
+        f"[中间概要 {index + 1}]\n概要：{synopsis.get('summary', '')}\n"
+        f"发展：{synopsis.get('document_arc', '')}\n"
+        f"主题：{'、'.join(synopsis.get('themes') or [])}\n"
+        f"实体：{'、'.join(synopsis.get('entities') or [])}\n"
+        f"概念：{'、'.join(synopsis.get('terms') or [])}\n"
+        f"翻译提示：{'、'.join(synopsis.get('translation_notes') or [])}"
+    )
+
+
+def _text_chunks(items: Sequence[str], max_chars: int) -> List[str]:
+    chunks: List[str] = []
+    current: List[str] = []
+    chars = 0
+    for item in items:
+        item = str(item or "")
+        if current and chars + len(item) > max_chars:
+            chunks.append("\n\n".join(current))
+            current, chars = [], 0
+        current.append(item)
+        chars += len(item)
+    if current:
+        chunks.append("\n\n".join(current))
+    return chunks
+
+
+def _reduce_synopsis(
+    items: Sequence[str],
+    provider: str,
+    api_key: str,
+    model: str,
+    target_lang: str,
+    call_llm: Callable,
+    max_chars: int,
+) -> Dict[str, Any]:
+    chunks = _text_chunks(items, max(1000, int(max_chars or 12000)))
+    if not chunks:
+        return {"summary": "", "status": "unavailable"}
+    reduced: List[Dict[str, Any]] = []
+    for chunk in chunks:
+        raw = _parse_object(_call(
+            call_llm, provider, api_key, model, _synopsis_system_prompt(),
+            f"目标语言：{target_lang}\n语义摘要块：\n{chunk}"))
+        if raw is None:
+            raise ValueError("模型未返回结构化 JSON")
+        reduced.append(_normalize_synopsis(raw))
+    if len(reduced) == 1:
+        return reduced[0]
+    return _reduce_synopsis(
+        [_synopsis_text(item, index) for index, item in enumerate(reduced)],
+        provider, api_key, model, target_lang, call_llm, max_chars * 2)
+
+
 def generate_document_synopsis(
     digests: Sequence[Dict[str, Any]],
     provider: str,
@@ -278,27 +373,18 @@ def generate_document_synopsis(
     model: str,
     target_lang: str = "",
     call_llm: Optional[Callable] = None,
+    max_chunk_chars: int = 12000,
 ) -> Tuple[Dict[str, Any], List[str]]:
-    """Map unit digests into one document-level synopsis."""
+    """Map unit digests into a hierarchical document-level synopsis."""
     if not digests:
         return {"summary": "", "status": "unavailable"}, ["全文概要跳过：没有语义摘要"]
     if call_llm is None:
         import core
         call_llm = core.call_llm
-    digest_text = "\n\n".join(
-        f"[{d['unit_id']} · 段 {d['start_segment']}-{d['end_segment']}]\n"
-        f"主旨：{d.get('summary', '')}\n"
-        f"实体：{'、'.join(d.get('key_entities') or [])}\n"
-        f"概念：{'、'.join(d.get('key_terms') or [])}\n"
-        f"提示：{'、'.join(d.get('translation_notes') or [])}"
-        for d in digests
-    )
     try:
-        raw = _parse_object(_call(
-            call_llm, provider, api_key, model, _synopsis_system_prompt(),
-            f"目标语言：{target_lang}\n语义单元摘要：\n{digest_text}"))
-        if raw is not None:
-            return _normalize_synopsis(raw), []
+        return _reduce_synopsis(
+            [_digest_text(digest) for digest in digests],
+            provider, api_key, model, target_lang, call_llm, max_chunk_chars), []
     except Exception as exc:
         warning = f"全文概要失败（{str(exc)[:160]}）"
     else:
@@ -324,13 +410,71 @@ def build_document_understanding(
     call_llm: Optional[Callable] = None,
     max_chars: int = DEFAULT_UNIT_CHARS,
     max_workers: int = DEFAULT_DIGEST_WORKERS,
+    checkpoint_dir: Optional[Path] = None,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Dict[str, Any], List[str]]:
-    """Build units, digests, and synopsis in one resumable-friendly call."""
+    """Build understanding artifacts with durable per-unit digest checkpoints."""
     units = build_semantic_units(paragraphs, document_profile, max_chars=max_chars)
+
+    stored_digests: List[Dict[str, Any]] = []
+    stored_synopsis: Optional[Dict[str, Any]] = None
+    stored_complete = False
+    if checkpoint_dir:
+        root = Path(checkpoint_dir)
+        try:
+            saved_units = json.loads((root / "semantic_units.json").read_text(encoding="utf-8"))
+        except (OSError, TypeError, ValueError):
+            saved_units = None
+        if saved_units != units:
+            saved_units = None
+        try:
+            candidate_digests = json.loads(
+                (root / "section_digests.json").read_text(encoding="utf-8"))
+        except (OSError, TypeError, ValueError):
+            candidate_digests = []
+        if saved_units is not None and isinstance(candidate_digests, list):
+            stored_digests = candidate_digests
+        try:
+            candidate_synopsis = json.loads(
+                (root / "document_synopsis.json").read_text(encoding="utf-8"))
+        except (OSError, TypeError, ValueError):
+            candidate_synopsis = None
+        if isinstance(candidate_synopsis, dict):
+            stored_synopsis = candidate_synopsis
+        digest_by_id = {
+            str(item.get("unit_id")): item for item in stored_digests
+            if isinstance(item, dict) and item.get("unit_id")
+        }
+        stored_complete = len(digest_by_id) == len(units) and all(
+            unit["unit_id"] in digest_by_id
+            and unit.get("start_segment") == digest_by_id[unit["unit_id"]].get("start_segment")
+            and unit.get("end_segment") == digest_by_id[unit["unit_id"]].get("end_segment")
+            for unit in units
+        )
+        if not stored_complete:
+            stored_synopsis = None
+        write_understanding_artifacts(
+            root, units, stored_digests,
+            stored_synopsis if stored_synopsis and stored_synopsis.get("status") != "pending"
+            and stored_complete else {"summary": "", "status": "pending"})
+
+    def checkpoint(digests: List[Dict[str, Any]]) -> None:
+        if checkpoint_dir:
+            write_understanding_artifacts(
+                Path(checkpoint_dir), units, digests,
+                {"summary": "", "status": "pending"})
+
     digests, warnings = generate_section_digests(
-        units, provider, api_key, model, target_lang, call_llm, max_workers=max_workers)
-    synopsis, synopsis_warnings = generate_document_synopsis(
-        digests, provider, api_key, model, target_lang, call_llm)
+        units, provider, api_key, model, target_lang, call_llm,
+        max_workers=max_workers, existing_digests=stored_digests,
+        on_progress=checkpoint if checkpoint_dir else None)
+    if stored_synopsis and stored_synopsis.get("status") != "pending" \
+            and len(digests) == len(units) and stored_complete:
+        synopsis, synopsis_warnings = stored_synopsis, []
+    else:
+        synopsis, synopsis_warnings = generate_document_synopsis(
+            digests, provider, api_key, model, target_lang, call_llm)
+    if checkpoint_dir:
+        write_understanding_artifacts(Path(checkpoint_dir), units, digests, synopsis)
     return units, digests, synopsis, warnings + synopsis_warnings
 
 

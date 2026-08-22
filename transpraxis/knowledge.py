@@ -50,22 +50,28 @@ def extract_observations(
     api_key: str,
     model: str,
     call_llm: Optional[Callable] = None,
-) -> Tuple[List[Dict[str, str]], Optional[str]]:
+    segment_ids: Optional[Sequence[int]] = None,
+) -> Tuple[List[Dict[str, Any]], Optional[str]]:
     """Extract terms/entities whose translation choices may matter later."""
     if not sources or not targets:
         return [], None
     if call_llm is None:
         import core
         call_llm = core.call_llm
+    segment_ids = list(segment_ids) if segment_ids is not None \
+        else list(range(len(sources)))
+    if len(segment_ids) != len(sources):
+        return [], "知识反馈 segment_ids 与批次长度不一致"
     numbered = "\n\n".join(
-        f"段落 {i + 1}\n原文：{source}\n译文：{target}"
-        for i, (source, target) in enumerate(zip(sources, targets))
+        f"segment_id: {segment_id}\n原文：{source}\n译文：{target}"
+        for segment_id, source, target in zip(segment_ids, sources, targets)
     )
     system_prompt = (
         "你是翻译流知识抽取器。只从给出的原文—译文对照中发现后续批次需要保持一致的"
         "人名、称谓、固定表达、口癖或专业术语。不要抽取普通词、整句、URL、邮箱或引用。"
-        "只输出 JSON 数组，每项为 {\"source_expression\": \"原文短语\","
-        "\"observed_target\": \"当前实际译法\", \"kind\": \"term|name|expression\"}。"
+        "只输出 JSON 数组，每项为 {\"segment_id\": 0,"
+        "\"source_expression\": \"原文短语\", \"observed_target\": \"当前实际译法\","
+        "\"kind\": \"term|name|expression\"}。segment_id 必须使用给出的全局编号。"
         "不要修改任何术语表，不要输出解释。"
     )
     try:
@@ -75,7 +81,9 @@ def extract_observations(
         return [], f"知识反馈调用失败：{str(exc)[:160]}"
     if parsed is None:
         return [], "知识反馈返回不是 JSON 数组"
-    observations = []
+    source_by_id = dict(zip(segment_ids, sources))
+    target_by_id = dict(zip(segment_ids, targets))
+    observations: List[Dict[str, Any]] = []
     seen = set()
     for item in parsed:
         if not isinstance(item, dict):
@@ -83,14 +91,33 @@ def extract_observations(
         source = str(item.get("source_expression") or item.get("source") or "").strip()
         target = str(item.get("observed_target") or item.get("target") or "").strip()
         kind = str(item.get("kind") or "term").strip() or "term"
+        segment_id = item.get("segment_id")
+        # A one-segment legacy response has no ambiguity; multi-segment
+        # responses must name the global segment explicitly.
+        if segment_id is None and len(segment_ids) == 1:
+            segment_id = segment_ids[0]
+        if isinstance(segment_id, bool) or not isinstance(segment_id, int) \
+                or segment_id < 0 or segment_id not in source_by_id:
+            continue
         if len(source) < 2 or not target or len(source) > 160 or len(target) > 240:
             continue
-        if source.casefold() in seen or re.search(r"https?://|@", source):
+        if not _contains(source, source_by_id[segment_id]) \
+                or not _contains(target, target_by_id[segment_id]):
             continue
-        seen.add(source.casefold())
+        key = (segment_id, source.casefold())
+        if key in seen or re.search(r"https?://|@", source):
+            continue
+        seen.add(key)
         observations.append({"source_expression": source,
-                             "observed_target": target, "kind": kind})
+                             "observed_target": target, "kind": kind,
+                             "segment_id": segment_id})
     return observations, None
+
+
+def _contains(needle: str, haystack: str) -> bool:
+    """Check a model claim against its named segment with normalised spaces."""
+    normal = lambda value: re.sub(r"\s+", " ", str(value or "")).strip().casefold()
+    return bool(normal(needle)) and normal(needle) in normal(haystack)
 
 
 def _first_alignment(
@@ -120,10 +147,10 @@ def _candidate_key(candidate: Dict[str, Any]) -> str:
 
 
 def _make_candidate(
-    observation: Dict[str, str],
+    observation: Dict[str, Any],
     paragraphs: Sequence[str],
     pairs: Sequence[Dict[str, Any]],
-    segment_index: int,
+    segment_id: int,
 ) -> Dict[str, Any]:
     source = observation["source_expression"]
     occurrences = terminology.find_occurrences(source, list(paragraphs))
@@ -132,9 +159,9 @@ def _make_candidate(
     return {
         "source": source,
         "observed_target": observed_target,
-        "first_observed_segment": first if first is not None else segment_index,
+        "first_observed_segment": segment_id,
         "occurrences": occurrences,
-        "observed_segments": [segment_index],
+        "observed_segments": [segment_id],
         "status": "emergent_candidate",
         "origin": "translation_observation",
         "kind": observation.get("kind") or "term",
@@ -154,20 +181,26 @@ def observe_batch(
     model: str,
     existing_candidates: Optional[Sequence[Dict[str, Any]]] = None,
     call_llm: Optional[Callable] = None,
+    segment_ids: Optional[Sequence[int]] = None,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Optional[str]]:
     """Return updated candidate queue, auditable events, and a non-fatal warning."""
+    segment_ids = list(segment_ids) if segment_ids is not None \
+        else [batch_offset + index for index in range(len(sources))]
     observations, warning = extract_observations(
-        sources, targets, provider, api_key, model, call_llm=call_llm)
+        sources, targets, provider, api_key, model, call_llm=call_llm,
+        segment_ids=segment_ids)
     candidates = [dict(item) for item in (existing_candidates or [])
                   if isinstance(item, dict)]
     by_source = {_candidate_key(item): item for item in candidates if _candidate_key(item)}
     events: List[Dict[str, Any]] = []
-    all_pairs = list(pairs_before_batch) + [
-        {"source": source, "target": target}
-        for source, target in zip(sources, targets)
-    ]
-    for local_index, observation in enumerate(observations):
+    all_pairs = list(pairs_before_batch)
+    for segment_id, source, target in zip(segment_ids, sources, targets):
+        while len(all_pairs) <= segment_id:
+            all_pairs.append({})
+        all_pairs[segment_id] = {"source": source, "target": target}
+    for observation in observations:
         source = observation["source_expression"]
+        segment_id = observation["segment_id"]
         existing = _existing_entry(source, glossary)
         first, first_target = _first_alignment(source, paragraphs, all_pairs)
         candidate_target = observation["observed_target"] or first_target
@@ -181,7 +214,7 @@ def observe_batch(
                     "source": source,
                     "preferred_target": preferred,
                     "observed_target": candidate_target,
-                    "segment_index": batch_offset + local_index,
+                    "segment_id": segment_id,
                     "reason": f"锁定术语「{source}」的观察译法与首选译名不一致",
                 })
             else:
@@ -189,18 +222,18 @@ def observe_batch(
                     "type": "known_consistency",
                     "source": source,
                     "observed_target": candidate_target,
-                    "segment_index": batch_offset + local_index,
+                    "segment_id": segment_id,
                 })
             continue
         candidate = _make_candidate(
-            observation, paragraphs, all_pairs, batch_offset + local_index)
+            observation, paragraphs, all_pairs, segment_id)
         key = _candidate_key(candidate)
         old = by_source.get(key)
         if old is not None:
             old["occurrences"] = sorted(set(old.get("occurrences") or []) |
                                          set(candidate.get("occurrences") or []))
             old["observed_segments"] = sorted(set(old.get("observed_segments") or []) |
-                                                {batch_offset + local_index})
+                                                {segment_id})
             if not old.get("observed_target"):
                 old["observed_target"] = candidate["observed_target"]
             candidate = old
@@ -213,7 +246,7 @@ def observe_batch(
             "observed_target": candidate["observed_target"],
             "first_observed_segment": candidate["first_observed_segment"],
             "occurrences": list(candidate["occurrences"]),
-            "segment_index": batch_offset + local_index,
+            "segment_id": segment_id,
             "origin": "translation_observation",
         })
     return candidates, events, warning

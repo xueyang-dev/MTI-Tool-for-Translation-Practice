@@ -52,6 +52,8 @@ def _default_new_fields() -> Dict[str, Any]:
         "glossary_injection_log": [],
         "human_actions": [],
         "delivery_manifest": {},
+        "delivery_approved_by_human": False,
+        "delivery_approval": None,
         "exported_assets": [],
         "quality_mode": False,
         "quality_bypass": False,

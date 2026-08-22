@@ -828,8 +828,28 @@ BATCH_SIZE = 4
 MAX_BATCH_CHARS = 1600
 
 
-def make_batches(paragraphs, batch_size=BATCH_SIZE, max_chars=MAX_BATCH_CHARS):
-    """把段落聚成语义批次：≤batch_size 段且累计 ≤max_chars 字符。"""
+def make_batches(paragraphs, batch_size=BATCH_SIZE, max_chars=MAX_BATCH_CHARS,
+                 semantic_units=None):
+    """把段落聚成批次；提供 semantic_units 时不跨单元边界。"""
+    if semantic_units:
+        batches = []
+        ranges = []
+        for unit in semantic_units:
+            if not isinstance(unit, dict):
+                continue
+            try:
+                start = int(unit.get("start_segment"))
+                end = int(unit.get("end_segment"))
+            except (TypeError, ValueError):
+                continue
+            if 0 <= start <= end < len(paragraphs):
+                ranges.append((start, end))
+        for start, end in sorted(ranges):
+            batches.extend(make_batches(paragraphs[start:end + 1], batch_size, max_chars))
+        covered = {index for start, end in ranges for index in range(start, end + 1)}
+        range_size = sum(end - start + 1 for start, end in ranges)
+        if batches and len(covered) == len(paragraphs) and range_size == len(paragraphs):
+            return batches
     batches, cur, n = [], [], 0
     for p in paragraphs:
         if cur and (len(cur) >= batch_size or n + len(p) > max_chars):
@@ -840,6 +860,17 @@ def make_batches(paragraphs, batch_size=BATCH_SIZE, max_chars=MAX_BATCH_CHARS):
     if cur:
         batches.append(cur)
     return batches
+
+
+def _translation_evidence_index(
+    paras, pairs, batch_pairs, glossary, document_profile,
+    document_synopsis, section_digests, findings_all, blind=False,
+    candidate_targets=None,
+):
+    return _translation_evidence.TranslationEvidenceIndex(
+        paras, pairs + batch_pairs, glossary, document_profile,
+        document_synopsis, section_digests, findings_all,
+        blind=blind, candidate_targets=candidate_targets)
 
 
 def _batch_section_profile(document_profile, offset, batch_len):
@@ -907,11 +938,9 @@ def translate_batch(segments, ctx_prev, ctx_next, glossary_text, style_rules, ta
     """翻译一个语义批次，返回与 segments 等长的译文列表；失败抛出 RuntimeError。"""
     numbered = "\n".join(f"{i + 1}. {s}" for i, s in enumerate(segments))
     if context_packet is not None:
-        # ContextCompiler owns the stable prompt order; keep the old arguments
-        # for callers that still use the compact source-only path.
-        # Keep glossary/style in the system prompt for existing providers and
-        # audit consumers; the packet repeats them in a stable user layout.
-        sys_prompt = _translator_system(glossary_text, style_rules, target_lang)
+        # Keep the system prefix invariant across batches.  Glossary/style are
+        # carried once in the ordered context packet below.
+        sys_prompt = _translator_system("", "", target_lang)
         user_prompt = _context.render_context_packet(context_packet)
     else:
         sys_prompt = _translator_system(glossary_text, style_rules, target_lang)
@@ -1334,7 +1363,9 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
             save_job_state(job_id, state)
     paras = state["paras"]
     pairs = state["pairs"]
-    batches = make_batches(paras)
+    batches = make_batches(
+        paras, semantic_units=state.get("semantic_units")
+        or state.get("section_digests") or None)
 
     # 断点：从第一个未完成批次继续；若中间批次不完整则截断重译
     cum_end, start_batch = 0, 0
@@ -1392,7 +1423,8 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                                   "initial_target": hit["target"],
                                   "accepted_target": hit["target"],
                                   "target_provenance": "tm_approved",
-                                  "reviewed": True, "from_tm": True}
+                                  "reviewed": True, "review_status": "tm_approved",
+                                  "from_tm": True}
                 state["tm_used_count"] = state.get("tm_used_count", 0) + 1
             elif not re.search(r"[A-Za-z0-9\u4e00-\u9fff]", clean_src):
                 # 纯符号段落（章节分隔装饰等）：不是正文，原样保留，不调模型
@@ -1400,7 +1432,8 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                                   "initial_target": clean_src,
                                   "accepted_target": clean_src,
                                   "target_provenance": "reviewed",
-                                  "reviewed": True, "from_tm": False}
+                                  "reviewed": True, "review_status": "reviewed_clean",
+                                  "from_tm": False}
             else:
                 to_translate.append((i, clean_src))
 
@@ -1460,7 +1493,8 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                 batch_pairs[i] = {"source": src, "target": cleaned_tgt,
                                   "initial_target": cleaned_tgt,
                                   "target_provenance": "generated",
-                                  "reviewed": False, "from_tm": False}
+                                  "reviewed": False, "review_status": "not_reviewed",
+                                  "from_tm": False}
 
         batch_sources = [p["source"] for p in batch_pairs]
         batch_targets = [p["target"] for p in batch_pairs]
@@ -1494,7 +1528,8 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                                 continue
                             shadow_targets[j] = candidate
                     overlay = _repair.create_overlay(
-                        formal_targets, shadow_targets, fixable, "deterministic")
+                        formal_targets, shadow_targets, fixable, "deterministic",
+                        sources=batch_sources)
                     shadow_findings = check_translation_batch(
                         batch_sources, shadow_targets, glossary, target_lang,
                         section_profile=section_profile)
@@ -1502,14 +1537,18 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
                     if enable_review and not any(
                             f["severity"] in ("blocking", "actionable")
                             for f in shadow_findings):
-                        shadow_index = _translation_evidence.TranslationEvidenceIndex(
-                            paras, pairs + batch_pairs, glossary, document_profile,
-                            document_synopsis, section_digests, findings_all)
+                        shadow_index = _translation_evidence_index(
+                            paras, pairs, batch_pairs, glossary, document_profile,
+                            document_synopsis, section_digests, findings_all,
+                            blind=True,
+                            candidate_targets={offset + j: shadow_targets[j]
+                                               for j in range(len(shadow_targets))})
                         blind_findings, blind_failed, blind_trace = \
                             _translation_evidence.review_translation_batch_with_evidence(
                                 batch_sources, shadow_targets, glossary_text, style_rules,
                                 target_lang, provider, api_key, model, shadow_index,
-                                call_llm=call_llm, blind=True)
+                                call_llm=call_llm, blind=True,
+                                segment_ids=list(range(offset, offset + len(batch_pairs))))
                         if blind_trace:
                             state.setdefault("review_evidence", []).append({
                                 "batch": bi, "phase": "shadow_repair", **blind_trace})
@@ -1539,79 +1578,92 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
         })
 
         # 4) 独立审校：actionable 建议复验后应用；blocking 记录给用户
+        review_succeeded = False
         if enable_review:
             stats["batches_reviewed"] += 1
-            evidence_index = _translation_evidence.TranslationEvidenceIndex(
-                paras, pairs + batch_pairs, glossary, document_profile,
+            evidence_index = _translation_evidence_index(
+                paras, pairs, batch_pairs, glossary, document_profile,
                 document_synopsis, section_digests, findings_all)
             rfindings, failed, review_trace = \
                 _translation_evidence.review_translation_batch_with_evidence(
                     batch_sources, batch_targets, glossary_text, style_rules, target_lang,
-                    provider, api_key, model, evidence_index, call_llm=call_llm)
+                    provider, api_key, model, evidence_index, call_llm=call_llm,
+                    segment_ids=list(range(offset, offset + len(batch_pairs))))
             state.setdefault("review_evidence", []).append({
                 "batch": bi, "phase": "formal_review", **review_trace,
             })
             if failed:
                 stats["review_failed"] += 1
-            for rf in rfindings:
-                sev = rf.get("severity")
-                if sev not in ("blocking", "actionable", "informational"):
-                    continue
-                idx = rf.get("segment_index")
-                if not isinstance(idx, int) or not (0 <= idx < len(batch_pairs)):
-                    continue
-                record = {"segment_index": offset + idx, "severity": sev, "type": "review",
-                          "reason": str(rf.get("reason") or "审校发现问题")}
-                if sev == "actionable" and rf.get("suggested_target") \
-                        and not batch_pairs[idx]["from_tm"]:
-                    suggested = clean_xml_chars(rf["suggested_target"]).replace('\n', ' ').strip()
-                    if suggested:
-                        old_target = batch_pairs[idx]["target"]
-                        overlay = _repair.create_overlay(
-                            [old_target], [suggested], [rf], "review_suggested")
-                        recheck = check_translation_batch(
-                            [batch_sources[idx]], [suggested], glossary, target_lang,
-                            section_profile=section_profile)
-                        blind_trace = None
-                        blind_findings = []
-                        blind_failed = False
-                        if not any(f["severity"] in ("blocking", "actionable")
-                                   for f in recheck):
-                            blind_index = _translation_evidence.TranslationEvidenceIndex(
-                                paras, pairs + batch_pairs, glossary, document_profile,
-                                document_synopsis, section_digests, findings_all)
-                            blind_findings, blind_failed, blind_trace = \
-                                _translation_evidence.review_translation_batch_with_evidence(
-                                    [batch_sources[idx]], [suggested], glossary_text,
-                                    style_rules, target_lang, provider, api_key, model,
-                                    blind_index, call_llm=call_llm, blind=True)
-                            # A blind reviewer may echo the exact candidate as its
-                            # suggestion; that is confirmation, not a new issue.
-                            blind_findings = [
-                                item for item in blind_findings
-                                if item.get("segment_index") == 0 and not (
-                                    item.get("severity") == "actionable"
-                                    and str(item.get("suggested_target") or "").strip()
-                                    == suggested)
-                            ]
-                        overlay = _repair.evaluate_overlay(
-                            overlay, recheck, blind_findings, blind_failed)
-                        state.setdefault("repair_overlays", []).append({
-                            "batch": bi, "offset": offset, "segment_index": idx,
-                            **overlay, "blind_trace": blind_trace,
-                        })
-                        if blind_trace:
-                            state.setdefault("review_evidence", []).append({
-                                "batch": bi, "phase": "suggested_shadow_review",
-                                **blind_trace,
-                            })
-                        if overlay["status"] == "accepted":
-                            batch_pairs[idx]["target"] = suggested
-                        else:
-                            record["suggested_target"] = suggested
-                            findings_all.append(record)
+            if failed:
+                # Provider/JSON/protocol failure is not a clean review.  Do
+                # not interpret an empty findings list as acceptance.
+                for pair in batch_pairs:
+                    if not pair.get("from_tm"):
+                        pair["review_status"] = "review_failed"
+            else:
+                review_succeeded = True
+                global_to_local = {
+                    offset + index: index for index in range(len(batch_pairs))
+                }
+                for rf in rfindings:
+                    sev = rf.get("severity")
+                    if sev not in ("blocking", "actionable", "informational"):
                         continue
-                findings_all.append(record)
+                    segment_id = rf.get("segment_id")
+                    idx = global_to_local.get(segment_id)
+                    if idx is None:
+                        continue
+                    record = {
+                        "segment_id": segment_id, "segment_index": segment_id,
+                        "severity": sev, "type": "review",
+                        "reason": str(rf.get("reason") or "审校发现问题"),
+                        "evidence_refs": list(rf.get("evidence_refs") or []),
+                    }
+                    if sev == "actionable" and rf.get("suggested_target") \
+                            and not batch_pairs[idx]["from_tm"]:
+                        suggested = clean_xml_chars(rf["suggested_target"]).replace('\n', ' ').strip()
+                        if suggested:
+                            old_target = batch_pairs[idx]["target"]
+                            overlay = _repair.create_overlay(
+                                [old_target], [suggested], [rf], "review_suggested",
+                                sources=[batch_sources[idx]])
+                            recheck = check_translation_batch(
+                                [batch_sources[idx]], [suggested], glossary, target_lang,
+                                section_profile=section_profile)
+                            blind_trace = None
+                            blind_findings = []
+                            blind_failed = False
+                            if not any(f["severity"] in ("blocking", "actionable")
+                                       for f in recheck):
+                                blind_index = _translation_evidence_index(
+                                    paras, pairs, batch_pairs, glossary, document_profile,
+                                    document_synopsis, section_digests, findings_all,
+                                    blind=True, candidate_targets={segment_id: suggested})
+                                blind_findings, blind_failed, blind_trace = \
+                                    _translation_evidence.review_translation_batch_with_evidence(
+                                        [batch_sources[idx]], [suggested], glossary_text,
+                                        style_rules, target_lang, provider, api_key, model,
+                                        blind_index, call_llm=call_llm, blind=True,
+                                        segment_ids=[segment_id])
+                            overlay = _repair.evaluate_overlay(
+                                overlay, recheck, blind_findings, blind_failed)
+                            state.setdefault("repair_overlays", []).append({
+                                "batch": bi, "offset": offset, "segment_index": idx,
+                                "segment_id": segment_id, **overlay,
+                                "blind_trace": blind_trace,
+                            })
+                            if blind_trace:
+                                state.setdefault("review_evidence", []).append({
+                                    "batch": bi, "phase": "suggested_shadow_review",
+                                    **blind_trace,
+                                })
+                            if overlay["status"] == "accepted":
+                                batch_pairs[idx]["target"] = suggested
+                            else:
+                                record["suggested_target"] = suggested
+                                findings_all.append(record)
+                            continue
+                    findings_all.append(record)
             _checkpoint.append_event(job_dir(job_id), {
                 "batch": bi, "offset": offset, "phase": "semantic_review_done",
             })
@@ -1627,35 +1679,52 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
 
         # 批内冲突检测（跨段同术语多译法）——在 TM 入库前执行
         for cf in _detect_conflicts(batch_pairs, glossary, sections=sections):
-            cf["segment_index"] = offset + cf["segment_id"]
+            segment_id = offset + cf["segment_id"]
+            cf["segment_index"] = segment_id
+            cf["segment_id"] = segment_id
             findings_all.append(cf)
 
         # 记录仍未解决的确定性问题
         for f in findings:
             if f["severity"] in ("blocking", "actionable", "informational"):
-                findings_all.append({"segment_index": offset + f["segment_index"],
+                segment_id = offset + f["segment_index"]
+                findings_all.append({"segment_id": segment_id,
+                                     "segment_index": segment_id,
                                      "severity": f["severity"], "type": "check",
                                      "reason": f["reason"]})
 
         # 5) 批后知识反馈：只进入 candidate queue，不改变 frozen glossary。
-        if enable_review:
+        accepted_for_knowledge = []
+        if enable_review and review_succeeded:
+            for j, _pair in enumerate(batch_pairs):
+                segment_id = offset + j
+                segment_findings = [
+                    finding for finding in findings_all
+                    if finding.get("segment_id", finding.get("segment_index")) == segment_id
+                ]
+                if not segment_findings:
+                    accepted_for_knowledge.append(j)
+        if accepted_for_knowledge:
+            knowledge_segment_ids = [offset + j for j in accepted_for_knowledge]
             knowledge_candidates, knowledge_events, knowledge_warning = \
                 _knowledge.observe_batch(
-                    batch_sources, [p["target"] for p in batch_pairs], paras, pairs,
+                    [batch_sources[j] for j in accepted_for_knowledge],
+                    [batch_pairs[j]["target"] for j in accepted_for_knowledge],
+                    paras, pairs,
                     glossary, offset, provider, api_key, model,
                     existing_candidates=state.get("knowledge_candidates") or [],
-                    call_llm=call_llm)
+                    call_llm=call_llm, segment_ids=knowledge_segment_ids)
         else:
-            # Without semantic acceptance there is no trustworthy observation
-            # to promote into the continuity queue.
+            # Review failure or any finding leaves no trustworthy observation.
             knowledge_candidates, knowledge_events, knowledge_warning = \
                 state.get("knowledge_candidates") or [], [], None
         for event in knowledge_events:
             event["batch"] = bi
             state.setdefault("knowledge_events", []).append(event)
             if event.get("type") == "target_conflict":
+                segment_id = event.get("segment_id", offset)
                 findings_all.append({
-                    "segment_index": event.get("segment_index", offset),
+                    "segment_id": segment_id, "segment_index": segment_id,
                     "severity": "actionable",
                     "type": "knowledge_conflict",
                     "reason": event.get("reason") or "翻译流观察译法与锁定术语不一致",
@@ -1679,9 +1748,21 @@ def translate_stage(state, job_id, glossary, provider, api_key, model, target_la
         # 6) 审校通过的段落 -> 翻译记忆
         if enable_review:
             for j, p in enumerate(batch_pairs):
-                seg_findings = [f for f in findings_all if f.get("segment_index") == offset + j
-                                and f["severity"] in ("blocking", "actionable")]
-                if not seg_findings and not p["from_tm"] \
+                segment_id = offset + j
+                seg_findings = [
+                    f for f in findings_all
+                    if f.get("segment_id", f.get("segment_index")) == segment_id
+                ]
+                if not p.get("from_tm"):
+                    if not review_succeeded:
+                        p["review_status"] = "review_failed"
+                        p["reviewed"] = False
+                    elif seg_findings:
+                        p["review_status"] = "reviewed_with_findings"
+                        p["reviewed"] = False
+                    else:
+                        p["review_status"] = "reviewed_clean"
+                if review_succeeded and not seg_findings and not p["from_tm"] \
                         and _tm_eligible(p["source"], p["target"]):
                     p["reviewed"] = True
                     p["accepted_target"] = p["target"]
@@ -2594,7 +2675,8 @@ def run_job_pipeline(job_id, filename, file_bytes, *, provider, api_key, model,
         units, digests, synopsis, understanding_warnings = \
             _context.build_document_understanding(
                 state["paras"], state.get("document_profile"), provider, api_key,
-                model, target_lang, call_llm=understanding_call)
+                model, target_lang, call_llm=understanding_call,
+                checkpoint_dir=job_dir(job_id))
         state["semantic_units"] = units
         state["section_digests"] = digests
         state["document_synopsis"] = synopsis

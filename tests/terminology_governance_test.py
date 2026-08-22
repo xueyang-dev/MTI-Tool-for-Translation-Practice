@@ -618,7 +618,7 @@ def test_batch_injection_log_and_prompt():
 
         def llm(provider, api_key, model, system_prompt, user_prompt, temperature=0.1):
             if "学术翻译专家" in system_prompt:
-                prompts.append(system_prompt)
+                prompts.append(system_prompt + "\n" + user_prompt)
                 return json.dumps([f"译文：{s}" for _, s in _numbered(user_prompt)])
             if "翻译审校专家" in system_prompt:
                 return '[]'
