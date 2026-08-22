@@ -39,6 +39,8 @@ def server_args(port: int, lan: bool) -> list[str]:
     args = ["-m", "streamlit", "run", str(ROOT / "app.py"),
             "--server.headless", "true",
             "--server.port", str(port),
+            "--theme.primaryColor", "#1267e8",
+            "--theme.textColor", "#131c2e",
             "--browser.gatherUsageStats", "false"]
     if lan:
         args += ["--server.address", "0.0.0.0"]

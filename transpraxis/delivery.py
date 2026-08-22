@@ -110,6 +110,11 @@ def approve_delivery(state: Dict[str, Any], note: str = "", actor: str = "user",
                                      note or "接受风险（人工确认）", actor)
     state["delivery_status"] = "final"
     state["stage"] = "FINAL"
+    for pair in state.get("pairs") or []:
+        if pair.get("target"):
+            pair["accepted_target"] = pair["target"]
+            pair["human_accepted"] = True
+            pair["target_provenance"] = "human_accepted"
     add_human_action(state, "*delivery*", "approve_final", note, actor)
     return state, True, []
 

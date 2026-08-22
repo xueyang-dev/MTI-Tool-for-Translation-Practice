@@ -23,6 +23,18 @@ def main():
             and 'animation: tp-upload-bar' in app_source \
             and '[data-testid="stFileChipName"]::before' in app_source, \
             "上传中的 Streamlit FileChip 应重绘为带状态的全宽文件卡"
+        assert 'label, [data-testid="stWidgetLabel"]' in app_source \
+            and '[data-testid="stTextInput"] input::placeholder' in app_source \
+            and '[role="listbox"] [role="option"]' in app_source \
+            and 'opacity: 1 !important' in app_source, \
+            "表单标签、输入占位符和说明文字必须保持可读对比度"
+        assert '[data-testid="stRadioOption"]' in app_source \
+            and '[data-testid="stSliderThumbValue"]' in app_source \
+            and 'var(--tp-primary) !important' in app_source, \
+            "风格调整的单选项和滑块必须使用可读文字与品牌蓝"
+        assert 'tp-history-copy' in app_source \
+            and 'history_item_' in app_source, \
+            "历史任务名称与进度必须使用明确的高对比度展示容器"
         # 预置一个本地任务，确保「资产与交付 / 学术写作」Tabs 一定渲染
         jid = "ab000000000000001"
         state = core.new_job_state("boot_fixture.pdf")
@@ -31,6 +43,9 @@ def main():
                      stage="DONE",
                      delivery_status="draft")
         core.save_job_state(jid, state)
+        pending = core.new_job_state("pending_fixture.docx")
+        pending.update(p1_done=True, p2_done=False, quality_mode=True, glossary=[])
+        core.save_job_state("ab000000000000002", pending)
         job_root = core.job_dir(jid)
         (job_root / "literature-sources.json").write_text(json.dumps({
             "sources": [{"source_id": "s1", "title": "测试来源"}]}, ensure_ascii=False),
@@ -53,6 +68,9 @@ def main():
         at = AppTest.from_file(str(root / "app.py"), default_timeout=30)
         at.run()
         assert not at.exception, f"应用启动异常：{at.exception}"
+        assert at.session_state["app_view"] == "new" \
+            and not at.session_state["workspace_mode"], \
+            "打开应用时应进入新建任务初始页，未完成任务从历史任务进入"
         assert any("TransPraxis" in m.value and "译践" in m.value
                    for m in at.sidebar.markdown), \
             "侧栏应显示 TransPraxis / 译践 品牌锁定"
@@ -122,6 +140,17 @@ def main():
             "未配置 AI 引擎时应提供前往配置入口"
         assert any(b.label == "重试" for b in at.button), \
             "降级结果应允许重试"
+        next(b for b in at.button if b.label == "调整").click()
+        at.run()
+        assert any(r.label == "基础风格" for r in at.radio), \
+            "风格调整面板应显示基础风格单选项"
+        assert all(any(s.label == label for s in at.slider) for label in (
+            "表达正式度", "句法重构幅度", "术语保守程度", "原文形式保留")), \
+            "风格调整面板应显示四个可调参数"
+        next(b for b in at.button if b.label == "应用风格").click()
+        at.run()
+        assert at.session_state["style_selection"]["source"] == "user_override", \
+            "应用风格后应记录为用户覆盖"
         next(b for b in at.button if b.label == "重试").click()
         at.run()
         assert any(b.label == "前往配置 API Key" for b in at.button), \
@@ -208,6 +237,19 @@ def main():
         assert any(s.label == "理论框架" and s.value == "自动推荐（建议）"
                    for s in at.selectbox), \
             "只有实践报告开启后才显示证据约束的理论框架"
+        assert any("参考文献与理论资料" in m.value for m in at.markdown), \
+            "实践报告应让普通用户从参考文献与理论资料开始"
+        assert any(f.label == "上传参考资料" for f in at.file_uploader), \
+            "普通模式应上传论文等参考资料"
+        assert any(e.label == "高级选项" for e in at.expander), \
+            "已有 JSON 注册表应收纳在高级选项中"
+        assert not any(f.label == "文献证据注册表（可选）" for f in at.file_uploader), \
+            "普通界面不应再暴露工程化的注册表上传项"
+        next(f for f in at.file_uploader if f.label == "上传参考资料").upload(
+            "theory.md", b"# Theory\n\nA grounded paragraph.", "text/markdown")
+        at.run()
+        assert at.session_state["literature_upload_sources"][0]["source_type"] == "md", \
+            "普通参考资料应转换为内部来源，而不是要求用户准备 JSON"
         next(b for b in at.button if b.label == "下一步").click()
         at.run()
         assert at.session_state["task_step"] == 4, "输出设置完成后可进入确认运行"
@@ -252,6 +294,27 @@ def main():
             and saved_cfg["model"] == "deepseek-v4-pro" \
             and saved_cfg["api_key"] == "sk-persist", \
             "保存配置应把服务商/模型/密钥写入本地配置文件"
+
+        old_fetch_models = core.fetch_provider_models
+        core.fetch_provider_models = lambda *args, **kwargs: (
+            True, ["relay-model-b", "relay-model-a"], "已获取 2 个可用模型")
+        try:
+            at.session_state["provider_choice"] = "自定义中转站"
+            at.session_state["api_key_自定义中转站"] = "sk-relay"
+            at.session_state["custom_base_url"] = "https://relay.example.com/v1"
+            at.run()
+            assert any(b.label == "获取可用模型" and not b.disabled for b in at.button), \
+                "填写 API Key 与地址后应允许获取中转站模型目录"
+            next(b for b in at.button if b.label == "获取可用模型").click()
+            at.run()
+            fetched_select = next(s for s in at.selectbox if s.label == "模型")
+            assert fetched_select.options == ["relay-model-a", "relay-model-b"] \
+                and fetched_select.value in fetched_select.options, \
+                "获取模型目录后应使用排序后的模型选择框"
+            assert any("已获取 2 个可用模型" in m.value for m in at.success), \
+                "模型目录获取成功应反馈数量"
+        finally:
+            core.fetch_provider_models = old_fetch_models
 
         print("AppTest 启动测试通过 ✅")
     finally:

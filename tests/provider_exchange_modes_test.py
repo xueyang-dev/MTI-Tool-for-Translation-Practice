@@ -56,6 +56,12 @@ def test_custom_relay_base_url():
         create_kwargs = next(k for k in calls if not isinstance(k, tuple))
         assert create_kwargs["model"] == "relay-model"
 
+        calls.clear()
+        core.call_llm("自定义中转站", "k", "relay-model", "s", "u",
+                      base_url="https://relay.example.com/v1/chat/completions")
+        client_kwargs = next(k for tag, k in calls if tag == "client")
+        assert client_kwargs["base_url"] == "https://relay.example.com/v1"
+
         # 预设中转站使用注册表默认 base_url
         calls.clear()
         core.call_llm("OpenRouter", "k", "anthropic/claude-sonnet-4", "s", "u")
@@ -104,6 +110,34 @@ def test_provider_probe():
     finally:
         core.OpenAI = original
     print("  ✓ test_provider（成功 / 失败路径）")
+
+
+def test_fetch_provider_models():
+    calls = []
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"data": [{"id": "model-z"}, {"id": "model-a"},
+                              {"id": "model-a"}]}
+
+    def fake_get(url, headers, timeout):
+        calls.append((url, headers, timeout))
+        return FakeResponse()
+
+    original_get = core.httpx.get
+    core.httpx.get = fake_get
+    try:
+        ok, models, msg = core.fetch_provider_models(
+            "自定义中转站", "k", "https://relay.example.com/v1/chat/completions")
+        assert ok and models == ["model-a", "model-z"] and "2" in msg
+        assert calls[0][0] == "https://relay.example.com/v1/models"
+        assert calls[0][1]["Authorization"] == "Bearer k"
+    finally:
+        core.httpx.get = original_get
+    print("  ✓ 自定义中转站模型目录获取")
 
 
 def test_exchange_formats():
@@ -282,6 +316,7 @@ def main():
     test_provider_registry_sane()
     test_custom_relay_base_url()
     test_provider_probe()
+    test_fetch_provider_models()
     test_exchange_formats()
     test_mode_semantics()
     test_translation_memory_switch()

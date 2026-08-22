@@ -1162,6 +1162,14 @@ def _section_packet(
         terminology = all_terms[:30]
     else:
         terminology = [x for x in all_terms if x.get("id") in case_term_ids]
+    available_segment_ids = list(segments)
+    if len(available_segment_ids) > 40:
+        available_segment_ids = available_segment_ids[:39] + [available_segment_ids[-1]]
+    available_evidence = [
+        {key: (segments.get(segment_id) or {}).get(key)
+         for key in ("segment_id", "source", "initial_target", "final_target")}
+        for segment_id in available_segment_ids
+    ]
     return {
         "research_model": research_model,
         "global_outline": [
@@ -1172,6 +1180,10 @@ def _section_packet(
         ],
         "current_section": section,
         "claims": [claims[x] for x in section.get("claims", []) if x in claims],
+        # This is an index of available evidence, not implicit case selection;
+        # only the explicit ``cases`` list may be used as a case in the report.
+        "available_segment_ids": available_segment_ids,
+        "available_evidence": available_evidence,
         "cases": [{
             **cases[x],
             "evidence": segments.get(x) if cases[x].get(

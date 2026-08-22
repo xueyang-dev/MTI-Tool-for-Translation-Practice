@@ -15,6 +15,7 @@ import streamlit as st
 import core
 from transpraxis import assets as _assets
 from transpraxis import delivery as _delivery
+from transpraxis import literature_evidence as _literature_evidence
 from transpraxis import report_evidence as _report_evidence
 
 # ================= 页面全局设置 =================
@@ -34,6 +35,10 @@ if "active_job_id" not in st.session_state:
     st.session_state.active_job_id = None
 if "task_step" not in st.session_state:
     st.session_state.task_step = 1
+if "app_view" not in st.session_state:
+    st.session_state.app_view = "new"
+if "workspace_mode" not in st.session_state:
+    st.session_state.workspace_mode = False
 if "provider_configured" not in st.session_state:
     st.session_state.provider_configured = False
 if "provider_connection_status" not in st.session_state:
@@ -58,17 +63,6 @@ if _saved_provider_cfg:
     if _saved_provider_cfg.get("base_url") \
             and "custom_base_url" not in st.session_state:
         st.session_state.custom_base_url = _saved_provider_cfg["base_url"]
-_initial_jobs = core.list_jobs()
-_pending_quality_job = next((
-    job["job_id"] for job in _initial_jobs
-    if job["state"].get("p1_done") and not job["state"].get("p2_done")
-    and job["state"].get("quality_mode")
-    and job["state"].get("glossary") is not None
-), None)
-if _pending_quality_job and "app_view" not in st.session_state:
-    st.session_state.update(app_view="workspace", workspace_mode=True,
-                            active_job_id=_pending_quality_job)
-
 # ================= 设计系统（TransPraxis Research IDE） =================
 _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
@@ -129,7 +123,35 @@ h1 { font-size: 34px !important; line-height: 1.2 !important; font-weight: 700 !
 h2 { font-size: 23px !important; }
 h3 { font-size: 16px !important; }
 p, label, input, textarea, [data-baseweb="select"] { font-size: 14px !important; }
-[data-testid="stCaptionContainer"], .stCaption { color: var(--tp-sub); }
+label, [data-testid="stWidgetLabel"], [data-testid="stWidgetLabel"] label {
+ color: var(--tp-ink) !important; opacity: 1 !important;
+}
+[data-testid="stCaptionContainer"], .stCaption {
+ color: var(--tp-sub) !important; opacity: 1 !important;
+}
+[data-testid="stRadio"] [data-testid="stRadioOption"],
+[data-testid="stRadio"] [data-testid="stRadioOption"] [data-testid="stMarkdownContainer"],
+[data-testid="stRadio"] [data-testid="stRadioOption"] [data-testid="stMarkdownContainer"] *,
+[data-testid="stSlider"] [data-testid="stSliderThumbValue"],
+[data-testid="stSlider"] [data-testid="stSliderThumbValue"] * {
+ color: var(--tp-ink) !important; opacity: 1 !important;
+}
+[data-testid="stRadio"] [data-testid="stRadioOption"] > div > div > div:first-child {
+ background: var(--tp-surface) !important; border: 2px solid #98a2b3 !important;
+}
+[data-testid="stRadio"] [data-testid="stRadioOption"][data-selected="true"] > div > div > div:first-child {
+ background: var(--tp-primary) !important; border-color: var(--tp-primary) !important;
+}
+[data-testid="stRadio"] [data-testid="stRadioOption"][data-selected="true"]
+ > div > div > div:first-child > div {
+ background: #fff !important;
+}
+[data-testid="stRadio"] [data-testid="stRadioOption"]:hover > div > div > div:first-child {
+ border-color: var(--tp-primary) !important;
+}
+[data-testid="stSlider"] div:has(> [data-testid="stSliderThumbValue"]) {
+ background: var(--tp-primary) !important;
+}
 a { color: var(--tp-primary); text-decoration-color: var(--tp-border); text-underline-offset: 2px; }
 a:hover { color: var(--tp-primary-hover); text-decoration-color: var(--tp-logo-blue); }
 hr { border-color: var(--tp-line); }
@@ -266,6 +288,25 @@ hr { border-color: var(--tp-line); }
 .tp-title p {
  margin: 16px 0 0; color: #707b8d; font-size: 15px !important; font-weight: 400;
 }
+.tp-history-copy { min-width: 0; padding: 2px 0; }
+.tp-history-copy strong {
+ display: block; overflow: hidden; color: var(--tp-ink) !important;
+ font-size: 14px; font-weight: 600; line-height: 1.45;
+ text-overflow: ellipsis; white-space: nowrap;
+}
+.tp-history-copy span {
+ display: block; margin-top: 4px; color: var(--tp-sub) !important;
+ font-size: 12px; line-height: 1.4;
+}
+[class*="st-key-history_item_"] {
+ margin-bottom: 12px; padding: 10px 12px 10px 16px;
+ border: 1px solid var(--tp-line); border-radius: 10px;
+ background: var(--tp-surface);
+}
+[class*="st-key-history_item_"] [data-testid="stHorizontalBlock"] {
+ align-items: center; gap: 16px;
+}
+[class*="st-key-history_item_"] [data-testid="stMarkdownContainer"] { margin-bottom: 0; }
 .tp-section-title {
  margin: 0 0 8px; color: #172033; font-size: 23px;
  font-weight: 650; line-height: 1.3;
@@ -374,7 +415,11 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
  background: var(--tp-surface) !important; color: var(--tp-ink) !important;
  caret-color: var(--tp-ink) !important;
 }
-[data-testid="stTextArea"] textarea::placeholder { color: var(--tp-sub) !important; }
+[data-testid="stTextInput"] input::placeholder,
+[data-testid="stNumberInput"] input::placeholder,
+[data-testid="stTextArea"] textarea::placeholder {
+ color: var(--tp-sub) !important; opacity: 1 !important;
+}
 [data-testid="stTextInput"] input, [data-testid="stNumberInput"] input,
 [data-baseweb="select"] > div { min-height: 44px; }
 [data-testid="stTextInput"] input:focus,
@@ -410,6 +455,18 @@ div[data-baseweb="tab-highlight"], div[data-baseweb="tab-border"] { display: non
 .stSelectbox .react-aria-ComboBox > div:focus-within {
  border-color: #69a7f8 !important;
  box-shadow: 0 0 0 3px rgba(18,103,232,.14) !important;
+}
+[role="listbox"] {
+ background: var(--tp-surface) !important; color: var(--tp-ink) !important;
+}
+[role="listbox"] [role="option"] {
+ background: var(--tp-surface) !important; color: var(--tp-ink) !important;
+}
+[role="listbox"] [role="option"][aria-selected="true"] {
+ background: var(--tp-primary-soft) !important; color: var(--tp-brand-ink) !important;
+}
+[role="listbox"] [role="option"]:hover {
+ background: #f6f8fb !important; color: var(--tp-ink) !important;
 }
 [data-testid="stFileUploaderDropzone"] {
  min-height: 148px; border-radius: var(--tp-radius-lg);
@@ -1231,10 +1288,16 @@ def _request_step(step):
     st.session_state.task_step = step
 
 
-def _reset_provider_connection():
+def _reset_provider_connection(preserve_models=False):
     st.session_state.provider_configured = False
     st.session_state.provider_connection_status = "unverified"
     st.session_state.pop("provider_test_feedback", None)
+    if not preserve_models:
+        provider = st.session_state.get("provider_choice")
+        if provider:
+            st.session_state.pop(f"fetched_models_{provider}", None)
+            st.session_state.pop(f"preferred_fetched_model_{provider}", None)
+        st.session_state.pop("model_fetch_feedback", None)
 
 
 def _open_provider_settings():
@@ -1567,6 +1630,91 @@ def _remove_task_termbase():
     for key in ("task_glossary", "task_glossary_name", "task_glossary_count"):
         st.session_state.pop(key, None)
     st.session_state.show_termbase_picker = False
+
+
+def _remove_literature_uploads():
+    for key in ("literature_uploads", "literature_upload_sources",
+                "literature_upload_warnings"):
+        st.session_state.pop(key, None)
+    st.session_state.literature_uploader_generation = \
+        st.session_state.get("literature_uploader_generation", 0) + 1
+
+
+def _remove_literature_registry():
+    for key in ("literature_registry_sources", "literature_registry_name",
+                "literature_registry_signature", "literature_registry_warning"):
+        st.session_state.pop(key, None)
+    st.session_state.literature_registry_generation = \
+        st.session_state.get("literature_registry_generation", 0) + 1
+
+
+def _render_literature_inputs():
+    """Show user-facing reference uploads; registry JSON stays an advanced escape hatch."""
+    uploads = st.session_state.get("literature_uploads") or []
+    if uploads:
+        names = [escape(str(item.get("name") or "未命名资料")) for item in uploads]
+        label = names[0] if len(names) == 1 else f"{names[0]} 等 {len(names)} 个文件"
+        st.markdown(
+            f'<div class="tp-attachment"><div><strong>{label}</strong>'
+            f'<span>已添加参考资料 · 系统将在运行时解析并记录来源位置</span></div></div>',
+            unsafe_allow_html=True)
+        st.button("移除参考资料", key="remove_literature_uploads",
+                  on_click=_remove_literature_uploads, width="stretch")
+    else:
+        uploaded = st.file_uploader(
+            "上传参考资料",
+            type=["pdf", "docx", "md", "markdown", "txt", "bib", "ris"],
+            accept_multiple_files=True,
+            key=f"literature_uploads_"
+                f"{st.session_state.get('literature_uploader_generation', 0)}",
+            help="支持 PDF、DOCX、Markdown、TXT、BibTeX / RIS（含 Zotero 导出）",
+        )
+        if uploaded:
+            files = [{"name": item.name, "bytes": item.getvalue()} for item in uploaded]
+            sources, warnings = _literature_evidence.build_sources_from_uploads(
+                files, core.OUTPUT_DIR)
+            st.session_state.literature_uploads = files
+            st.session_state.literature_upload_sources = sources
+            st.session_state.literature_upload_warnings = warnings
+            st.rerun()
+    for warning in st.session_state.get("literature_upload_warnings") or []:
+        st.warning(warning)
+
+    with st.expander("高级选项", expanded=False):
+        st.caption("用于恢复已有工作流；普通用户无需准备 JSON。")
+        registry_file = st.file_uploader(
+            "导入已有文献证据注册表（.json）",
+            type=["json"],
+            key=f"literature_registry_"
+                f"{st.session_state.get('literature_registry_generation', 0)}",
+            help="仅支持已有 Literature Evidence Registry JSON",
+        )
+        if registry_file:
+            raw = registry_file.getvalue()
+            signature = (registry_file.name, len(raw))
+            if signature != st.session_state.get("literature_registry_signature"):
+                try:
+                    loaded = json.loads(raw.decode("utf-8-sig"))
+                    if isinstance(loaded, dict):
+                        loaded = loaded.get("sources") or []
+                    if not isinstance(loaded, list) \
+                            or not all(isinstance(item, dict) for item in loaded):
+                        raise ValueError("JSON 中没有可用的 sources 列表")
+                    st.session_state.literature_registry_sources = loaded
+                    st.session_state.literature_registry_name = registry_file.name
+                    st.session_state.literature_registry_warning = None
+                except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                    st.session_state.literature_registry_warning = f"注册表无法导入：{exc}"
+                st.session_state.literature_registry_signature = signature
+        if st.session_state.get("literature_registry_warning"):
+            st.warning(st.session_state.literature_registry_warning)
+        if st.session_state.get("literature_registry_sources") is not None:
+            registry_name = escape(str(
+                st.session_state.get("literature_registry_name") or "已有注册表"))
+            registry_count = len(st.session_state.get("literature_registry_sources") or [])
+            st.caption(f"已导入 {registry_name} · {registry_count} 条来源")
+            st.button("移除已有注册表", key="remove_literature_registry",
+                      on_click=_remove_literature_registry, width="stretch")
 
 
 def _remove_source_documents():
@@ -1952,7 +2100,11 @@ elif theory_choice in ("自动推荐", "自动推荐（建议）"):
     translation_theory = "基于文本特征、案例证据与可用文献自动推荐理论框架"
 else:
     translation_theory = theory_choice
-literature_sources = st.session_state.get("literature_sources")
+_uploaded_literature = st.session_state.get("literature_upload_sources") or []
+_registry_literature = st.session_state.get("literature_registry_sources")
+if _registry_literature is None:
+    _registry_literature = st.session_state.get("literature_sources") or []
+literature_sources = [*_uploaded_literature, *_registry_literature] or None
 research_settings = st.session_state.get("research_settings", {
     "target_words": 4200, "submission_year": 2026, "body_language": "zh-CN",
     "case_selection_policy": "mixed", "case_limit": 5,
@@ -1973,6 +2125,9 @@ with setup_placeholder.container():
                                     persist_state="session")
         provider_cfg = core.PROVIDERS[ai_provider]
         model_opts = sorted(provider_cfg.get("models") or [], key=str.casefold)
+        fetched_models = sorted(
+            set(st.session_state.get(f"fetched_models_{ai_provider}") or []),
+            key=str.casefold)
         if model_opts:
             default_model = provider_cfg.get("default_model")
             if default_model not in model_opts:
@@ -1986,6 +2141,20 @@ with setup_placeholder.container():
                                      key=model_key,
                                      on_change=_reset_provider_connection,
                                      persist_state="session")
+        elif fetched_models:
+            model_key = f"fetched_model_choice_{ai_provider}"
+            preferred_key = f"preferred_fetched_model_{ai_provider}"
+            current_model = st.session_state.get(
+                model_key, st.session_state.get(
+                    preferred_key, st.session_state.get(f"model_choice_{ai_provider}")))
+            if current_model not in fetched_models:
+                current_model = fetched_models[0]
+            ai_model = pc2.selectbox(
+                "模型", fetched_models,
+                index=fetched_models.index(current_model), key=model_key,
+                on_change=_reset_provider_connection, args=(True,),
+                persist_state="session")
+            st.session_state[f"model_choice_{ai_provider}"] = ai_model
         else:
             ai_model = pc2.text_input("模型", key=f"model_choice_{ai_provider}",
                                      placeholder=provider_cfg.get("model_hint") or "model-name",
@@ -2001,7 +2170,31 @@ with setup_placeholder.container():
                                      persist_state="session")
         else:
             api_base = None
-        st.caption(f"接口地址：{provider_cfg.get('base_url') or '由服务商管理'}")
+        can_fetch_models = provider_cfg.get("kind") in ("openai", "openai_compat") \
+            and (provider_cfg.get("custom_base_url") or not model_opts)
+        if can_fetch_models:
+            fetch_base = api_base or provider_cfg.get("base_url")
+            if st.button("获取可用模型", width="stretch",
+                         disabled=not (api_key and fetch_base),
+                         help="从 OpenAI 兼容接口的 /models 目录读取可用模型"):
+                with st.spinner("正在获取模型目录…"):
+                    ok, fetched, msg = core.fetch_provider_models(
+                        ai_provider, api_key, base_url=fetch_base)
+                if ok:
+                    st.session_state[f"fetched_models_{ai_provider}"] = fetched
+                    selected = st.session_state.get(f"model_choice_{ai_provider}")
+                    if selected not in fetched:
+                        selected = fetched[0]
+                    st.session_state[f"preferred_fetched_model_{ai_provider}"] = selected
+                else:
+                    st.session_state.pop(f"fetched_models_{ai_provider}", None)
+                st.session_state.model_fetch_feedback = (ok, msg)
+                st.rerun()
+            if feedback := st.session_state.get("model_fetch_feedback"):
+                ok, msg = feedback
+                (st.success if ok else st.error)(msg)
+        display_base = api_base or provider_cfg.get("base_url") or "由服务商管理"
+        st.caption(f"接口地址：{display_base}")
         save_btn, test_btn = st.columns(2)
         with save_btn:
             if st.button("保存配置", width="stretch",
@@ -2144,6 +2337,9 @@ with setup_placeholder.container():
                         st.rerun()
                     except ValueError as exc:
                         st.warning(str(exc))
+            # Keep the current custom relay available to quick profiling, which
+            # can run before the rest of the page reaches the pipeline setup.
+            core.set_llm_base_url(api_base if provider_cfg.get("custom_base_url") else None)
             if task_files:
                 _render_style_profile_section()
             _render_task_actions(next_step=2,
@@ -2298,15 +2494,14 @@ with setup_placeholder.container():
                             "基于文本特征、案例证据与可用文献自动推荐理论框架"
                     else:
                         translation_theory = theory_choice
-                    with st.expander("文献证据（可选）", expanded=False):
-                        st.caption("可导入已有证据注册表；系统不会在缺少证据时强行套用理论。")
-                        literature_registry_file = st.file_uploader(
-                            "文献证据注册表（可选）", type=["json"], key="literature_registry")
-                        if literature_registry_file:
-                            loaded_literature = json.load(literature_registry_file)
-                            if isinstance(loaded_literature, dict):
-                                loaded_literature = loaded_literature.get("sources") or []
-                            st.session_state.literature_sources = loaded_literature
+                    with st.container(key="literature_inputs"):
+                        st.markdown(
+                            '<div class="tp-output-section-head"><strong>参考文献与理论资料</strong>'
+                            '<span>上传与本次翻译实践相关的论文、专著或研究资料</span></div>',
+                            unsafe_allow_html=True)
+                        st.caption(
+                            "系统将从文献中提取可核验的理论依据，并仅在证据充分时用于实践报告。")
+                        _render_literature_inputs()
                     study_a, study_b = st.columns(2)
                     with study_a:
                         st.checkbox(
@@ -2452,13 +2647,16 @@ if app_view == "history":
         st.info("暂无历史任务。")
     else:
         for job in saved_jobs:
-            hc1, hc2 = st.columns([4, 1])
-            hc1.markdown(f"**{job['state'].get('filename', '?')}** \n"
-                         f"{core.progress_label(job['state'])}")
-            if hc2.button("打开", key=f"open_history_{job['job_id']}", width="stretch"):
-                st.session_state.update(active_job_id=job["job_id"], app_view="workspace",
-                                        workspace_mode=True)
-                st.rerun()
+            with st.container(key=f"history_item_{job['job_id']}"):
+                hc1, hc2 = st.columns([4, 1])
+                filename = escape(str(job["state"].get("filename", "?")))
+                progress = escape(core.progress_label(job["state"]))
+                hc1.markdown(f'<div class="tp-history-copy"><strong>{filename}</strong>'
+                             f'<span>{progress}</span></div>', unsafe_allow_html=True)
+                if hc2.button("打开", key=f"open_history_{job['job_id']}", width="stretch"):
+                    st.session_state.update(active_job_id=job["job_id"], app_view="workspace",
+                                            workspace_mode=True)
+                    st.rerun()
     st.stop()
 if app_view == "new" and not workspace_mode and not run_clicked:
     st.stop()

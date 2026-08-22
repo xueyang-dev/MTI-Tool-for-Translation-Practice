@@ -461,6 +461,17 @@ def test_apptest_term_review_panel():
                                default_timeout=30)
         at.run()
         assert not at.exception, f"应用启动异常：{at.exception}"
+        assert at.session_state["app_view"] == "new" \
+            and not at.session_state["workspace_mode"], \
+            "打开应用时不应自动进入未完成任务"
+        next(b for b in at.sidebar.button if b.label == "历史任务").click()
+        at.run()
+        assert any("quality.docx" in m.value for m in at.markdown), \
+            "未完成任务应保留在历史任务列表"
+        assert any("tp-history-copy" in m.value for m in at.markdown), \
+            "历史任务名称与进度应使用可读的任务信息容器"
+        next(b for b in at.button if b.label == "打开").click()
+        at.run()
         subheaders = [s.value for s in at.subheader]
         assert any("术语准备与审核" in s for s in subheaders), subheaders
         labels = [b.label for b in at.button]

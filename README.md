@@ -75,12 +75,12 @@ python gui.py --lan
 
 ## 📚 使用指南
 
-1. 在左侧边栏配置引擎与 API Key（默认 DeepSeek 官方 API / deepseek-v4-flash），选择模型与翻译预设（快速 / 标准 / 学术增强）。引擎支持 OpenCode Go、DeepSeek、OpenAI、Gemini、OpenRouter、SiliconFlow、Moonshot(Kimi)、Zhipu(GLM)、Qwen(DashScope)，以及任意 **OpenAI /chat/completions 兼容中转站**（填入 base_url + 模型名即可，one-api/new-api 等均可）；点「🔌 测试连接」可先验证 Key 与模型名。
+1. 在左侧边栏配置引擎与 API Key（默认 DeepSeek 官方 API / deepseek-v4-flash），选择模型与翻译预设（快速 / 标准 / 学术增强）。引擎支持 OpenCode Go、DeepSeek、OpenAI、Gemini、OpenRouter、SiliconFlow、Moonshot(Kimi)、Zhipu(GLM)、Qwen(DashScope)，以及任意 **OpenAI /chat/completions 兼容中转站**（填入 API 地址与 API Key 后可点「获取可用模型」读取 `/models` 目录，也可手动填写模型名；one-api/new-api 等均可）；点「🔌 测试连接」可先验证 Key 与模型名。
 2. （可选）导入术语库或翻译记忆，支持 `.xlsx` / `.csv`（Source/Target 列，可带 Behavior/Status/Preferred/Forbidden）、`.tbx`（Trados MultiTerm 等，导入即锁定）、`.tmx`（Trados / memoQ 导出，并入全局翻译记忆）；或勾选“智能抽取术语库”。
 3. （可选）用“风格模板”配置风格与保留规则（学术书面语 / 文学叙事 / 技术文档 / 自定义），规则会注入翻译与审校 prompt，决定译文语气、保留项与标点习惯；标注颜色可自定义。
 4. 上传需处理的 PDF/DOCX 文献，点击“开始处理”。
 5. 学术增强预设（或手动开启“审核并冻结候选术语”）下，在“术语准备与审核”面板完成候选术语审核（可编辑译名/锁定/拒绝/保存草稿）后点击“冻结术语表并继续翻译”。
-6. 所有进度与中间产物保存在本地 `outputs/` 目录（含 `translation_memory.json` 翻译记忆）：刷新页面或重启后，在左侧“本地任务”中选择任务即可继续，无需重新上传。翻译记忆可在「资产与交付」页查看与清空。
+6. 所有进度与中间产物保存在本地 `outputs/` 目录（含 `translation_memory.json` 翻译记忆）：刷新页面或重启后，在左侧「历史任务」中选择任务即可继续，无需重新上传；应用每次打开默认进入新建任务初始页。翻译记忆可在「资产与交付」页查看与清空。
 7. 翻译完成后，资产面板显示交付状态；blocking 问题需在面板中“标记已人工修复 / 接受风险 / 重新翻译”处理，之后点击“确认交付 (final)”。
 8. 在“学术写作设置”中可维护研究问题、分析维度、字数与文献来源注册表；来源可包含受信任的本地 PDF/DOCX/Markdown/TXT 路径、用户笔记或人工摘录。资产面板可沿来源查看证据、Literature Claim、Global Claim、章节和文献支持审校问题。实践报告仍是 AI 初稿；即使验证通过，最终理论判断也必须人工核查。
 

@@ -32,6 +32,195 @@ def _sha_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def _upload_value(item: Any) -> Tuple[str, bytes]:
+    if isinstance(item, dict):
+        return str(item.get("name") or "reference"), bytes(item.get("bytes") or b"")
+    return str(getattr(item, "name", "reference")), bytes(item.getvalue())
+
+
+def _slug(value: str) -> str:
+    value = re.sub(r"[^A-Za-z0-9_-]+", "-", str(value or "")).strip("-_").lower()
+    return value or "reference"
+
+
+def _unique_id(value: str, used: set[str]) -> str:
+    base = _slug(value)
+    candidate = base
+    suffix = 2
+    while candidate in used:
+        candidate = f"{base}-{suffix}"
+        suffix += 1
+    used.add(candidate)
+    return candidate
+
+
+def _bib_value(value: str) -> str:
+    value = value.strip().rstrip(",").strip()
+    if len(value) >= 2 and value[0] == "{" and value[-1] == "}":
+        value = value[1:-1]
+    elif len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+        value = value[1:-1]
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _parse_bibtex(text: str) -> List[Dict[str, Any]]:
+    entries: List[Dict[str, Any]] = []
+    entry_re = re.compile(
+        r"@(?P<kind>[A-Za-z]+)\s*\{\s*(?P<key>[^,\s]+)\s*,(?P<body>.*?)(?=\n\s*@|\Z)",
+        re.DOTALL,
+    )
+    field_re = re.compile(r"(?:^|,)\s*([A-Za-z][\w-]*)\s*=\s*", re.MULTILINE)
+    for match in entry_re.finditer(text or ""):
+        fields: Dict[str, str] = {}
+        body = match.group("body")
+        field_matches = list(field_re.finditer(body))
+        for index, field in enumerate(field_matches):
+            start = field.end()
+            end = field_matches[index + 1].start() if index + 1 < len(field_matches) else len(body)
+            fields[field.group(1).casefold()] = _bib_value(body[start:end])
+        if fields.get("title") or fields.get("author"):
+            entries.append({
+                "key": match.group("key"),
+                "title": fields.get("title", ""),
+                "authors": [x.strip() for x in re.split(
+                    r"\s+and\s+", fields.get("author", ""), flags=re.IGNORECASE)
+                    if x.strip()],
+                "year": fields.get("year", ""),
+                "doi": fields.get("doi", ""),
+                "url": fields.get("url", ""),
+                "journal": fields.get("journal") or fields.get("booktitle", ""),
+                "publisher": fields.get("publisher", ""),
+                "abstract": fields.get("abstract", ""),
+            })
+    return entries
+
+
+def _parse_ris(text: str) -> List[Dict[str, Any]]:
+    entries: List[Dict[str, Any]] = []
+    record: Dict[str, Any] = {}
+    last_tag = ""
+
+    def flush() -> None:
+        if record.get("TI") or record.get("AU"):
+            year = str(record.get("PY") or record.get("Y1") or "")
+            entries.append({
+                "key": str(record.get("ID") or ""),
+                "title": str(record.get("TI") or "").strip(),
+                "authors": [str(x).strip() for x in record.get("AU", []) if str(x).strip()],
+                "year": (re.search(r"\d{4}", year) or [""])[0],
+                "doi": str(record.get("DO") or "").strip(),
+                "url": str(record.get("UR") or "").strip(),
+                "journal": str(record.get("JO") or record.get("T2") or "").strip(),
+                "publisher": str(record.get("PB") or "").strip(),
+                "abstract": str(record.get("AB") or "").strip(),
+            })
+        record.clear()
+
+    for line in str(text or "").splitlines():
+        match = re.match(r"^([A-Z0-9]{2})\s*[- ]\s?(.*)$", line.strip())
+        if match:
+            tag, value = match.groups()
+            if tag == "TY":
+                flush()
+            if tag == "ER":
+                flush()
+                last_tag = ""
+                continue
+            if tag in {"AU", "A1"}:
+                record.setdefault("AU", []).append(value.strip())
+            else:
+                record[tag] = value.strip()
+            last_tag = tag
+        elif line.strip() and last_tag and record.get(last_tag):
+            if isinstance(record[last_tag], list):
+                record[last_tag][-1] += " " + line.strip()
+            else:
+                record[last_tag] += " " + line.strip()
+    flush()
+    return entries
+
+
+def _metadata_source(entry: Dict[str, Any], source_id: str, source_type: str,
+                     import_identity: str) -> Dict[str, Any]:
+    title = str(entry.get("title") or "").strip()
+    authors = [str(x).strip() for x in entry.get("authors") or [] if str(x).strip()]
+    year = str(entry.get("year") or "").strip() or None
+    citation = {"title": title, "authors": authors, "year": year}
+    for key in ("doi", "url", "journal", "publisher"):
+        if entry.get(key):
+            citation[key] = str(entry[key]).strip()
+    citation_complete = bool(title and authors and year)
+    source = {
+        "source_id": source_id,
+        "title": title or import_identity,
+        "authors": authors,
+        "year": year,
+        "source_type": source_type,
+        "citation_metadata": citation,
+        "import_identity": import_identity,
+        "verification_status": "user_provided",
+        "allowed_citation_status": "allowed" if citation_complete else "not_allowed",
+        "content_availability": "metadata_only",
+        "citation_allowed": citation_complete,
+    }
+    if entry.get("abstract"):
+        source["notes"] = [str(entry["abstract"]).strip()]
+        source["content_availability"] = "notes_only"
+    return source
+
+
+def build_sources_from_uploads(
+    files: Iterable[Any], storage_dir: Path | str,
+) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """Register ordinary reference uploads without exposing the registry format."""
+    root = Path(storage_dir) / "literature_uploads"
+    root.mkdir(parents=True, exist_ok=True)
+    sources: List[Dict[str, Any]] = []
+    warnings: List[str] = []
+    used_ids: set[str] = set()
+    for index, item in enumerate(files or [], 1):
+        name, raw = _upload_value(item)
+        filename = Path(name).name or f"reference-{index}"
+        suffix = Path(filename).suffix.casefold()
+        stem = Path(filename).stem or f"reference-{index}"
+        if suffix in {".bib", ".ris"}:
+            text = raw.decode("utf-8-sig", errors="replace")
+            entries = _parse_bibtex(text) if suffix == ".bib" else _parse_ris(text)
+            if not entries:
+                warnings.append(f"{filename} 未识别到可用的文献条目。")
+                continue
+            for entry_index, entry in enumerate(entries, 1):
+                key = entry.get("key") or f"{stem}-{entry_index}"
+                source_id = _unique_id(f"{suffix[1:]}-{key}", used_ids)
+                sources.append(_metadata_source(
+                    entry, source_id, suffix[1:], f"{filename} / {key}"))
+            continue
+        if suffix not in {".pdf", ".docx", ".md", ".markdown", ".txt"}:
+            warnings.append(f"{filename} 格式不受支持，已跳过。")
+            continue
+        source_id = _unique_id(f"upload-{stem}", used_ids)
+        destination = root / f"{source_id}{suffix}"
+        try:
+            destination.write_bytes(raw)
+        except OSError as exc:
+            warnings.append(f"{filename} 无法保存：{exc}")
+            continue
+        sources.append({
+            "source_id": source_id,
+            "title": stem,
+            "authors": [],
+            "year": None,
+            "source_type": suffix[1:],
+            "import_identity": filename,
+            "local_source_path": str(destination),
+            "verification_status": "user_provided",
+            "allowed_citation_status": "not_allowed",
+            "content_availability": "full_text_available",
+            "citation_allowed": False,
+        })
+    return sources, warnings
+
+
 def _split_piece(text: str, maximum: int = 1200) -> List[str]:
     text = text.strip()
     if not text:
